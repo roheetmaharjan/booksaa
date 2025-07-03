@@ -1,5 +1,6 @@
 import { Archivo } from "next/font/google";
 import "../styles/globals.css";
+import SessionWrapper from "@/components/components_admin/SessionWrapper";
 
 const archivo = Archivo({
   weight: ["400", "700"],
@@ -16,7 +17,9 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en">
       <body className={`${archivo.variable} antialiased`}>
-        {children}
+        <SessionWrapper>
+          {children}
+        </SessionWrapper>
       </body>
     </html>
   );

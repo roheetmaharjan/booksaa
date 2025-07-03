@@ -22,13 +22,36 @@ model Order {
   quantity   Int
   customer   String
   createdAt  DateTime @default(now())
-
   product    Product  @relation(fields: [productId], references: [id])
 }
 
-model User{
-  id Int @id @default(autoincrement())
-  username String @unique
-  password String
-  role String @default("user")
+model User {
+  id         String        @id @default(uuid())
+  email      String        @unique
+  password   String
+  username   String        @unique
+  phone      String?
+  location   String?
+  image      String?       // Profile picture URL or path
+  bio        String?       // Short biography or description
+  status     AccountStatus
+  joinedAt   DateTime      @default(now())
+  role       Role          @default(CUSTOMER)
+}
+
+
+
+enum Role{
+  ADMIN
+  VENDOR
+  CUSTOMER
+}
+enum AccountStatus{
+  TRIAL_ACTIVE
+  TRIAL_EXPIRING
+  TRIAL_EXPIRED
+  ACTIVE
+  INACTIVE
+  SUSPENDED
+  BANNED
 }
