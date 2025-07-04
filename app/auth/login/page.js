@@ -43,7 +43,7 @@ export default function LoginPage() {
             <div className="logo"></div>
           </div>
           <div className="mb-10">
-            <h2 className="mb-2">Welcome back!</h2>
+            <h2 className="mb-2 font-bold text-3xl">Welcome back!</h2>
             <p className="font-semibold heading-text">
               Please enter your credentials to Log in!
             </p>
