@@ -7,9 +7,10 @@ async function main() {
   const hashedPassword = await bcrypt.hash('supersecret', 10);
   await prisma.user.create({
     data: {
-      username: 'superadmin',
+      email: 'superadmin@gmail.com',
       password: hashedPassword,
-      role: 'superadmin',
+      role : "ADMIN",
+      status: "ACTIVE"
     },
   });
   console.log('Super admin created!');

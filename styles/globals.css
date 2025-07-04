@@ -19,13 +19,8 @@ body {
   background: var(--background);
   font-family: var(--font-archivo);
 }
-
-.btn-primary{
-  @apply py-4 px-6 inline-block bg-primary mr-4 hover:bg-white hover:text-primary
-}
-.btn-secondary{
-  @apply py-4 px-6 inline-block bg-white mr-4 text-primary border-white border-2 hover:bg-transparent hover:text-white
-}
-.container{
-  @apply xl:max-w-screen-2xl mx-auto px-6;
+@layer base {
+  input {
+    @apply border rounded px-3 py-2 focus:outline-none 
+  }
 }

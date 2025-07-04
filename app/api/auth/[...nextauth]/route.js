@@ -8,19 +8,30 @@ const handler = NextAuth({
     CredentialsProvider({
       name: "Credentials",
       credentials: {
-        username: { label: "Username", type: "text" },
+        identifier: { label: "Username or Email", type: "text" },
         password: { label: "Password", type: "password" },
       },
       async authorize(credentials) {
-        const user = await prisma.user.findUnique({
-          where: { username: credentials.username },
+        if (!credentials) return null;
+        const user = await prisma.user.findFirst({
+          where: {
+            OR: [
+              { email: credentials.identifier },
+              { username: credentials.identifier },
+            ],
+          },
         });
         if (
           user &&
           (await bcrypt.compare(credentials.password, user.password))
         ) {
-          // Return user object with role
-          return { id: user.id, name: user.username, role: user.role };
+          // Return user object with all needed fields
+          return {
+            id: user.id,
+            name: user.username,
+            email: user.email,
+            role: user.role,
+          };
         }
         return null;
       },
@@ -31,16 +42,20 @@ const handler = NextAuth({
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Persist the user's role to the token
+      // Persist the user's info to the token
       if (user) {
         token.role = user.role;
+        token.name = user.name;
+        token.email = user.email;
       }
       return token;
     },
     async session({ session, token }) {
-      // Make the role available in the session
-      if (token?.role) {
+      // Make the role, name, and email available in the session
+      if (token) {
         session.user.role = token.role;
+        session.user.name = token.name;
+        session.user.email = token.email;
       }
       return session;
     },

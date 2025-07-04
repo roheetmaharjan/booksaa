@@ -29,7 +29,7 @@ model User {
   id         String        @id @default(uuid())
   email      String        @unique
   password   String
-  username   String        @unique
+  username   String?        @unique
   phone      String?
   location   String?
   image      String?       // Profile picture URL or path
