@@ -1,11 +1,14 @@
 "use client";
-import { signIn, signOut, useSession } from "next-auth/react";
+import { signIn, useSession } from "next-auth/react";
 import { useRouter } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect,useState } from "react";
+import Image from "next/image";
+import { Loader2 } from "lucide-react";
 
 export default function LoginPage() {
   const { data: session, status } = useSession();
   const router = useRouter();
+  const [loading,setLoading] = useState(false)
 
   useEffect(() => {
     if (status === "loading") return;
@@ -19,6 +22,7 @@ export default function LoginPage() {
 
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const form = e.target;
     const identifier = form.elements.identifier?.value || "";
     const password = form.elements.password?.value || "";
@@ -28,19 +32,28 @@ export default function LoginPage() {
       password,
     });
 
+    setLoading(false);
+
     if (result?.error) {
       console.error(result.error);
     } else if (result?.ok) {
-      window.location.reload(); // <-- This is the key change!
+      window.location.reload(); 
     }
   };
 
   return (
-    <div>
-      <div className=" flex flex-col justify-center items-center flex-1 bg-red-500">
+    <>
+      <div className=" flex flex-col justify-center items-center flex-1 h-[100vh]">
         <div className="w-full xl:max-w-[450px] px-8 max-w-[380px]">
           <div className="mb-8">
-            <div className="logo"></div>
+            <div className="logo">
+              <Image
+              src="/logo.png"
+              width={100}
+              height={30}
+              alt="bookaroo"
+              />
+            </div>
           </div>
           <div className="mb-10">
             <h2 className="mb-2 font-bold text-3xl">Welcome back!</h2>
@@ -50,12 +63,12 @@ export default function LoginPage() {
           </div>
           <div>
             <form onSubmit={handleLogin}>
-              <div className="form-container vertical">
-                <div className="form-item vertical">
-                  <label className="form-label mb-2">Username or Email</label>
+              <div className="form-container vertical text-gray-500">
+                <div className="flex flex-col">
+                  <label className="font-semibold align-center flex">Username or Email</label>
                   <div className="">
                     <input
-                      className="input input-md h-12 focus:ring-primary focus-within:ring-primary focus-within:border-primary focus:border-primary"
+                      className="w-full h-12 focus:ring-primary focus-within:ring-primary focus-within:border-primary focus:border-primary"
                       placeholder="Username or Email"
                       autoComplete="off"
                       type="email"
@@ -63,40 +76,17 @@ export default function LoginPage() {
                     />
                   </div>
                 </div>
-                <div className="form-item vertical mb-0">
-                  <label className="form-label mb-2">Password</label>
+                <div className="flex flex-col">
+                  <label className="font-semibold align-center flex">Password</label>
                   <div className="">
                     <span className="input-wrapper">
                       <input
-                        className="input input-md h-12 focus:ring-primary focus-within:ring-primary focus-within:border-primary focus:border-primary"
+                        className="w-full h-12 focus:ring-primary focus-within:ring-primary focus-within:border-primary focus:border-primary"
                         placeholder="Password"
                         autoComplete="off"
                         type="password"
                         name="password"
                       />
-                      <div className="input-suffix-end">
-                        <span
-                          className="cursor-pointer select-none text-xl"
-                          role="button"
-                        >
-                          <svg
-                            stroke="currentColor"
-                            fill="none"
-                            strokeWidth="2"
-                            viewBox="0 0 24 24"
-                            aria-hidden="true"
-                            height="1em"
-                            width="1em"
-                            xmlns="http://www.w3.org/2000/svg"
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M13.875 18.825A10.05 10.05 0 0112 19c-4.478 0-8.268-2.943-9.543-7a9.97 9.97 0 011.563-3.029m5.858.908a3 3 0 114.243 4.243M9.878 9.878l4.242 4.242M9.88 9.88l-3.29-3.29m7.532 7.532l3.29 3.29M3 3l3.59 3.59m0 0A9.953 9.953 0 0112 5c4.478 0 8.268 2.943 9.543 7a10.025 10.025 0 01-4.132 5.411m0 0L21 21"
-                            ></path>
-                          </svg>
-                        </span>
-                      </div>
                     </span>
                   </div>
                 </div>
@@ -110,10 +100,12 @@ export default function LoginPage() {
                   </a>
                 </div>
                 <button
-                  className="button bg-primary hover:bg-primary-mild text-neutral h-12 rounded-xl px-5 py-2 w-full button-press-feedback"
+                  className="button flex items-center gap-2 justify-center text-white bg-primary hover:bg-primary-100 text-neutral h-12 rounded-md px-5 py-2 w-full button-press-feedback"
                   type="submit"
+                  disabled={loading}
                 >
-                  Log In
+                  {loading ? "Logging in..." : "Log In"}
+                  {loading&& <Loader2 className="animate-spin h-5 w-5 mr-2"/>}
                 </button>
               </div>
             </form>
@@ -155,7 +147,7 @@ export default function LoginPage() {
           </div> */}
           <div>
             <div className="mt-6 text-center">
-              <span>Don't have an account yet? </span>
+              <span>Don&apos;t have an account yet? </span>
               <a
                 className="hover:underline heading-text font-bold"
                 href="/sign-up"
@@ -167,6 +159,6 @@ export default function LoginPage() {
           </div>
         </div>
       </div>
-    </div>
+    </>
   );
 }

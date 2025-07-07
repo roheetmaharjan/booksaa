@@ -7,51 +7,56 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Product {
-  id        Int      @id @default(autoincrement())
-  name      String
-  price     Float
-  image     String
-  createdAt DateTime @default(now())
-  orders    Order[]
-}
-
-model Order {
-  id         Int      @id @default(autoincrement())
-  productId  Int
-  quantity   Int
-  customer   String
-  createdAt  DateTime @default(now())
-  product    Product  @relation(fields: [productId], references: [id])
-}
-
 model User {
-  id         String        @id @default(uuid())
-  email      String        @unique
-  password   String
-  username   String?        @unique
-  phone      String?
-  location   String?
-  image      String?       // Profile picture URL or path
-  bio        String?       // Short biography or description
-  status     AccountStatus
-  joinedAt   DateTime      @default(now())
-  role       Role          @default(CUSTOMER)
+  id        String        @id @default(uuid())
+  email     String        @unique
+  firstname String
+  lastname  String
+  password  String
+  username  String?       @unique
+  phone     String?
+  location  String?
+  image     String?
+  bio       String?
+  status    UserStatus
+  joinedAt  DateTime      @default(now())
+  role      Role          @default(CUSTOMER)
 }
 
+model Vendor {
+  id String @id
+  name  String
+  location String
+  description String?
+  image String?
+  phone String?
+  cancellation_policy String
+  categoryID String
+  category Category @relation(fields: [categoryID],references: [id])
+  status AccountStatus 
+}
 
+model Category{
+  id String @id @default(uuid())
+  name String
+  image String?
+  vendors Vendor[]
+}
 
-enum Role{
+enum Role {
   ADMIN
   VENDOR
   CUSTOMER
 }
-enum AccountStatus{
+enum UserStatus {
+  ACTIVE
+  INACTIVE
+}
+
+enum AccountStatus {
   TRIAL_ACTIVE
   TRIAL_EXPIRING
   TRIAL_EXPIRED
   ACTIVE
   INACTIVE
-  SUSPENDED
-  BANNED
 }
