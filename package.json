@@ -7,7 +7,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma migrate deploy && prisma db seed"
+    "postinstall": "prisma migrate deploy && prisma generate",
+    "seed": "node ./prisma/seedAll.js"
   },
   "dependencies": {
     "@phosphor-icons/react": "^2.1.10",
