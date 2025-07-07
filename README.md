@@ -1,8 +1,28 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
 
 ## Getting Started
+First, Create a database in Postgresql:
 
-First, run the development server:
+Second, run database migration 
+
+```bash
+# for local
+npx prisma migrate dev
+
+# for production
+npx prisma migrate deploy
+
+
+
+```
+Third, seed the Databse
+
+```bash
+npx prisma db seed
+```
+
+
+Forth, run the development server:
 
 ```bash
 npm run dev
