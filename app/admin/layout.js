@@ -22,10 +22,10 @@ export function UsersLayout({ children }) {
       <UsersSidebar startTransition={startTransition} />
       {isPending ?
         <Loading />
-       :
+       : 
         <main className="flex-1">
           <SidebarTrigger />
-           { children }
+          {children}
         </main>
       }
     </SidebarProvider>
