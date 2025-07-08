@@ -44,8 +44,5 @@
     "eslint-config-next": "15.3.4",
     "postcss": "^8.5.6",
     "tailwindcss": "^3.4.17"
-  },
-  "prisma": {
-    "seed": "node prisma/seedall.js"
   }
 }
