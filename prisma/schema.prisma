@@ -32,13 +32,13 @@ model Vendor {
   phone String?
   cancellation_policy String
   categoryID String
-  category Category @relation(fields: [categoryID],references: [id])
-  status AccountStatus 
+  category Category @relation(fields: [categoryID], references: [id])
+  status AccountStatus
 }
 
 model Category{
   id String @id @default(uuid())
-  name String
+  name String @unique
   image String?
   vendors Vendor[]
 }
