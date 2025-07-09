@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { PrismaClient } from "@prisma/client";
+
 const prisma = new PrismaClient();
 
 export async function POST(request) {
@@ -10,34 +11,45 @@ export async function POST(request) {
       location,
       description,
       cancellation_policy,
-      categoryID
+      phone,
+      image,
+      category, // category name
+      status = "ACTIVE" // default status if not provided
     } = body;
 
-    if (
-      !name ||
-      !location ||
-      !description ||
-      !cancellation_policy ||
-      !categoryID
-    ) {
+    // Validate required fields
+    if (!name || !location || !cancellation_policy || !category) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
-    const newVendor = await prisma.vendor.create({
-      data: {
-        id: Date.now().toString(), // Prisma expects string
-        name,
-        location,
-        description,
-        cancellation_policy,
-        categoryID,
-        status: 'ACTIVE' // or use body.status if provided
-      },
+    // Get category by name
+    const categoryRecord = await prisma.category.findUnique({
+      where: { name: category }
     });
 
-    return NextResponse.json({ newVendor }, { status: 201 });
+    if (!categoryRecord) {
+      return NextResponse.json({ error: "Category not found" }, { status: 404 });
+    }
+
+    // Create vendor
+    const newVendor = await prisma.vendor.create({
+      data: {
+        id: Date.now().toString(), // or use uuid if preferred
+        name,
+        location,
+        description: description || null,
+        cancellation_policy,
+        phone: phone || null,
+        image: image || null,
+        categoryID: categoryRecord.id,
+        status
+      }
+    });
+
+    return NextResponse.json({ vendor: newVendor }, { status: 201 });
+
   } catch (error) {
-    console.error(error);
-    return NextResponse.json({ error: "Invalid JSON or Server Error" }, { status: 400 });
+    console.error("Error creating vendor:", error);
+    return NextResponse.json({ error: "Server error" }, { status: 500 });
   }
 }
