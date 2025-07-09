@@ -43,7 +43,7 @@ export function UsersSidebar({startTransition}) {
   }
   return (
     
-    <Sidebar className="top-[53px]">
+    <Sidebar className="top-[53px]" collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Accounts</SidebarGroupLabel>
