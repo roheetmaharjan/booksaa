@@ -38,7 +38,7 @@ model Vendor {
 
 model Category{
   id String @id @default(uuid())
-  name String
+  name String @unique
   image String?
   vendors Vendor[]
 }

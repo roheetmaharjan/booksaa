@@ -3,21 +3,21 @@ const prisma = new PrismaClient();
 
 export async function GET(req) {
   try {
-    const results = await prisma.vendor.findMany();
+    const results = await prisma.category.findMany();
     return new Response(JSON.stringify(results), {
-      status: 200,
+      status: "200",
       headers: {
-        "Content-Type": "application/json",
-        "Cache-Control": "no-store",
+        "Cotent-Type": "application/json",
+        "cache-control": "no-store",
       },
     });
-  } catch (error) {
-    console.error("Error fetching data", error);
+  } catch (err) {
+    console.error("Error Fetching data", err);
     return new Response(
       JSON.stringify(
-        { error: "Error fetching data" },
+        { error: "Error fetching" },
         {
-          status: 500,
+          status: "200",
         }
       )
     );
