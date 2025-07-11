@@ -23,6 +23,8 @@ export default function AdminHeader({startTransition}) {
           <button className="flex gap-2 items-center" onClick={handleNav("/admin")}><SquaresFourIcon size={25} weight="duotone"/>Dashboard</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/users")}><UsersIcon size={25} weight="duotone" /> Users</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/settings")}><GearIcon size={25} weight="duotone" /> Settings</button>
+          <button className="flex gap-2 items-center" onClick={handleNav("/admin/reports")}><GearIcon size={25} weight="duotone" /> Reports</button>
+          <button className="flex gap-2 items-center" onClick={handleNav("/admin/support")}><GearIcon size={25} weight="duotone" /> Support</button>
         </nav>
         <div className="hidden md:flex md:ml-auto">
             <button onClick={() => signOut({ callbackUrl: "/auth/login" })}>Sign Out</button>

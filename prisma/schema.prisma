@@ -24,15 +24,15 @@ model User {
 }
 
 model Vendor {
-  id String @id
+  id String @id @default(uuid())
   name  String
   location String
   description String?
   image String?
   phone String?
   cancellation_policy String
-  categoryID String
-  category Category @relation(fields: [categoryID],references: [id])
+  categoryId String
+  category Category @relation(fields: [categoryId],references: [id])
   status AccountStatus 
 }
 
