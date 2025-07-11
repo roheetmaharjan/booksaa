@@ -1,7 +1,9 @@
+import { SettingsLayout } from "../layout";
+
 export default function AdminSettings(){
     return(
-        <div className="text-3xl">
+        <SettingsLayout>
             Settings
-        </div>
+        </SettingsLayout>
     )
 }

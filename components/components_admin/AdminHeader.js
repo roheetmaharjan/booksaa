@@ -14,7 +14,7 @@ export default function AdminHeader({startTransition}) {
     })
   }
   return (
-    <div className="flex border-b py-3 px-4 flex-row justify-between">
+    <div className="flex border-b py-3 px-4 flex-row justify-between sticky top-0">
       <div className="w-full flex flex-row gap-5 item-center">
         <div className="flex">
           <Image src="/logo.png" width="150" height="150" alt="Bookaroo" />

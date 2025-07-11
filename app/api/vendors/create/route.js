@@ -13,7 +13,7 @@ export async function POST(request) {
       cancellation_policy,
       phone,
       image,
-      category, // category name
+      category,
       status = "ACTIVE" // default status if not provided
     } = body;
 
