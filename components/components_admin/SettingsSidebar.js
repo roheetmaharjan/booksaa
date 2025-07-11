@@ -23,22 +23,22 @@ const items = [
   },
   {
     title: "Categories",
-    url: "/admin/categories",
+    url: "/admin/settings/categories",
     icon: StackIcon,
   },
   {
     title: "Payment",
-    url: "/admin/payments",
+    url: "/admin/settings/payments",
     icon: CreditCardIcon,
   },
   {
     title: "Notification",
-    url: "/admin/notification",
+    url: "/admin/settings/notification",
     icon: BellIcon,
   },
   {
     title: "Legal",
-    url: "/admin/legal",
+    url: "/admin/settings/legal",
     icon: GavelIcon,
   }
 ];
