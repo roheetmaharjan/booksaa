@@ -1,5 +1,6 @@
 "use client"
 import { Calendar, Home, Inbox } from "lucide-react";
+import { GearIcon,StackIcon,CreditCardIcon,BellIcon,GavelIcon } from "@phosphor-icons/react";
 import { usePathname,useRouter } from "next/navigation";
 
 import {
@@ -16,14 +17,29 @@ import {
 // Menu items.
 const items = [
   {
-    title: "Profile",
+    title: "General",
     url: "/admin/settings",
-    icon: Inbox,  
+    icon: GearIcon,  
   },
   {
     title: "Categories",
     url: "/admin/categories",
-    icon: Home,
+    icon: StackIcon,
+  },
+  {
+    title: "Payment",
+    url: "/admin/payments",
+    icon: CreditCardIcon,
+  },
+  {
+    title: "Notification",
+    url: "/admin/notification",
+    icon: BellIcon,
+  },
+  {
+    title: "Legal",
+    url: "/admin/legal",
+    icon: GavelIcon,
   }
 ];
 
@@ -53,7 +69,7 @@ export function SettingsSidebar({startTransition}) {
                   >
                     <SidebarMenuButton asChild>
                       <button onClick={handleNav(`${item.url}`)}>
-                        <item.icon />
+                        <item.icon weight="duotone" size={25} />
                         <span>{item.title}</span>
                       </button>
                     </SidebarMenuButton>
