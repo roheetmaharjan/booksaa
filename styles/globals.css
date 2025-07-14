@@ -108,3 +108,118 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+
+body{
+    overflow-y: hidden;
+}
+
+section{
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+
+    background: url("https://images.pexels.com/photos/7820319/pexels-photo-7820319.jpeg");
+    background-repeat: no-repeat;
+    background-position: center;
+    background-size: cover;
+}
+
+.container {
+    text-align: center;
+    backdrop-filter: blur(5px) brightness(80%);
+    max-width: 600px;
+    height: 100vh;
+    padding: 10px;
+    display: flex;
+    padding: 0 30px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.content{
+    margin: 30px 0px;
+}
+
+.company{
+    font-size: 20px;
+    font-weight: bolder;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    margin-bottom: 20px;
+    color: white
+}
+
+.title{
+    font-size: 5em;
+    margin-bottom: 15px;
+    color: white
+
+}
+
+.discription{
+    font-size: 16px;
+    line-height: 1.5;
+    width: 100%;
+    margin: 0 auto 40px;
+    color: white
+}
+
+.button button{
+    width: 150px;
+    height: 40px;
+    border-radius: 20px;
+    background: transparent;
+    border: 2px solid #fff;
+    font-weight: bolder;
+}
+
+.button button:hover{
+    background: #fff;
+    color: #000;
+    transition: 0.5s;
+}
+
+.icons{
+    margin-top: 50px;
+}
+
+.icons button{
+    background: transparent;
+    border: none;
+    width: 50px;
+    font-size: 1.5em;
+    border-radius: 50%;
+}
+
+.icons button ion-icon{
+    padding: 10px;
+}
+
+.icons button:hover{
+    background: rgba(255, 255, 255,0.1);
+    transition: 0.5s;
+}
+/* StyleSheet:End */
+
+/* Responsiveness:Start */
+@media screen and (max-width: 480px) {
+    .container{
+        width: 100%;
+    }
+}
+
+@media screen and (max-width: 320px) {
+    .company{
+        font-size: 0.6em;
+    }
+    .title{
+        font-size: 4em;
+    }
+    .discription{
+        font-size: 0.7em;
+    }
+}
+/* Responsiveness:End */
