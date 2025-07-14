@@ -1,5 +1,5 @@
 import Image from "next/image";
-import { SquaresFourIcon, GearIcon, UsersIcon } from "@phosphor-icons/react";
+import { SquaresFourIcon, GearIcon, UsersIcon,ChartBarIcon,QuestionIcon } from "@phosphor-icons/react";
 import { signOut } from "next-auth/react";
 import { usePathname,useRouter } from "next/navigation";
 
@@ -15,7 +15,7 @@ export default function AdminHeader({startTransition}) {
   }
   return (
     <div className="flex border-b py-3 px-4 flex-row justify-between sticky top-0">
-      <div className="w-full flex flex-row gap-5 item-center">
+      <div className="w-full flex flex-row gap-5 item-center justify-between">
         <div className="flex">
           <Image src="/logo.png" width="150" height="150" alt="Bookaroo" />
         </div>
@@ -23,13 +23,13 @@ export default function AdminHeader({startTransition}) {
           <button className="flex gap-2 items-center" onClick={handleNav("/admin")}><SquaresFourIcon size={25} weight="duotone"/>Dashboard</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/users")}><UsersIcon size={25} weight="duotone" /> Users</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/settings")}><GearIcon size={25} weight="duotone" /> Settings</button>
-          <button className="flex gap-2 items-center" onClick={handleNav("/admin/reports")}><GearIcon size={25} weight="duotone" /> Reports</button>
-          <button className="flex gap-2 items-center" onClick={handleNav("/admin/support")}><GearIcon size={25} weight="duotone" /> Support</button>
+          <button className="flex gap-2 items-center" onClick={handleNav("/admin/reports")}><ChartBarIcon size={25} weight="duotone" /> Reports</button>
+          <button className="flex gap-2 items-center" onClick={handleNav("/admin/support")}><QuestionIcon size={25} weight="duotone" /> Support</button>
         </nav>
-        <div className="hidden md:flex md:ml-auto">
+        <div className="hidden md:flex">
             <button onClick={() => signOut({ callbackUrl: "/auth/login" })}>Sign Out</button>
         </div>
-        <div className="flex ml-auto md:hidden">
+        <div className="flex md:hidden">
           Menu
         </div>
       </div>

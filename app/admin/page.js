@@ -6,10 +6,11 @@ export default function AdminPage() {
 
   return (
     <div>
-      
-      <main>
-        Welcome to admin page, {session?.user?.name}
-      </main>
+      <div className="container-fluid">
+        <h4 className="page-title">
+          Welcome to admin page, {session?.user?.name}
+        </h4>
+      </div>
     </div>
   );
 }

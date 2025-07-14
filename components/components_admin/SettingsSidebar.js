@@ -1,6 +1,5 @@
 "use client"
-import { Calendar, Home, Inbox } from "lucide-react";
-import { GearIcon,StackIcon,CreditCardIcon,BellIcon,GavelIcon } from "@phosphor-icons/react";
+import { GearIcon,StackIcon,CreditCardIcon,BellIcon,GavelIcon,EnvelopeIcon } from "@phosphor-icons/react";
 import { usePathname,useRouter } from "next/navigation";
 
 import {
@@ -40,6 +39,11 @@ const items = [
     title: "Legal",
     url: "/admin/settings/legal",
     icon: GavelIcon,
+  },
+  {
+    title: "Email Templates",
+    url: "/admin/settings/emailtemplates",
+    icon: EnvelopeIcon,
   }
 ];
 
@@ -57,7 +61,7 @@ export function SettingsSidebar({startTransition}) {
     <Sidebar className="top-[53px]" collapsible="icon">
       <SidebarContent>
         <SidebarGroup>
-          <SidebarGroupLabel>Accounts</SidebarGroupLabel>
+          <SidebarGroupLabel>Settings</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
               {items.map((item) => {
@@ -69,7 +73,7 @@ export function SettingsSidebar({startTransition}) {
                   >
                     <SidebarMenuButton asChild>
                       <button onClick={handleNav(`${item.url}`)}>
-                        <item.icon weight="duotone" size={25} />
+                        <item.icon weight="duotone" size={40} />
                         <span>{item.title}</span>
                       </button>
                     </SidebarMenuButton>

@@ -1,5 +1,5 @@
-"use client"
-import { UsersLayout } from "../layout";
+"use client";
+import { UsersLayout } from "@/app/admin/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import {
@@ -20,18 +20,17 @@ export default function VendorsList() {
   }, []);
   return (
     <UsersLayout>
-      <div className="container-fluid">
-        <div className="flex flex-row justify-between w-full">
-          <h4 className="page-title">Vendors</h4>
-          <Dialog>
-            <DialogTrigger asChild className="ml-auto">
-              <Button>Add Vendors</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
-                <DialogTitle>Add Vendors</DialogTitle>
-              </DialogHeader>
-              {/* <form onSubmit={handleSubmit}>
+      <div className="flex flex-row justify-between w-full">
+        <h4 className="page-title">Vendors</h4>
+        <Dialog>
+          <DialogTrigger asChild className="ml-auto">
+            <Button>Add Vendors</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[425px]">
+            <DialogHeader>
+              <DialogTitle>Add Vendors</DialogTitle>
+            </DialogHeader>
+            {/* <form onSubmit={handleSubmit}>
                 <div className="grid gap-4">
                   <div className="grid gap-3">
                     <Label htmlFor="firstname">First name</Label>
@@ -85,58 +84,57 @@ export default function VendorsList() {
                   <Button type="submit">Send Invite</Button>
                 </DialogFooter>
               </form> */}
-            </DialogContent>
-          </Dialog>
-        </div>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="flex">
         <div className="flex">
-          <div className="flex">
-            <input
-              type="search"
-              className="bg-gray-50 border rounded focus:border-blue-500"
-              placeholder="Search..."
-            />
-          </div>
-          <div className="flex"></div>
+          <input
+            type="search"
+            className="bg-gray-50 border rounded focus:border-blue-500"
+            placeholder="Search..."
+          />
         </div>
-        <div className="table-responsive">
-          <table className="w-full boo-table mt-3 border">
-            <thead>
+        <div className="flex"></div>
+      </div>
+      <div className="table-responsive">
+        <table className="w-full boo-table mt-3 border">
+          <thead>
+            <tr>
+              <th className="text-left text-sm w-16">S.N</th>
+              <th className="text-left w-1/3 text-sm">Name</th>
+              <th className="text-left text-sm">Location</th>
+              <th className="text-left text-sm">Image</th>
+              <th className="text-left text-sm">Phone</th>
+              <th className="text-left text-sm">Status</th>
+              <th className="text-left text-sm">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {vendors.length === 0 ? (
               <tr>
-                <th className="text-left text-sm w-16">S.N</th>
-                <th className="text-left w-1/3 text-sm">Name</th>
-                <th className="text-left text-sm">Location</th>
-                <th className="text-left text-sm">Image</th>
-                <th className="text-left text-sm">Phone</th>
-                <th className="text-left text-sm">Status</th>
-                <th className="text-left text-sm">Action</th>
+                <td colSpan="4">Loading...</td>
               </tr>
-            </thead>
-            <tbody>
-              {vendors.length === 0 ? (
-                <tr>
-                  <td colSpan="4">Loading...</td>
+            ) : (
+              vendors.map((vendor, idx) => (
+                <tr key={vendor.id} className="border-b">
+                  <td className="p-2 text-base text-center">{vendor.id}</td>
+                  <td className="p-2 text-base">
+                    <div className="font-bold">{vendor.name}</div>
+                  </td>
+                  <td className="p-2 text-base">
+                    <div className="font-bold">{vendor.location}</div>
+                  </td>
+                  <td>
+                    <img src={`${vendor.image}`} alt="" />
+                  </td>
+                  <td>{vendor.phone}</td>
+                  <td>{vendor.status}</td>
                 </tr>
-              ) : (
-                vendors.map((vendor, idx) => (
-                  <tr key={vendor.id} className="border-b">
-                    <td className="p-2 text-base text-center">{vendor.id}</td>
-                    <td className="p-2 text-base">
-                      <div className="font-bold">{vendor.name}</div>
-                    </td>
-                    <td className="p-2 text-base">
-                      <div className="font-bold">{vendor.location}</div>
-                    </td>
-                    <td>
-                      <img src={`${vendor.image}`} alt="" />
-                    </td>
-                    <td>{vendor.phone}</td>
-                    <td>{vendor.status}</td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
       </div>
     </UsersLayout>
   );

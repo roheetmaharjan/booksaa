@@ -57,7 +57,6 @@ export default function Users() {
 
   return (
     <UsersLayout>
-      <div className="container-fluid">
         <div className="flex flex-row justify-between w-full">
           <h4 className="page-title">Users List</h4>
           <Dialog>
@@ -187,7 +186,6 @@ export default function Users() {
             </tbody>
           </table>
         </div>
-      </div>
     </UsersLayout>
   );
 }

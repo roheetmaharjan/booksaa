@@ -1,5 +1,5 @@
 "use client"
-import { Calendar, Home, Inbox } from "lucide-react";
+import { UsersIcon, StorefrontIcon,UsersFourIcon } from "@phosphor-icons/react";
 import { usePathname,useRouter } from "next/navigation";
 
 import {
@@ -18,17 +18,17 @@ const items = [
   {
     title: "Users",
     url: "/admin/users",
-    icon: Home,
+    icon: UsersIcon,
   },
   {
     title: "Vendors",
-    url: "/admin/vendors",
-    icon: Inbox,  
+    url: "/admin/users/vendors",
+    icon: StorefrontIcon,  
   },
   {
     title: "Customers",
-    url: "/admin/customers",
-    icon: Calendar,
+    url: "/admin/users/customers",
+    icon: UsersFourIcon,
   },
 ];
 
@@ -58,7 +58,7 @@ export function UsersSidebar({startTransition}) {
                   >
                     <SidebarMenuButton asChild>
                       <button onClick={handleNav(`${item.url}`)}>
-                        <item.icon />
+                        <item.icon weight="duotone" size={30} />
                         <span>{item.title}</span>
                       </button>
                     </SidebarMenuButton>

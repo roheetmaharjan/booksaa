@@ -1,7 +1,9 @@
+import { SettingsLayout } from "../../layout";
+
 export default function notification(){
     return(
-        <>
-        <h4>This is notification page</h4>
-        </>
+        <SettingsLayout>
+        <h4 className="page-title">Notifications</h4>
+        </SettingsLayout>
     )
 }
