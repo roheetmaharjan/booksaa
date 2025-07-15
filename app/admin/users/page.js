@@ -149,7 +149,7 @@ export default function Users() {
             <tbody>
               {users.length === 0 ? (
                 <tr>
-                  <td colSpan="5">Loading...</td>
+                  <td colSpan="5" className="p-2" align="center">You dont have any users</td>
                 </tr>
               ) : (
                 users.map((user, idx) => (

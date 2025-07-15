@@ -9,7 +9,7 @@ const archivo = Archivo({
 });
 
 export const metadata = {
-  title: "Bookaroo",
+  title: "Booksaa",
   description: "Go to service Provider",
 };
 

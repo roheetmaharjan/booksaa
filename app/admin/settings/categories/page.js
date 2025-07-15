@@ -120,30 +120,36 @@ export default function Users() {
     setEditOpen(true);
   };
   const handleUpdate = async () => {
-    let base64Image = null;
+    // let base64Image = null;
 
-    if (newImage) {
-      const buffer = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.readAsDataURL(newImage);
-        reader.onload = () => resolve(reader.result);
-        reader.onerror = (err) => reject(err);
-      });
-      base64Image = buffer;
-    }
-    const categoryId = selectedCategory?.id;
+    // if (newImage) {
+    //   const buffer = await new Promise((resolve, reject) => {
+    //     const reader = new FileReader();
+    //     reader.readAsDataURL(newImage);
+    //     reader.onload = () => resolve(reader.result);
+    //     reader.onerror = (err) => reject(err);
+    //   });
+    //   base64Image = buffer;
+    // }
     if (!newName.trim()) {
       toast.error("Name cannot be empty");
       return;
     }
+    const formData = new FormData();
+    formData.append("name", newName);
+    if (newImage) {
+      formData.append("image", newImage); // newImage should be a File object
+    }
+    const categoryId = selectedCategory?.id;
+    // if (!newName.trim()) {
+    //   toast.error("Name cannot be empty");
+    //   return;
+    // }
 
     try {
       const res = await fetch(`/api/categories/${categoryId}`, {
         method: "PATCH",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ name: newName,image: base64Image }),
+        body: formData,
       });
       const data = await res.json();
       if (res.ok) {
@@ -253,17 +259,14 @@ export default function Users() {
           <tbody>
             {categories.length === 0 ? (
               <tr>
-                <td colSpan="4">Loading...</td>
+                <td colSpan="4" align="center" className="p-2">No any category found</td>
               </tr>
             ) : (
               categories.map((category, idx) => (
                 <tr key={category.id} className="border-b">
                   <td className="p-2 text-base text-center">{idx + 1}</td>
                   <td className="P-2">
-                    {
-                      category.image
-                      // category.image ? <Image src={category.image} width="40" height="40" alt={category.name}/> : <div>a</div>
-                    }
+                    <img src={`/uploads/${category.image}`} alt="" />
                   </td>
                   <td className="p-2 text-base">
                     <div className="font-bold">{category.name}</div>

@@ -7,7 +7,7 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model User {
+model Users {
   id        String        @id @default(uuid())
   email     String        @unique
   firstname String
@@ -23,24 +23,37 @@ model User {
   role      Role          @default(CUSTOMER)
 }
 
-model Vendor {
+model Vendors {
   id String @id @default(uuid())
   name  String
   location String
   description String?
   image String?
   phone String?
-  cancellation_policy String
+  cancellation_policy String?
   categoryId String
   category Category @relation(fields: [categoryId],references: [id])
-  status AccountStatus 
+  planId String
+  plan Plans @relation(fields: [planId],references: [id])
+  status AccountStatus @default(ACTIVE)
+  joinedAt DateTime @default(now())
+  trialEndsAt DateTime?
 }
 
 model Category{
   id String @id @default(uuid())
   name String @unique
   image String?
-  vendors Vendor[]
+  vendors Vendors[]
+}
+
+model Plans{
+  id String @id @default(uuid())
+  name String 
+  price Float
+  duration Int
+  trialPeriod Int
+  vendors Vendors[]
 }
 
 enum Role {
@@ -48,6 +61,7 @@ enum Role {
   VENDOR
   CUSTOMER
 }
+
 enum UserStatus {
   ACTIVE
   INACTIVE

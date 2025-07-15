@@ -2,16 +2,12 @@
 import { UsersLayout } from "@/app/admin/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
+import AddVendor from "@/components/modals/AddVendor"
+
 
 export default function VendorsList() {
   const [vendors, setVendors] = useState([]);
+  const [addOpen,setAddOpen] = useState(false)
   useEffect(() => {
     fetch("/api/vendors")
       .then((res) => res.json())
@@ -21,71 +17,11 @@ export default function VendorsList() {
   return (
     <UsersLayout>
       <div className="flex flex-row justify-between w-full">
-        <h4 className="page-title">Vendors</h4>
-        <Dialog>
-          <DialogTrigger asChild className="ml-auto">
-            <Button>Add Vendors</Button>
-          </DialogTrigger>
-          <DialogContent className="sm:max-w-[425px]">
-            <DialogHeader>
-              <DialogTitle>Add Vendors</DialogTitle>
-            </DialogHeader>
-            {/* <form onSubmit={handleSubmit}>
-                <div className="grid gap-4">
-                  <div className="grid gap-3">
-                    <Label htmlFor="firstname">First name</Label>
-                    <Input
-                      id="firstname"
-                      name="firstname"
-                      value={form.firstname}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="lastname">Last name</Label>
-                    <Input
-                      id="lastname"
-                      name="lastname"
-                      value={form.lastname}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="email">Email</Label>
-                    <Input
-                      id="email"
-                      name="email"
-                      value={form.email}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={form.role} onValueChange={handleRoleChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="ADMIN">Admin</SelectItem>
-                          <SelectItem value="VENDOR">Vendor</SelectItem>
-                          <SelectItem value="CUSTOMER">Customer</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button variant="outline" type="button">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button type="submit">Send Invite</Button>
-                </DialogFooter>
-              </form> */}
-          </DialogContent>
-        </Dialog>
+          <h4 className="page-title">Vendors</h4>
+          <Button className="ml-auto" onClick={() => setAddOpen(true)}>
+            Add Vendors
+          </Button>
+          <AddVendor open={addOpen}  setAddOpen={setAddOpen}/>
       </div>
       <div className="flex">
         <div className="flex">
@@ -113,7 +49,7 @@ export default function VendorsList() {
           <tbody>
             {vendors.length === 0 ? (
               <tr>
-                <td colSpan="4">Loading...</td>
+                <td colSpan="4">You dont have any vendors</td>
               </tr>
             ) : (
               vendors.map((vendor, idx) => (

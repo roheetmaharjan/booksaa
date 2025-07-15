@@ -1,5 +1,5 @@
 "use client"
-import { GearIcon,StackIcon,CreditCardIcon,BellIcon,GavelIcon,EnvelopeIcon } from "@phosphor-icons/react";
+import { GearIcon,StackIcon,CreditCardIcon,BellIcon,GavelIcon,EnvelopeIcon,FileTextIcon } from "@phosphor-icons/react";
 import { usePathname,useRouter } from "next/navigation";
 
 import {
@@ -44,6 +44,11 @@ const items = [
     title: "Email Templates",
     url: "/admin/settings/emailtemplates",
     icon: EnvelopeIcon,
+  },
+  {
+    title: "Plans",
+    url: "/admin/settings/plans",
+    icon: FileTextIcon,
   }
 ];
 

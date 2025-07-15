@@ -1,9 +1,8 @@
-import { PrismaClient } from "@prisma/client";
-const prisma = new PrismaClient();
+import { prisma } from "@/lib/prisma";
 
 export async function GET(req) {
   try {
-    const results = await prisma.vendor.findMany();
+    const results = await prisma.vendors.findMany();
     return new Response(JSON.stringify(results), {
       status: 200,
       headers: {
