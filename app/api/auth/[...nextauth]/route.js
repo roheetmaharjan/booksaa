@@ -13,7 +13,7 @@ const handler = NextAuth({
       },
       async authorize(credentials) {
         if (!credentials) return null;
-        const user = await prisma.user.findFirst({
+        const user = await prisma.users.findFirst({
           where: {
             OR: [
               { email: credentials.identifier },

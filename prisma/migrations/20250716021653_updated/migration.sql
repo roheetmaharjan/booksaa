@@ -1,29 +1,11 @@
-/*
-  Warnings:
+-- CreateEnum
+CREATE TYPE "Role" AS ENUM ('ADMIN', 'VENDOR', 'CUSTOMER');
 
-  - You are about to drop the `category` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `plans` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `users` table. If the table is not empty, all the data it contains will be lost.
-  - You are about to drop the `vendors` table. If the table is not empty, all the data it contains will be lost.
+-- CreateEnum
+CREATE TYPE "UserStatus" AS ENUM ('ACTIVE', 'INACTIVE');
 
-*/
--- DropForeignKey
-ALTER TABLE "vendors" DROP CONSTRAINT "vendors_categoryId_fkey";
-
--- DropForeignKey
-ALTER TABLE "vendors" DROP CONSTRAINT "vendors_planId_fkey";
-
--- DropTable
-DROP TABLE "category";
-
--- DropTable
-DROP TABLE "plans";
-
--- DropTable
-DROP TABLE "users";
-
--- DropTable
-DROP TABLE "vendors";
+-- CreateEnum
+CREATE TYPE "AccountStatus" AS ENUM ('TRIAL_ACTIVE', 'TRIAL_EXPIRING', 'TRIAL_EXPIRED', 'ACTIVE', 'INACTIVE');
 
 -- CreateTable
 CREATE TABLE "Users" (

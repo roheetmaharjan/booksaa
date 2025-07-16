@@ -1,9 +1,11 @@
 "use client"
 import { SettingsLayout } from "@/app/admin/layout";
 import { useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
 
 export default function Plan() {
   const [plans, setPlans] = useState([]);
+  const [openAdd, setAdd] = useState(false);
   useEffect(() => {
     fetch("/api/plans")
       .then((res) => res.json())
@@ -12,16 +14,22 @@ export default function Plan() {
   }, []);
   return (
     <SettingsLayout>
+      <div className="flex flex-row justify-between w-full">
+        <h4 className="page-title">Plans</h4>
+        <Button className="ml-auto" onClick={() => setAdd(true)}>
+          Add Plan
+        </Button>
+      </div>
       <div className="table-responsive">
         <table className="w-full boo-table mt-3 border">
           <thead>
             <tr>
               <th className="text-sm w-16">S.N</th>
-              <th className="text-left w-1/3 text-sm">Name</th>
-              <th className="text-left w-1/3 text-sm">Price</th>
-              <th className="text-left w-1/3 text-sm">Expiry Date</th>
-              <th className="text-left w-1/3 text-sm">Trial Period</th>
-              <th className="text-left w-1/3 text-sm">Enrolled Vendors</th>
+              <th className="text-left w-1/4 text-sm">Name</th>
+              <th className="text-left w-40 text-sm">Price</th>
+              <th className="text-left w-40 text-sm">Expiry Date</th>
+              <th className="text-left w-40 text-sm">Trial Period</th>
+              <th className="text-left w-1/5 text-sm">Enrolled Vendors</th>
               <th className="text-left text-sm">Action</th>
             </tr>
           </thead>

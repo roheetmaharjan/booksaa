@@ -63,33 +63,37 @@ export default function Users() {
             <DialogTrigger asChild className="ml-auto">
               <Button>Invite User</Button>
             </DialogTrigger>
-            <DialogContent className="sm:max-w-[425px]">
-              <DialogHeader>
+            <DialogContent className="sm:max-w-[525px]">
+              <DialogHeader className="mb-2">
                 <DialogTitle>Invite User</DialogTitle>
               </DialogHeader>
               <form onSubmit={handleSubmit}>
                 <div className="grid gap-4">
-                  <div className="grid gap-3">
-                    <Label htmlFor="firstname">First name</Label>
-                    <Input
-                      id="firstname"
-                      name="firstname"
-                      value={form.firstname}
-                      onChange={handleChange}
-                    />
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="lastname">Last name</Label>
-                    <Input
-                      id="lastname"
-                      name="lastname"
-                      value={form.lastname}
-                      onChange={handleChange}
-                    />
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <Label htmlFor="firstname">First name</Label>
+                      <Input
+                        id="firstname"
+                        name="firstname"
+                        value={form.firstname}
+                        onChange={handleChange}
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="lastname">Last name</Label>
+                      <Input
+                        id="lastname"
+                        name="lastname"
+                        value={form.lastname}
+                        onChange={handleChange}
+                      />
+
+                    </div>
                   </div>
                   <div className="grid gap-3">
                     <Label htmlFor="email">Email</Label>
                     <Input
+                      placeholder="example@gmail.com"
                       id="email"
                       name="email"
                       value={form.email}
@@ -112,7 +116,7 @@ export default function Users() {
                     </Select>
                   </div>
                 </div>
-                <DialogFooter>
+                <DialogFooter className="mt-4">
                   <DialogClose asChild>
                     <Button variant="outline" type="button">
                       Cancel

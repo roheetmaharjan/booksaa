@@ -37,7 +37,7 @@ export default function VendorsList() {
         <table className="w-full boo-table mt-3 border">
           <thead>
             <tr>
-              <th className="text-left text-sm w-16">S.N</th>
+              <th className="text-left text-sm w-16 px-2">S.N</th>
               <th className="text-left w-1/3 text-sm">Name</th>
               <th className="text-left text-sm">Location</th>
               <th className="text-left text-sm">Image</th>
@@ -49,7 +49,7 @@ export default function VendorsList() {
           <tbody>
             {vendors.length === 0 ? (
               <tr>
-                <td colSpan="4">You dont have any vendors</td>
+                <td colSpan="7" className="p-2 text-center">You dont have any vendors</td>
               </tr>
             ) : (
               vendors.map((vendor, idx) => (
