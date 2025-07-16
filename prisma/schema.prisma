@@ -20,7 +20,8 @@ model Users {
   bio       String?
   status    UserStatus
   joinedAt  DateTime      @default(now())
-  role      Role          @default(CUSTOMER)
+  roleId    String
+  role      Role     @relation(fields: [roleId], references: [id])
 }
 
 model Vendors {
@@ -56,10 +57,10 @@ model Plans{
   vendors Vendors[]
 }
 
-enum Role {
-  ADMIN
-  VENDOR
-  CUSTOMER
+model Role {
+  id    String  @id @default(cuid())
+  name  String  @unique
+  users Users[]
 }
 
 enum UserStatus {

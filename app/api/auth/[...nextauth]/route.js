@@ -20,6 +20,9 @@ const handler = NextAuth({
               { username: credentials.identifier },
             ],
           },
+          include:{
+            role:true,
+          },
         });
         if (
           user &&
@@ -28,9 +31,9 @@ const handler = NextAuth({
           // Return user object with all needed fields
           return {
             id: user.id,
-            name: user.username,
+            name: user.firstname,
             email: user.email,
-            role: user.role,
+            role: user.role.name,
           };
         }
         return null;
@@ -50,7 +53,7 @@ const handler = NextAuth({
       }
       return token;
     },
-    async session({ session, token }) {
+    async session({ session, token,user }) {
       // Make the role, name, and email available in the session
       if (token) {
         session.user.role = token.role;
