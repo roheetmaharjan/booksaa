@@ -52,9 +52,9 @@ export default function AddVendor({ open, setAddOpen }) {
         <form onSubmit={handleSubmit}>
           <div className="grid gap-4">
             <div className="grid gap-3">
-              <Label htmlFor="name">Name <span className="astrick">*</span></Label>
+              <Label htmlFor="name">Business Name <span className="astrick">*</span></Label>
               <Input
-                Placeholder="Enter Vendor Name"
+                Placeholder="Enter Business Name"
                 id="Name"
                 name="name"
                 value={form.name}
@@ -70,23 +70,6 @@ export default function AddVendor({ open, setAddOpen }) {
                 value={form.email}
                 onChange={handleChange}
               />
-            </div>
-            <div className="grid gap-3">
-              <Label htmlFor="plan">
-                Plan <span className="astrick">*</span>
-              </Label>
-                <Select value={form.plan} onValueChange={handlePlanChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="TRIAL_ACTIVE">Trial</SelectItem>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
             </div>
             <div className="grid gap-3">
               <Label htmlFor="category">Category <span className="astrick">*</span></Label>
@@ -105,15 +88,21 @@ export default function AddVendor({ open, setAddOpen }) {
             </div>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <Label htmlFor="trial">
-                  Trial Period <span className="astrick">*</span>
-                </Label>
-                <Input
-                  id="trial"
-                  name="trial"
-                  value={form.trial}
-                  onChange={handleChange}
-                />
+                <Label htmlFor="plan">
+                Plan <span className="astrick">*</span>
+              </Label>
+                <Select value={form.plan} onValueChange={handlePlanChange}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select a plan" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectGroup>
+                      <SelectItem value="TRIAL_ACTIVE">Trial</SelectItem>
+                      <SelectItem value="ACTIVE">Active</SelectItem>
+                      <SelectItem value="INACTIVE">Inactive</SelectItem>
+                    </SelectGroup>
+                  </SelectContent>
+                </Select>
               </div>
               <div>
                 <Label htmlFor="plan">

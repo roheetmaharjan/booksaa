@@ -161,7 +161,7 @@ export default function Users() {
                     <td className="py-2 text-base text-center">{idx + 1}</td>
                     <td className="py-2 text-base">
                       <div className="font-bold">
-                        {`${user.firstname} ` + `${user.lastname}`}
+                        {user.name}
                       </div>
                       <div className="text-gray-600">{user.email}</div>
                     </td>

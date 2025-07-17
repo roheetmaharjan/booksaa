@@ -22,6 +22,7 @@ model Users {
   joinedAt  DateTime      @default(now())
   roleId    String
   role      Role     @relation(fields: [roleId], references: [id])
+  vendors   Vendors?
 }
 
 model Vendors {
@@ -39,6 +40,8 @@ model Vendors {
   status AccountStatus @default(ACTIVE)
   joinedAt DateTime @default(now())
   trialEndsAt DateTime?
+  userId String @unique
+  user Users @relation(fields: [userId],references: [id])
 }
 
 model Category{
