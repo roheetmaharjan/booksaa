@@ -8,56 +8,59 @@ datasource db {
 }
 
 model Users {
-  id        String        @id @default(uuid())
-  email     String        @unique
+  id        String     @id @default(uuid())
+  email     String     @unique
   firstname String
   lastname  String
   password  String
-  username  String?       @unique
+  username  String?    @unique
   phone     String?
   location  String?
   image     String?
   bio       String?
   status    UserStatus
-  joinedAt  DateTime      @default(now())
+  joinedAt  DateTime   @default(now())
   roleId    String
-  role      Role     @relation(fields: [roleId], references: [id])
+  role      Role       @relation(fields: [roleId], references: [id])
   vendors   Vendors?
+  bookings  Bookings[]
 }
 
 model Vendors {
-  id String @id @default(uuid())
-  name  String
-  location String
-  description String?
-  image String?
-  phone String?
+  id                  String        @id @default(uuid())
+  name                String
+  location            String?
+  description         String?
+  image               String?
+  phone               String?
+  photos              String?
   cancellation_policy String?
-  categoryId String
-  category Category @relation(fields: [categoryId],references: [id])
-  planId String
-  plan Plans @relation(fields: [planId],references: [id])
-  status AccountStatus @default(ACTIVE)
-  joinedAt DateTime @default(now())
-  trialEndsAt DateTime?
-  userId String @unique
-  user Users @relation(fields: [userId],references: [id])
+  categoryId          String
+  category            Category      @relation(fields: [categoryId], references: [id])
+  planId              String
+  plan                Plans         @relation(fields: [planId], references: [id])
+  status              AccountStatus @default(ACTIVE)
+  joinedAt            DateTime      @default(now())
+  trialEndsAt         DateTime?
+  userId              String        @unique
+  user                Users         @relation(fields: [userId], references: [id])
+  bookings            Bookings[]
 }
 
-model Category{
-  id String @id @default(uuid())
-  name String @unique
-  image String?
+model Category {
+  id      String    @id @default(uuid())
+  name    String    @unique
+  image   String?
   vendors Vendors[]
 }
 
-model Plans{
-  id String @id @default(uuid())
-  name String 
-  price Float
-  duration Int
+model Plans {
+  id          String    @id @default(uuid())
+  name        String
+  price       Float
+  duration    Int
   trialPeriod Int
-  vendors Vendors[]
+  vendors     Vendors[]
 }
 
 model Role {
@@ -66,9 +69,27 @@ model Role {
   users Users[]
 }
 
+model Bookings {
+  id        String        @id @default(uuid())
+  date      DateTime
+  createdAt DateTime      @default(now())
+  status    BookingStatus @default(PENDING)
+  userId    String
+  user      Users         @relation(fields: [userId], references: [id])
+  vendorId  String
+  vendor    Vendors       @relation(fields: [vendorId], references: [id])
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
+}
+
+enum BookingStatus {
+  PENDING
+  CONFIRMED
+  CANCELED
+  COMPLETED
 }
 
 enum AccountStatus {
@@ -77,4 +98,5 @@ enum AccountStatus {
   TRIAL_EXPIRED
   ACTIVE
   INACTIVE
+  PENDING
 }

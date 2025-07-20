@@ -2,6 +2,7 @@
 import { SettingsLayout } from "@/app/admin/layout";
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
+import AddPlans from "@/components/modals/AddPlan";
 
 export default function Plan() {
   const [plans, setPlans] = useState([]);
@@ -11,7 +12,7 @@ export default function Plan() {
       .then((res) => res.json())
       .then((data) => setPlans(data))
       .catch((error) => console.error("Failed to fetch plans:", error));
-  }, []);
+  }, [openAdd]);
   return (
     <SettingsLayout>
       <div className="flex flex-row justify-between w-full">
@@ -19,6 +20,7 @@ export default function Plan() {
         <Button className="ml-auto" onClick={() => setAdd(true)}>
           Add Plan
         </Button>
+        <AddPlans />
       </div>
       <div className="table-responsive">
         <table className="w-full boo-table mt-3 border">

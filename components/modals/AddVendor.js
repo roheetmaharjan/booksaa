@@ -1,129 +1,247 @@
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-  DialogClose
-} from "@/components/ui/dialog";
+"use client";
+
+import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogFooter,DialogClose} from "@/components/ui/dialog";
+import {Select,SelectContent,SelectItem,SelectTrigger,SelectValue} from "@/components/ui/select";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
-import {
-  Select,
-  SelectContent,
-  SelectGroup,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { useState, useEffect } from "react";
+import { validateForm } from "@/utils/formValidator";
 
 export default function AddVendor({ open, setAddOpen }) {
   const [form, setForm] = useState({
-    id: "",
-    name:"",
-    planId:"",
-    status:"",
+    firstname: "",
+    lastname: "",
+    name: "",
+    email: "",
+    phone: "",
+    location: "",
+    planId: "",
+    categoryId: "",
+    status: "",
+    image: "",
   });
+
+  const [categories, setCategories] = useState([]);
+  const [plans, setPlans] = useState([]);
+  const [formErrors, setFormErrors] = useState({});
+
+  const validationRules = {
+    firstname: { required: true, message: "First name is required" },
+    lastname: { required: true, message: "Last name is required" },
+    email: {
+      required: true,
+      pattern: /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/,
+      message: "Valid email is required",
+    },
+    name: { required: true, message: "Business name is required" },
+    categoryId: { required: true, message: "Category is required" },
+    planId: { required: true, message: "Plan is required" },
+  };
+
+  useEffect(() => {
+    const fetchCategories = async () => {
+      try {
+        const res = await fetch("/api/categories");
+        if (!res.ok) throw new Error("Failed to fetch categories");
+        const data = await res.json();
+        setCategories(data.categories || data);
+      } catch (error) {
+        console.error("Failed to fetch categories:", error);
+        setCategories([]);
+      }
+    };
+    const fetchPlans = async () => {
+      try {
+        const res = await fetch("/api/plans");
+        if (!res.ok) throw new Error("Failed to fetch plans");
+        const data = await res.json();
+        setPlans(data.plans || data);
+      } catch (error) {
+        console.error("failed to fetch plans: ", error);
+        setPlans([]);
+      }
+    };
+    fetchPlans();
+    fetchCategories();
+  }, []);
+
   const handleChange = (e) => {
-    setForm({ ...form, [e.target.name]: e.target.value });
+    const { name, value } = e.target;
+    setForm((prev) => ({ ...prev, [name]: value }));
   };
-  const handleStatusChange = (e) => {
-    setForm({ ...form, status: value });
-  };
-  const handlePlanChange = (e) => {
-    setForm({ ...form, plan: value });
-  };
-  const handleCategoryChange = (e) =>{
-    setForm({...form, category: value})
-  }
-  const handleSubmit = (e) => {
+  
+
+  // Form submission handler
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Handle form submit here
-    onClose(); // Close the modal after submit
+    const errors = validateForm(form, validationRules);
+    setFormErrors(errors);
+
+    if (Object.keys(errors).length > 0) return;
+
+    try {
+      const res = await fetch("/api/vendors/create", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) throw new Error("Failed to submit vendor");
+
+      setAddOpen(false);
+      // Optionally clear form here or on modal close
+      setForm({
+        firstname: "",
+        lastname: "",
+        name: "",
+        email: "",
+        phone: "",
+        location: "",
+        planId: "",
+        categoryId: "",
+        status: "",
+        image: "",
+      });
+    } catch (err) {
+      console.error("Submission error:", err);
+    }
   };
+  if (!form) return null;
+
   return (
     <Dialog onOpenChange={setAddOpen} open={open}>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader className="mb-2 pb-2">
           <DialogTitle>Add Vendors</DialogTitle>
         </DialogHeader>
+
         <form onSubmit={handleSubmit}>
-          <div className="grid gap-4">
-            <div className="grid gap-3">
-              <Label htmlFor="name">Business Name <span className="astrick">*</span></Label>
+          <h5 className="mb-4 text-gray-500 uppercase text-xs">Users Detail</h5>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <Label htmlFor="firstname">
+                First Name <span className="astrick">*</span>
+              </Label>
               <Input
-                Placeholder="Enter Business Name"
-                id="Name"
-                name="name"
-                value={form.name}
+                id="firstname"
+                name="firstname"
+                value={form.firstname}
                 onChange={handleChange}
               />
+              {formErrors && formErrors.firstname && (
+                <p className="text-sm text-red-500">{formErrors.firstname}</p>
+              )}
             </div>
-            <div className="grid gap-3">
-              <Label htmlFor="email">Email <span className="astrick">*</span></Label>
+
+            <div>
+              <Label htmlFor="lastname">
+                Last Name <span className="astrick">*</span>
+              </Label>
               <Input
-                placeholder="example@gmail.com"
+                id="lastname"
+                name="lastname"
+                value={form.lastname}
+                onChange={handleChange}
+              />
+              {formErrors && formErrors.lastname && (
+                <p className="text-sm text-red-500">{formErrors.lastname}</p>
+              )}
+            </div>
+
+            <div className="col-span-2">
+              <Label htmlFor="email">
+                Email <span className="astrick">*</span>
+              </Label>
+              <Input
                 id="email"
                 name="email"
                 value={form.email}
                 onChange={handleChange}
               />
-            </div>
-            <div className="grid gap-3">
-              <Label htmlFor="category">Category <span className="astrick">*</span></Label>
-              <Select value={form.category} onValueChange={handleCategoryChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {/* <SelectItem value="TRIAL_ACTIVE">Trial</SelectItem>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem> */}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-            </div>
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <Label htmlFor="plan">
-                Plan <span className="astrick">*</span>
-              </Label>
-                <Select value={form.plan} onValueChange={handlePlanChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a plan" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="TRIAL_ACTIVE">Trial</SelectItem>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div>
-                <Label htmlFor="plan">
-                  Status <span className="astrick">*</span>
-                </Label>
-                <Select value={form.status} onValueChange={handleStatusChange}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      <SelectItem value="TRIAL_ACTIVE">Trial</SelectItem>
-                      <SelectItem value="ACTIVE">Active</SelectItem>
-                      <SelectItem value="INACTIVE">Inactive</SelectItem>
-                      <SelectItem value="PENDING">Pending</SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+              {formErrors && formErrors.email && (
+                <p className="text-sm text-red-500">{formErrors.email}</p>
+              )}
             </div>
           </div>
+
+          {/* Vendor Details */}
+          <h5 className="my-4 uppercase text-gray-500 text-xs">
+            Vendor Detail
+          </h5>
+          <div className="grid gap-4">
+            <div>
+              <Label htmlFor="name">
+                Business Name <span className="astrick">*</span>
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                value={form.name}
+                onChange={handleChange}
+              />
+              {formErrors && formErrors.name && (
+                <p className="text-sm text-red-500">{formErrors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="categoryId">
+                Category <span className="astrick">*</span>
+              </Label>
+              <Select
+                id="categoryId"
+                name="categoryId"
+                value={form.categoryId}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, categoryId: value }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Category" />
+                </SelectTrigger>
+                <SelectContent>
+                  {categories.length === 0 ? (
+                    <SelectItem key="No-category" value="No-Category">No categories found. Please add one to get started.</SelectItem>
+                  ) : (
+                    categories.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {formErrors && formErrors.categoryId && (
+                <p className="text-sm text-red-500">{formErrors.categoryId}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="planId">
+                Plan <span className="astrick">*</span>
+              </Label>
+              <Select>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select Plans"></SelectValue>
+                </SelectTrigger>
+                <SelectContent>
+                  {plans.length === 0 ? (
+                    <SelectItem key="no-plans" value="no-plans">No plans found. Please add one to get started.</SelectItem>
+                  ) : (
+                    plans.map((plan) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))
+                  )}
+                </SelectContent>
+              </Select>
+              {formErrors && formErrors.planId && (
+                <p className="text-sm text-red-500">{formErrors.planId}</p>
+              )}
+            </div>
+          </div>
+
           <DialogFooter className="mt-2 pt-2">
             <DialogClose asChild>
               <Button variant="outline" type="button">
