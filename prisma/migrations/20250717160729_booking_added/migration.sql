@@ -20,7 +20,7 @@ CREATE TABLE "Bookings" (
 );
 
 -- CreateIndex
-CREATE UNIQUE INDEX "Vendors_userId_key" ON "Vendors"("userId");
+-- CREATE UNIQUE INDEX "Vendors_userId_key" ON "Vendors"("userId");
 
 -- AddForeignKey
 ALTER TABLE "Bookings" ADD CONSTRAINT "Bookings_userId_fkey" FOREIGN KEY ("userId") REFERENCES "Users"("id") ON DELETE RESTRICT ON UPDATE CASCADE;

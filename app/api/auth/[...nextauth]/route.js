@@ -20,10 +20,15 @@ const handler = NextAuth({
               { username: credentials.identifier },
             ],
           },
-          include:{
-            role:true,
+          include: {
+            role: true,
           },
         });
+        if (user.status !== "ACTIVE") {
+          throw new Error(
+            "Your account is not active. Please complete your profile."
+          );
+        }
         if (
           user &&
           (await bcrypt.compare(credentials.password, user.password))
@@ -53,7 +58,7 @@ const handler = NextAuth({
       }
       return token;
     },
-    async session({ session, token,user }) {
+    async session({ session, token, user }) {
       // Make the role, name, and email available in the session
       if (token) {
         session.user.role = token.role;

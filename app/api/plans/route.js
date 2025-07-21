@@ -3,7 +3,13 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
     try{
-        const results = await prisma.plans.findMany();
+        const results = await prisma.plans.findMany({
+            include:{
+                _count :{
+                    select:{vendors: true}
+                }
+            }
+        });
         return new NextResponse(JSON.stringify(results),{
             status: 200,
             headers: {

@@ -20,7 +20,7 @@ export default function Plan() {
         <Button className="ml-auto" onClick={() => setAdd(true)}>
           Add Plan
         </Button>
-        <AddPlans />
+        <AddPlans open={openAdd} setAdd={setAdd} />
       </div>
       <div className="table-responsive">
         <table className="w-full boo-table mt-3 border">
@@ -29,8 +29,9 @@ export default function Plan() {
               <th className="text-sm w-16">S.N</th>
               <th className="text-left w-1/4 text-sm">Name</th>
               <th className="text-left w-40 text-sm">Price</th>
-              <th className="text-left w-40 text-sm">Expiry Date</th>
+              <th className="text-left w-40 text-sm">Billing Cycle</th>
               <th className="text-left w-40 text-sm">Trial Period</th>
+              <th className="text-left w-40 text-sm">Duration</th>
               <th className="text-left w-1/5 text-sm">Enrolled Vendors</th>
               <th className="text-left text-sm">Action</th>
             </tr>
@@ -47,27 +48,17 @@ export default function Plan() {
                 <tr key={plan.id} className="border-b">
                   <td className="p-2 text-base text-center">{idx + 1}</td>
                   <td className="p-2 text-base">
-                    <div className="font-bold">{plan.name}</div>
+                    <h4 className="font-bold">{plan.name}</h4>
                   </td>
-                  <td></td>
-                  <td></td>
-                  <td></td>
-                  {/* <td>
-                                <div className="flex gap-1">
-                                  <Button
-                                    className="py-0 bg-primary"
-                                    onClick={() => handleEditClick(category)}
-                                  >
-                                    Edit
-                                  </Button>
-                                  <Button
-                                    className="py-0 bg-red-200 text-red-500 hover:bg-red-300"
-                                    onClick={() => handleDelete(category.id)}
-                                  >
-                                    Delete
-                                  </Button>
-                                </div>
-                              </td> */}
+                  <td>
+                    <p>{plan.price}</p>
+                  </td>
+                  <td>
+                    {plan.billing_cycle}
+                  </td>
+                  <td>{plan.trial_period}</td>
+                  <td>{plan.duration}</td>
+                  <td>{plan._count?.vendors || 0}</td>
                 </tr>
               ))
             )}

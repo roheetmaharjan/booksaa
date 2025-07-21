@@ -56,10 +56,12 @@ model Category {
 
 model Plans {
   id          String    @id @default(uuid())
-  name        String
+  name        String @unique
   price       Float
   duration    Int
-  trialPeriod Int
+  trial_period Int
+  billing_cycle String
+  createdAt  DateTime @default(now())
   vendors     Vendors[]
 }
 
@@ -79,6 +81,15 @@ model Bookings {
   vendorId  String
   vendor    Vendors       @relation(fields: [vendorId], references: [id])
 }
+
+model Invitation {
+  id        String   @id @default(uuid())
+  email     String   @unique
+  token     String
+  expiresAt DateTime
+  used      Boolean  @default(false)
+}
+
 
 enum UserStatus {
   ACTIVE

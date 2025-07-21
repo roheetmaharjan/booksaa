@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { validateForm } from "@/utils/formValidator";
+import { toast } from "sonner"
 
 export default function AddVendor({ open, setAddOpen }) {
   const [form, setForm] = useState({
@@ -31,7 +32,7 @@ export default function AddVendor({ open, setAddOpen }) {
     lastname: { required: true, message: "Last name is required" },
     email: {
       required: true,
-      pattern: /^[\w-]+(\.[\w-]+)*@([\w-]+\.)+[a-zA-Z]{2,7}$/,
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
       message: "Valid email is required",
     },
     name: { required: true, message: "Business name is required" },
@@ -89,7 +90,7 @@ export default function AddVendor({ open, setAddOpen }) {
       if (!res.ok) throw new Error("Failed to submit vendor");
 
       setAddOpen(false);
-      // Optionally clear form here or on modal close
+      toast("Vendor created sucessful")
       setForm({
         firstname: "",
         lastname: "",
@@ -220,7 +221,14 @@ export default function AddVendor({ open, setAddOpen }) {
               <Label htmlFor="planId">
                 Plan <span className="astrick">*</span>
               </Label>
-              <Select>
+              <Select
+                id="planId"
+                name="planId"
+                value={form.planId}
+                onValueChange={(value) =>
+                  setForm((prev) => ({ ...prev, planId: value }))
+                }
+              >
                 <SelectTrigger>
                   <SelectValue placeholder="Select Plans"></SelectValue>
                 </SelectTrigger>
@@ -229,8 +237,8 @@ export default function AddVendor({ open, setAddOpen }) {
                     <SelectItem key="no-plans" value="no-plans">No plans found. Please add one to get started.</SelectItem>
                   ) : (
                     plans.map((plan) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
+                      <SelectItem key={plan.id} value={plan.id}>
+                        {plan.name}
                       </SelectItem>
                     ))
                   )}
