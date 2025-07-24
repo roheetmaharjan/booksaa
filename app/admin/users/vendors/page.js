@@ -38,9 +38,8 @@ export default function VendorsList() {
       <div className="mb-4">
         <input
           type="search"
-          className="bg-gray-50 border rounded px-3 py-2 w-full max-w-sm"
+          className="bg-gray-50 border rounded px-3 py-2"
           placeholder="Search vendors..."
-          // You can implement search/filter functionality here if you want
         />
       </div>
 

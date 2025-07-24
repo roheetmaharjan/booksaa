@@ -9,6 +9,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [role, setRole] = useState("ADMIN");
 
   const handleLogin = async (e) => {
     e.preventDefault();

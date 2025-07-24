@@ -47,10 +47,13 @@ const handler = NextAuth({
   ],
   session: {
     strategy: "jwt",
+    maxAge: 60 * 60,
+  },
+  jwt: {
+    maxAge: 60 * 60, 
   },
   callbacks: {
     async jwt({ token, user }) {
-      // Persist the user's info to the token
       if (user) {
         token.role = user.role;
         token.name = user.name;
@@ -59,7 +62,6 @@ const handler = NextAuth({
       return token;
     },
     async session({ session, token, user }) {
-      // Make the role, name, and email available in the session
       if (token) {
         session.user.role = token.role;
         session.user.name = token.name;

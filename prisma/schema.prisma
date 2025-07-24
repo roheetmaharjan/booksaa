@@ -45,6 +45,7 @@ model Vendors {
   userId              String        @unique
   user                Users         @relation(fields: [userId], references: [id])
   bookings            Bookings[]
+  isComplete          Boolean       @default(false)
 }
 
 model Category {

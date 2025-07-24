@@ -29,11 +29,20 @@ export default function Users() {
   const [newName, setNewName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
   const [newImage, setNewImage] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
-    fetch("/api/categories")
-      .then((res) => res.json())
-      .then((data) => setCategories(data))
-      .catch((error) => console.error("Failed to fetch users:", error));
+    async function fetchCategories() {
+      try {
+        const response = await fetch("/api/categories");
+        const data = await response.json();
+        setCategories(data);
+      } catch (error) {
+        console.error("Error Fetching categories", error);
+      } finally{
+        setIsLoading(false)
+      }
+    }
+    fetchCategories();
   }, []);
 
   const handleChange = (e) => {
@@ -216,7 +225,13 @@ export default function Users() {
             <div className="grid gap-4">
               <div className="grid gap-3">
                 <Label htmlFor="image">Image</Label>
-                <input type="file" name="image" id="image" accept="image/*" onChange={(e) => setNewImage(e.target.files[0])} />
+                <input
+                  type="file"
+                  name="image"
+                  id="image"
+                  accept="image/*"
+                  onChange={(e) => setNewImage(e.target.files[0])}
+                />
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="name">Name</Label>
@@ -253,13 +268,22 @@ export default function Users() {
               <th className="text-sm w-16">S.N</th>
               <th className="text-left w-56 text-sm">Image</th>
               <th className="text-left w-1/3 text-sm">Name</th>
+              <th className="text-left w-1/3 text-sm">Vendor</th>
               <th className="text-left text-sm">Action</th>
             </tr>
           </thead>
           <tbody>
-            {categories.length === 0 ? (
+            {isLoading ? (
               <tr>
-                <td colSpan="4" align="center" className="p-2">No any category found</td>
+                <td colSpan="4" align="center" className="p-2">
+                  Loading
+                </td>
+              </tr>
+            ) : categories.length === 0 ? (
+              <tr>
+                <td colSpan="4" align="center" className="p-2">
+                  No any category found
+                </td>
               </tr>
             ) : (
               categories.map((category, idx) => (
