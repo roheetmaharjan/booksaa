@@ -58,7 +58,7 @@ export default function AddPlans({ open, setAdd }) {
         billing_cycle: "",
         trial_period: ""
       });
-      setExpiryDate(new Date());
+      // setExpiryDate(new Date());
     } catch (err) {
       console.error("Submission error:", err);
     }

@@ -24,39 +24,6 @@ export async function DELETE(req, context) {
   }
 }
 
-// export async function PATCH(req, context) {
-//   const { id } = await context.params;
-
-//   if (!id) {
-//     return NextResponse.json({ error: "Category ID missing" }, { status: 400 });
-//   }
-
-//   try {
-//     const body = await req.json();
-//     const { name,image } = body;
-
-//     if (!name) {
-//       return NextResponse.json({ error: "Name is required" }, { status: 400 });
-//     }
-
-//     const updatedCategory = await prisma.category.update({
-//       where: { id }, // UUID string
-//       data: { 
-//         name,
-//         ...(image && { image }),
-//        },
-//     });
-
-//     return NextResponse.json(updatedCategory, { status: 200 });
-//   } catch (error) {
-//     console.error("Update error:", error);
-//     return NextResponse.json(
-//       { error: error.message || "Category not found" },
-//       { status: 500 }
-//     );
-//   }
-// }
-
 export async function PATCH(req, context) {
   const { id } = context.params;
 
