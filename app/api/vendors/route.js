@@ -4,9 +4,15 @@ export async function GET(req) {
   try {
     const vendors = await prisma.vendors.findMany({
       include: {
-        plan: {
+        plan:{
           select:{
-            id: true,
+            id:true,
+            name: true,
+          }
+        },
+        category:{
+          select:{
+            id:true,
             name: true,
           }
         },
