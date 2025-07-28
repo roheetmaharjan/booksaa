@@ -15,7 +15,10 @@ export async function POST(req) {
   let user = await prisma.users.findUnique({ where: { email } });
 
   if (user) {
-    return NextResponse.json({ error: "Email Already Exists" }, { status: 400 });
+    return NextResponse.json(
+      { error: "Email Already Exists" },
+      { status: 400 }
+    );
   }
 
   const hashed = await bcrypt.hash("INVITED", 10);
@@ -35,11 +38,31 @@ export async function POST(req) {
     },
   });
 
+  const plan = await prisma.plans.findUnique({
+    where: { id: planId },
+  });
+
+  if (!plan) {
+    return new Response(JSON.stringify({ error: "Plan not found" }), {
+      status: 400,
+    });
+  }
+
+  const now = new Date();
+  let trialEndsAt = null;
+  if (plan.trial_period && plan.trial_period > 0) {
+    trialEndsAt = new Date(
+      now.getTime() + plan.trial_period * 24 * 60 * 60 * 1000
+    );
+  }
+
   const vendor = await prisma.vendors.create({
     data: {
       name,
       categoryId,
       planId,
+      trialEndsAt,
+      joinedAt: now,
       userId: user.id,
       status: "INACTIVE",
     },

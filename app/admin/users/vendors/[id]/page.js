@@ -7,7 +7,9 @@ import { ArrowCircleLeftIcon } from "@phosphor-icons/react";
 import { UsersLayout } from "@/app/admin/layout";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import Loading from "@/components/common/Loading";
-import {Card,CardContent,CardHeader,CardTitle,} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 export default function VendorDetail() {
   const { id: vendorId } = useParams();
@@ -25,7 +27,6 @@ export default function VendorDetail() {
         setVendor(null);
       })
       .finally(() => setLoading(false));
-
   }, [vendorId]);
 
   return (
@@ -62,53 +63,125 @@ export default function VendorDetail() {
               <TabsTrigger value="detail">Detail</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="professionals">Professionals</TabsTrigger>
+              <TabsTrigger value="photos">Photos</TabsTrigger>
+              <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
             <TabsContent value="detail">
-              <div className="grid">
-                <div className="col-span-3">
+              <div className="grid grid-cols-12 gap-4">
+                <div className="col-span-12 lg:col-span-4">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Highlights</CardTitle>
+                      <CardTitle>Detail</CardTitle>
                     </CardHeader>
                     <CardContent>
                       <table>
                         <tbody>
                           <tr>
-                            <td>Location</td>
-                            {/* <td>{vendor.location === 0 ? (<h4>No Location</h4>): (<h5>There is loation</h5>)}</td> */}
+                            <td className="py-1 text-gray-500">Name</td>
+                            <td className="py-1 pl-6">
+                              {vendor.user.firstname + vendor.user.lastname}
+                            </td>
                           </tr>
                           <tr>
-                            <td>Status</td>
-                            <td>{vendor.status}</td>
+                            <td className="py-1 text-gray-500">Email</td>
+                            <td className="py-1 pl-6">
+                              {vendor.user.email || "-"}
+                            </td>
                           </tr>
                           <tr>
-                            <td>Joined Date</td>
-                            <td>{vendor.joinedAt}</td>
+                            <td className="py-1 text-gray-500">Joined Date</td>
+                            <td className="py-1 pl-6">{vendor.joinedAt}</td>
                           </tr>
                           <tr>
-                            <td>Phone</td>
-                            <td>{vendor.phone || "-"}</td>
+                            <td className="py-1 text-gray-500">Status</td>
+                            <td className="py-1 pl-6">
+                              {vendor.status === "ACTIVE" ? (
+                                <Badge
+                                  variant="default"
+                                  className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
+                                >
+                                  Active
+                                </Badge>
+                              ) : (
+                                <Badge
+                                  variant="default"
+                                  className="bg-gray-500 hover:bg-gray-500"
+                                >
+                                  Inactive
+                                </Badge>
+                              )}
+                            </td>
                           </tr>
                           <tr>
-                            <td>Plan</td>
-                            <td>{vendor.planId || "-"}</td>
+                            <td className="py-1 text-gray-500">Plan</td>
+                            <td className="py-1 pl-6">
+                              {vendor.plan.name || "-"}
+                            </td>
                           </tr>
                           <tr>
-                            <td>Category</td>
-                            <td>{vendor.category.name}</td>
+                            <td className="py-1 text-gray-500">Category</td>
+                            <td className="py-1 pl-6">
+                              {vendor.category.name || "-"}
+                            </td>
                           </tr>
                         </tbody>
                       </table>
                     </CardContent>
                   </Card>
                 </div>
-                <div className="col-span-9">
+                <div className="col-span-12 md:col-span-8 gap-4 grid">
                   <Card>
                     <CardHeader>
-                      <CardTitle>Location</CardTitle>
+                      <CardTitle>Company Profile</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      this location
+                      <div className="grid grid-cols-12">
+                        <div className="col-span-6">
+                          {vendor.location || "-"}
+                        </div>
+                        <div className="col-span-6">
+                          <table>
+                            <tbody>
+                              <tr>
+                                <td className="py-1 text-gray-500">Email</td>
+                                <td className="py-1 pl-6">
+                                  {vendor.email || "-"}
+                                </td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 text-gray-500">
+                                  Website
+                                </td>
+                                <td className="py-1 pl-6">{vendor.website || "-"}</td>
+                              </tr>
+                              <tr>
+                                <td className="py-1 text-gray-500">Phone</td>
+                                <td className="py-1 pl-6">
+                                  {vendor.phone || "-"}
+                                </td>
+                              </tr>
+                            </tbody>
+                          </table>
+                        </div>
+                      </div>
+                      <h4 className="font-bold">About</h4>
+                      <p>{vendor.description || "-"}</p>
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Locations</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      locations
+                    </CardContent>
+                  </Card>
+                  <Card>
+                    <CardHeader>
+                      <CardTitle>Cancelation Policy</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <p>{vendor.cancellation_policy}</p>   
                     </CardContent>
                   </Card>
                 </div>
@@ -116,6 +189,8 @@ export default function VendorDetail() {
             </TabsContent>
             <TabsContent value="services">comming soon</TabsContent>
             <TabsContent value="professionals">Coming Soon</TabsContent>
+            <TabsContent value="photos">Coming Soon</TabsContent>
+            <TabsContent value="reviews">Review Comming Soon</TabsContent>
           </Tabs>
         </>
       ) : (

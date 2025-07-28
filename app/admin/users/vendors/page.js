@@ -7,6 +7,7 @@ import AddVendor from "@/components/modals/AddVendor";
 import { toast } from "sonner";
 import { TrashIcon,PencilLineIcon } from "@phosphor-icons/react";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
+import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 
 export default function VendorsList() {
@@ -142,7 +143,23 @@ export default function VendorsList() {
                   </td>
                   <td className="p-2">{vendor.location || "-"}</td>
                   <td className="p-2">{vendor.phone || "-"}</td>
-                  <td className="p-2">{vendor.status || "-"}</td>
+                  <td className="p-2">
+                    {vendor.status === "ACTIVE" ? (
+                      <Badge
+                        variant="default"
+                        className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
+                      >
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="default"
+                        className="bg-gray-500 hover:bg-gray-500"
+                      >
+                        Inactive
+                      </Badge>
+                    ) || "-"}
+                  </td>
                   <td className="p-2">
                     <div className="flex gap-2">
                       <button className="text-gray-500">
