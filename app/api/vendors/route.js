@@ -1,5 +1,9 @@
 import { prisma } from "@/lib/prisma";
 
+export async function GET(params) {
+  
+}
+
 export async function GET(req) {
   try {
     const vendors = await prisma.vendors.findMany({
