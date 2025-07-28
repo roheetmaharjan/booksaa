@@ -1,36 +1,39 @@
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { sendInviteEmail } from "@/lib/sendInviteEmail";
-import bcrypt from "bcryptjs"; 
-
+import bcrypt from "bcryptjs";
+import { NextResponse } from "next/server";
 
 export async function POST(req) {
   const body = await req.json();
-  const { firstname, lastname, email, categoryId, planId,name } = body;
+  const { firstname, lastname, email, categoryId, planId, name, userId } = body;
 
   if (!firstname || !lastname || !email || !categoryId || !planId || !name) {
-    return Response.json({ error: "Missing fields" }, { status: 400 });
+    return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
   let user = await prisma.users.findUnique({ where: { email } });
+
+  if (user) {
+    return NextResponse.json({ error: "Email Already Exists" }, { status: 400 });
+  }
+
   const hashed = await bcrypt.hash("INVITED", 10);
 
-  if (!user) {
-    user = await prisma.users.create({
-      data: {
-        firstname,
-        lastname,
-        email,
-        password: hashed,
-        role: {
-          connect:{
-            name: "VENDOR",
-          }
+  user = await prisma.users.create({
+    data: {
+      firstname,
+      lastname,
+      email,
+      password: hashed,
+      role: {
+        connect: {
+          name: "VENDOR",
         },
-        status: "INACTIVE", // Optional
       },
-    });
-  }
+      status: "INACTIVE",
+    },
+  });
 
   const vendor = await prisma.vendors.create({
     data: {
@@ -54,5 +57,5 @@ export async function POST(req) {
 
   await sendInviteEmail(email, token);
 
-  return Response.json({ success: true });
+  return NextResponse.json({ success: true });
 }

@@ -72,8 +72,6 @@ export default function AddVendor({ open, setAddOpen }) {
     setForm((prev) => ({ ...prev, [name]: value }));
   };
   
-
-  // Form submission handler
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(form, validationRules);
@@ -87,10 +85,14 @@ export default function AddVendor({ open, setAddOpen }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error("Failed to submit vendor");
+      const data = await res.json();
+      if (!res.ok) {
+        const errorMsg = data?.message || data?.error || "Failed to submit vendor";
+        throw new Error(errorMsg);
+      }
 
       setAddOpen(false);
-      toast("Vendor created sucessful")
+      toast.success("Vendor created sucessful")
       setForm({
         firstname: "",
         lastname: "",
@@ -105,6 +107,7 @@ export default function AddVendor({ open, setAddOpen }) {
       });
     } catch (err) {
       console.error("Submission error:", err);
+      toast.error(err.message);
     }
   };
   if (!form) return null;

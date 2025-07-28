@@ -1,7 +1,6 @@
 "use client";
 import { SettingsLayout } from "@/app/admin/layout";
 import { useEffect, useState } from "react";
-import Image from "next/image";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import {
@@ -14,6 +13,8 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import ConfirmAlert from "@/components/common/ConfirmAlert";
+import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 
 export default function Users() {
   const [categories, setCategories] = useState([]);
@@ -28,6 +29,8 @@ export default function Users() {
   const [editOpen, setEditOpen] = useState(false);
   const [newName, setNewName] = useState("");
   const [selectedCategory, setSelectedCategory] = useState(null);
+  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [openAlert, setAlertOpen] = useState(false);
   const [newImage, setNewImage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   useEffect(() => {
@@ -38,8 +41,8 @@ export default function Users() {
         setCategories(data);
       } catch (error) {
         console.error("Error Fetching categories", error);
-      } finally{
-        setIsLoading(false)
+      } finally {
+        setIsLoading(false);
       }
     }
     fetchCategories();
@@ -93,7 +96,7 @@ export default function Users() {
       setForm({ id: "", name: "", image: "" });
       setImageUrl("");
       setError("");
-      setOpen(false); //close the modal
+      setOpen(false);
       toast("Category has been created.");
 
       const updated = await fetch("/api/categories").then((res) => res.json());
@@ -103,24 +106,28 @@ export default function Users() {
       setError("Something went wrong.");
     }
   };
-  const handleDelete = async (categoryId) => {
-    const confirmDelete = confirm(
-      `"Are you sure you want to delete this user?" ${categoryId}`
-    );
-    if (!confirmDelete) return;
+  const handleDeleteClick = (categoryId) => {
+    setSelectedCategoryId(categoryId);
+    setAlertOpen(true);
+  };
+  const handleDelete = async (selectedCategoryId) => {
     try {
-      const res = await fetch(`/api/categories/${categoryId}`, {
+      const res = await fetch(`/api/categories/${selectedCategoryId}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Category deleted successfully");
+        toast.success("Category deleted successfully");
+        const updated = await fetch("/api/categories").then((res) =>
+          res.json()
+        );
+        setCategories(updated);
       } else {
-        alert(data.error || "failed to delete user");
+        toast.error(data.error || "failed to delete user");
       }
     } catch (error) {
       console.error("Delete error:", error);
-      alert("An error occured");
+      toast.error("An error occured");
     }
   };
   const handleEditClick = (category) => {
@@ -129,17 +136,6 @@ export default function Users() {
     setEditOpen(true);
   };
   const handleUpdate = async () => {
-    // let base64Image = null;
-
-    // if (newImage) {
-    //   const buffer = await new Promise((resolve, reject) => {
-    //     const reader = new FileReader();
-    //     reader.readAsDataURL(newImage);
-    //     reader.onload = () => resolve(reader.result);
-    //     reader.onerror = (err) => reject(err);
-    //   });
-    //   base64Image = buffer;
-    // }
     if (!newName.trim()) {
       toast.error("Name cannot be empty");
       return;
@@ -150,11 +146,6 @@ export default function Users() {
       formData.append("image", newImage); // newImage should be a File object
     }
     const categoryId = selectedCategory?.id;
-    // if (!newName.trim()) {
-    //   toast.error("Name cannot be empty");
-    //   return;
-    // }
-
     try {
       const res = await fetch(`/api/categories/${categoryId}`, {
         method: "PATCH",
@@ -162,18 +153,18 @@ export default function Users() {
       });
       const data = await res.json();
       if (res.ok) {
-        alert("Category updated successfully");
+        toast.success("Category updated successfully");
         setEditOpen(false);
         const updated = await fetch("/api/categories").then((res) =>
           res.json()
         );
         setCategories(updated);
       } else {
-        alert(data.error || "failed to update user");
+        toast.error(data.error || "failed to update user");
       }
     } catch {
       console.error("Update error", error);
-      alert("An error occured");
+      toast.error("An error occured");
     }
   };
 
@@ -259,14 +250,13 @@ export default function Users() {
             placeholder="Search..."
           />
         </div>
-        <div className="flex"></div>
       </div>
       <div className="table-responsive">
         <table className="w-full boo-table mt-3 border">
           <thead>
             <tr>
               <th className="text-sm w-16">S.N</th>
-              <th className="text-left w-56 text-sm">Image</th>
+              <th className="text-left w-44 text-sm">Image</th>
               <th className="text-left w-1/3 text-sm">Name</th>
               <th className="text-left w-1/3 text-sm">Vendor</th>
               <th className="text-left text-sm">Action</th>
@@ -290,25 +280,34 @@ export default function Users() {
                 <tr key={category.id} className="border-b">
                   <td className="p-2 text-base text-center">{idx + 1}</td>
                   <td className="P-2">
-                    <img src={`/uploads/${category.image}`} alt="" />
+                    <figure className="w-16 h-16 bg-gray-300 border rounded-md flex overflow-hidden">
+                      <img
+                        src={`/uploads/${category.image}`}
+                        alt=""
+                        className="object-cover w-full h-full"
+                      />
+                    </figure>
                   </td>
                   <td className="p-2 text-base">
                     <div className="font-bold">{category.name}</div>
                   </td>
+                  <td></td>
                   <td>
-                    <div className="flex gap-1">
-                      <Button
-                        className="py-0 bg-primary"
+                    <div className="flex gap-2">
+                      <a
+                        href="#"
+                        className="text-gray-500"
                         onClick={() => handleEditClick(category)}
                       >
-                        Edit
-                      </Button>
-                      <Button
-                        className="py-0 bg-red-200 text-red-500 hover:bg-red-300"
-                        onClick={() => handleDelete(category.id)}
+                        <PencilLineIcon size={20} weight="duotone" />
+                      </a>
+                      <a
+                        href="#"
+                        className="text-red-500"
+                        onClick={() => handleDeleteClick(category.id)}
                       >
-                        Delete
-                      </Button>
+                        <TrashIcon size={20} weight="duotone" />
+                      </a>
                     </div>
                   </td>
                 </tr>
@@ -317,6 +316,17 @@ export default function Users() {
           </tbody>
         </table>
       </div>
+      <ConfirmAlert
+        open={openAlert}
+        onOpenChange={setAlertOpen}
+        title="Delete Category?"
+        description={`Are you sure you want to delete category ${selectedCategoryId}`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => {
+          handleDelete(selectedCategoryId);
+        }}
+      />
     </SettingsLayout>
   );
 }

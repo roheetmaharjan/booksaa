@@ -8,15 +8,15 @@ export async function DELETE(req, context) {
   const { id } = context.params;
 
   if (!id) {
-    return new NextResponse(JSON.stringify({ error: "category ID missing" }));
+    return new NextResponse(JSON.stringify({ error: "Category ID missing" }));
   }
 
   try {
-    const deletedUser = await prisma.category.delete({
+    const deletedCategory = await prisma.category.delete({
       where: { id: id },
     });
 
-    return new NextResponse(JSON.stringify(deletedUser), { status: 200 });
+    return new NextResponse(JSON.stringify(deletedCategory), { status: 200 });
   } catch (error) {
     return new NextResponse(JSON.stringify({ error: "Category not found" }), {
       status: 404,

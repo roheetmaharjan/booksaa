@@ -4,10 +4,16 @@ import { UsersLayout } from "@/app/admin/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import AddVendor from "@/components/modals/AddVendor";
+import { toast } from "sonner";
+import { TrashIcon,PencilLineIcon } from "@phosphor-icons/react";
+import ConfirmAlert from "@/components/common/ConfirmAlert";
+import Link from "next/link";
 
 export default function VendorsList() {
   const [vendors, setVendors] = useState([]);
   const [addOpen, setAddOpen] = useState(false);
+  const [open, setOpen] = useState(false);
+  const [selectedVendorId, setSelectedVendorId] = useState(null);
 
   useEffect(() => {
     const fetchVendors = async () => {
@@ -27,6 +33,35 @@ export default function VendorsList() {
     }
   }, [addOpen]);
 
+  const handleDeleteClick = (vendorId)=>{
+    setSelectedVendorId(vendorId);
+    setOpen(true);
+  }
+
+  const handleDelete = async (vendorId) => {
+    try {
+      const res = await fetch(`/api/vendors/${vendorId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Vendor deleted successfully");
+        const updated = await fetch("/api/vendors").then((res) =>
+          res.json()
+        );
+        setVendors(updated);
+      } else {
+        toast.error(data.error || "failed to delete vendor");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("An error occured");
+    } finally {
+      setOpen(false);
+      setSelectedVendorId(null)
+    }
+  };
+
   return (
     <UsersLayout>
       <div className="flex flex-row justify-between w-full items-center mb-4">
@@ -34,7 +69,6 @@ export default function VendorsList() {
         <Button onClick={() => setAddOpen(true)}>Add Vendor</Button>
         <AddVendor open={addOpen} setAddOpen={setAddOpen} />
       </div>
-
       <div className="mb-4">
         <input
           type="search"
@@ -47,13 +81,28 @@ export default function VendorsList() {
         <table className="w-full boo-table mt-3 border-collapse border border-gray-300">
           <thead>
             <tr className="bg-gray-100">
-              <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">S.N</th>
-              <th className="text-left text-sm px-2 py-1 border-gray-300">Image</th>
-              <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">Vendor Name</th>
-              <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">Name</th>
-              <th className="text-left text-sm px-2 py-1 border-gray-300">Location</th>
-              <th className="text-left text-sm px-2 py-1 border-gray-300">Phone</th>
-              <th className="text-left text-sm px-2 py-1 border-gray-300">Status</th>
+              <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">
+                S.N
+              </th>
+              <th className="text-left text-sm w-28 px-2 py-1 border-gray-300">
+                Image
+              </th>
+              <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
+                Vendor Name
+              </th>
+              <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
+                Name
+              </th>
+              <th className="text-left text-sm px-2 py-1 border-gray-300">
+                Location
+              </th>
+              <th className="text-left text-sm px-2 py-1 border-gray-300">
+                Phone
+              </th>
+              <th className="text-left text-sm px-2 py-1 border-gray-300">
+                Status
+              </th>
+              <th className="text-left text-sm px-2 py-1">Action</th>
             </tr>
           </thead>
           <tbody>
@@ -78,20 +127,50 @@ export default function VendorsList() {
                       <span className="text-gray-400">No Image</span>
                     )}
                   </td>
-                  <td className="p-2 font-semibold">{vendor.name || "N/A"}</td>
+
+                  <td className="p-2 font-semibold">
+                    <Link
+                      href={`/admin/users/vendors/${vendor.id}`}
+                      className="text-blue-600 underline"
+                    >
+                      {vendor.name || "N/A"}
+                    </Link>
+                  </td>
                   <td>
-                    <h5 className="font-semibold">{`${vendor.user.firstname} ${vendor.user.lastname }`}</h5>
+                    <h5 className="font-semibold">{`${vendor.user.firstname} ${vendor.user.lastname}`}</h5>
                     <p>{vendor.user.email || "-"}</p>
                   </td>
                   <td className="p-2">{vendor.location || "-"}</td>
                   <td className="p-2">{vendor.phone || "-"}</td>
                   <td className="p-2">{vendor.status || "-"}</td>
+                  <td className="p-2">
+                    <div className="flex gap-2">
+                      <button className="text-gray-500">
+                        <PencilLineIcon size={20} weight="duotone" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(vendor.id)}
+                        className="text-red-500"
+                      >
+                        <TrashIcon size={20} weight="duotone" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
               ))
             )}
           </tbody>
         </table>
       </div>
+      <ConfirmAlert
+        open={open}
+        onOpenChange={setOpen}
+        title="Delete Vendor?"
+        description={`Are you sure you want to delete vendor ID: ${selectedVendorId}?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => handleDelete(selectedVendorId)}
+      />
     </UsersLayout>
   );
 }

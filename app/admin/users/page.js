@@ -2,6 +2,9 @@
 import { UsersLayout } from "./../layout";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { PencilLineIcon, TrashIcon } from "@phosphor-icons/react";
+import ConfirmAlert from "@/components/common/ConfirmAlert";
+import { toast } from "sonner";
 import {
   Dialog,
   DialogClose,
@@ -25,6 +28,8 @@ import {
 
 export default function Users() {
   const [users, setUsers] = useState([]);
+  const [open, setOpen] = useState(false);
+  const [selectedUserId, setSelectedUserId] = useState(null);
   const [form, setForm] = useState({
     firstname: "",
     lastname: "",
@@ -55,141 +60,189 @@ export default function Users() {
     });
   };
 
+  const handleDeleteClick = (userId) => {
+    setSelectedUserId(userId);
+    setOpen(true);
+  };
+
+  const handleDelete = async (userId) => {
+    try {
+      const res = await fetch(`/api/users/${userId}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        toast.success("Users deleted successfully");
+        const updated = await fetch("/api/users").then((res) => res.json());
+        setUsers(updated);
+      } else {
+        toast.error(data.error || "failed to delete user");
+      }
+    } catch (error) {
+      console.error("Delete error:", error);
+      toast.error("An error occured");
+    } finally {
+      setOpen(false);
+      setSelectedUserId(null);
+    }
+  };
+
   return (
     <UsersLayout>
-        <div className="flex flex-row justify-between w-full">
-          <h4 className="page-title">Users List</h4>
-          <Dialog>
-            <DialogTrigger asChild className="ml-auto">
-              <Button>Invite User</Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-[525px]">
-              <DialogHeader className="mb-2">
-                <DialogTitle>Invite User</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit}>
-                <div className="grid gap-4">
-                  <div className="grid grid-cols-2 gap-3">
-                    <div>
-                      <Label htmlFor="firstname">First name</Label>
-                      <Input
-                        id="firstname"
-                        name="firstname"
-                        value={form.firstname}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <div>
-                      <Label htmlFor="lastname">Last name</Label>
-                      <Input
-                        id="lastname"
-                        name="lastname"
-                        value={form.lastname}
-                        onChange={handleChange}
-                      />
-
-                    </div>
-                  </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="email">Email</Label>
+      <div className="flex flex-row justify-between w-full">
+        <h4 className="page-title">Users List</h4>
+        <Dialog>
+          <DialogTrigger asChild className="ml-auto">
+            <Button>Invite User</Button>
+          </DialogTrigger>
+          <DialogContent className="sm:max-w-[525px]">
+            <DialogHeader className="mb-2">
+              <DialogTitle>Invite User</DialogTitle>
+            </DialogHeader>
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4">
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <Label htmlFor="firstname">First name</Label>
                     <Input
-                      placeholder="example@gmail.com"
-                      id="email"
-                      name="email"
-                      value={form.email}
+                      id="firstname"
+                      name="firstname"
+                      value={form.firstname}
                       onChange={handleChange}
                     />
                   </div>
-                  <div className="grid gap-3">
-                    <Label htmlFor="role">Role</Label>
-                    <Select value={form.role} onValueChange={handleRoleChange}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectGroup>
-                          <SelectItem value="ADMIN">Admin</SelectItem>
-                          <SelectItem value="VENDOR">Vendor</SelectItem>
-                          <SelectItem value="CUSTOMER">Customer</SelectItem>
-                        </SelectGroup>
-                      </SelectContent>
-                    </Select>
+                  <div>
+                    <Label htmlFor="lastname">Last name</Label>
+                    <Input
+                      id="lastname"
+                      name="lastname"
+                      value={form.lastname}
+                      onChange={handleChange}
+                    />
                   </div>
                 </div>
-                <DialogFooter className="mt-4">
-                  <DialogClose asChild>
-                    <Button variant="outline" type="button">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button type="submit">Send Invite</Button>
-                </DialogFooter>
-              </form>
-            </DialogContent>
-          </Dialog>
-        </div>
+                <div className="grid gap-3">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    placeholder="example@gmail.com"
+                    id="email"
+                    name="email"
+                    value={form.email}
+                    onChange={handleChange}
+                  />
+                </div>
+                <div className="grid gap-3">
+                  <Label htmlFor="role">Role</Label>
+                  <Select value={form.role} onValueChange={handleRoleChange}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        <SelectItem value="ADMIN">Admin</SelectItem>
+                        <SelectItem value="VENDOR">Vendor</SelectItem>
+                        <SelectItem value="CUSTOMER">Customer</SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter className="mt-4">
+                <DialogClose asChild>
+                  <Button variant="outline" type="button">
+                    Cancel
+                  </Button>
+                </DialogClose>
+                <Button type="submit">Send Invite</Button>
+              </DialogFooter>
+            </form>
+          </DialogContent>
+        </Dialog>
+      </div>
+      <div className="flex">
         <div className="flex">
-          <div className="flex">
-            <input
-              type="search"
-              className="bg-gray-50 border rounded focus:border-blue-500"
-              placeholder="Search..."
-            />
-          </div>
-          <div className="flex"></div>
+          <input
+            type="search"
+            className="bg-gray-50 border rounded focus:border-blue-500"
+            placeholder="Search..."
+          />
         </div>
-        <div className="table-responsive">
-          <table className="w-full boo-table mt-3 border">
-            <thead>
+        <div className="flex"></div>
+      </div>
+      <div className="table-responsive">
+        <table className="w-full boo-table mt-3 border">
+          <thead>
+            <tr>
+              <th className="text-sm w-16">S.N</th>
+              <th className="text-left w-1/3 text-sm">Name</th>
+              <th className="text-left w-52 text-sm">Joined Date</th>
+              <th className="text-left w-52 text-sm">Role</th>
+              <th className="text-left text-sm">Status</th>
+              <th className="text-left text-sm">Action</th>
+            </tr>
+          </thead>
+          <tbody>
+            {users.length === 0 ? (
               <tr>
-                <th className="text-sm w-16">S.N</th>
-                <th className="text-left w-1/3 text-sm">Name</th>
-                <th className="text-left w-52 text-sm">Joined Date</th>
-                <th className="text-left w-52 text-sm">Role</th>
-                <th className="text-left text-sm">Status</th>
-                <th className="text-left text-sm">Action</th>
+                <td colSpan="5" className="p-2" align="center">
+                  You dont have any users
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {users.length === 0 ? (
-                <tr>
-                  <td colSpan="5" className="p-2" align="center">You dont have any users</td>
+            ) : (
+              users.map((user, idx) => (
+                <tr key={user.id} className="border-b">
+                  <td className="py-2 text-base text-center">{idx + 1}</td>
+                  <td className="py-2 text-base">
+                    <div className="font-bold">{user.name}</div>
+                    <div className="text-gray-600">{user.email}</div>
+                  </td>
+                  <td className="py-2 text-base">{user.joinedAt}</td>
+                  <td className="py-2 text-base">{user.role}</td>
+                  <td className="py-2 text-base">
+                    {user.status === "ACTIVE" ? (
+                      <Badge
+                        variant="default"
+                        className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
+                      >
+                        Active
+                      </Badge>
+                    ) : (
+                      <Badge
+                        variant="default"
+                        className="bg-gray-500 hover:bg-gray-500"
+                      >
+                        Inactive
+                      </Badge>
+                    )}
+                  </td>
+                  <td>
+                    <div className="flex flex-row gap-1">
+                      <button className="text-gray-500">
+                        <PencilLineIcon size={20} weight="duotone" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteClick(user.id)}
+                        className="text-red-500"
+                      >
+                        <TrashIcon size={20} weight="duotone" />
+                      </button>
+                    </div>
+                  </td>
                 </tr>
-              ) : (
-                users.map((user, idx) => (
-                  <tr key={user.id} className="border-b">
-                    <td className="py-2 text-base text-center">{idx + 1}</td>
-                    <td className="py-2 text-base">
-                      <div className="font-bold">
-                        {user.name}
-                      </div>
-                      <div className="text-gray-600">{user.email}</div>
-                    </td>
-                    <td className="py-2 text-base">{user.joinedAt}</td>
-                    <td className="py-2 text-base">{user.role}</td>
-                    <td className="py-2 text-base">
-                      {user.status === "ACTIVE" ? (
-                        <Badge
-                          variant="default"
-                          className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
-                        >
-                          Active
-                        </Badge>
-                      ) : (
-                        <Badge
-                          variant="default"
-                          className="bg-gray-500 hover:bg-gray-500"
-                        >
-                          Inactive
-                        </Badge>
-                      )}
-                    </td>
-                  </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-        </div>
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
+      <ConfirmAlert
+        open={open}
+        onOpenChange={setOpen}
+        title="Delete User?"
+        description={`Are you sure you want to delete vendor ID: ${selectedUserId}?`}
+        confirmLabel="Delete"
+        cancelLabel="Cancel"
+        onConfirm={() => handleDelete(selectedUserId)}
+      />
     </UsersLayout>
   );
 }
