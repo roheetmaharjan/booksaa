@@ -16,10 +16,26 @@ export default function VendorDetail() {
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
 
-  const handleResend = async () => {
-    if (!email) return;
-    setLoading(true);
-  }
+  const handleResend = async (vendorId) => {
+    try {
+      const res = await fetch("/api/resend-activation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to resend activation link");
+      }
+
+      toast.success(data.message); // Or use toast/message
+    } catch (error) {
+      console.error("Resend failed:", error);
+      toast.error(error.message); // Or show a toast for errors
+    }
+  };
 
   useEffect(() => {
     if (!vendorId) return;
@@ -63,7 +79,7 @@ export default function VendorDetail() {
               <p className="text-gray-500">{vendor.user.email}</p>
             </div>
             <div className="flex gap-2 ml-auto">
-              <Button>Send Activation Link</Button>
+              <Button onClick={() => handleResend(vendor.id)}>Send Activation Link</Button>
               <Button variant="outline">Edit Profile</Button>
             </div>
           </div>
