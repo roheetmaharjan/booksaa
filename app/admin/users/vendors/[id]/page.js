@@ -16,6 +16,11 @@ export default function VendorDetail() {
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  const handleResend = async () => {
+    if (!email) return;
+    setLoading(true);
+  }
+
   useEffect(() => {
     if (!vendorId) return;
 
@@ -39,7 +44,7 @@ export default function VendorDetail() {
         <Loading />
       ) : vendor ? (
         <>
-          <div className="flex items-center gap-4 mt-4 mb-4">
+          <div className="flex items-center gap-4 mt-4 mb-4 flex-col md:flex-row">
             <figure>
               {vendor.image ? (
                 <img
@@ -56,6 +61,10 @@ export default function VendorDetail() {
             <div className="flex flex-col gap-1">
               <h4 className="text-2xl font-bold">{vendor.name}</h4>
               <p className="text-gray-500">{vendor.user.email}</p>
+            </div>
+            <div className="flex gap-2 ml-auto">
+              <Button>Send Activation Link</Button>
+              <Button variant="outline">Edit Profile</Button>
             </div>
           </div>
           <Tabs defaultValue="detail">
