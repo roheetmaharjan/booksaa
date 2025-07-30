@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import AddVendor from "@/components/modals/AddVendor";
 import { toast } from "sonner";
-import { TrashIcon,PencilLineIcon } from "@phosphor-icons/react";
+import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -34,10 +34,10 @@ export default function VendorsList() {
     }
   }, [addOpen]);
 
-  const handleDeleteClick = (vendorId)=>{
+  const handleDeleteClick = (vendorId) => {
     setSelectedVendorId(vendorId);
     setOpen(true);
-  }
+  };
 
   const handleDelete = async (vendorId) => {
     try {
@@ -47,9 +47,7 @@ export default function VendorsList() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Vendor deleted successfully");
-        const updated = await fetch("/api/vendors").then((res) =>
-          res.json()
-        );
+        const updated = await fetch("/api/vendors").then((res) => res.json());
         setVendors(updated);
       } else {
         toast.error(data.error || "failed to delete vendor");
@@ -59,7 +57,7 @@ export default function VendorsList() {
       toast.error("An error occured");
     } finally {
       setOpen(false);
-      setSelectedVendorId(null)
+      setSelectedVendorId(null);
     }
   };
 
@@ -152,13 +150,15 @@ export default function VendorsList() {
                         Active
                       </Badge>
                     ) : (
-                      <Badge
-                        variant="default"
-                        className="bg-gray-500 hover:bg-gray-500"
-                      >
-                        Inactive
-                      </Badge>
-                    ) || "-"}
+                      (
+                        <Badge
+                          variant="default"
+                          className="bg-gray-500 hover:bg-gray-500"
+                        >
+                          Inactive
+                        </Badge>
+                      ) || "-"
+                    )}
                   </td>
                   <td className="p-2">
                     <div className="flex gap-2">

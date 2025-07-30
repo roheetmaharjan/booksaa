@@ -217,15 +217,21 @@ export default function Users() {
                   </td>
                   <td>
                     <div className="flex flex-row gap-1">
-                      <button className="text-gray-500">
-                        <PencilLineIcon size={20} weight="duotone" />
-                      </button>
-                      <button
-                        onClick={() => handleDeleteClick(user.id)}
-                        className="text-red-500"
-                      >
-                        <TrashIcon size={20} weight="duotone" />
-                      </button>
+                      {user.role === "ADMIN" ? (
+                        <p>-</p>
+                      ) : (
+                        <>
+                          <button className="text-gray-500">
+                            <PencilLineIcon size={20} weight="duotone" />
+                          </button>
+                          <button
+                            onClick={() => handleDeleteClick(user.id)}
+                            className="text-red-500"
+                          >
+                            <TrashIcon size={20} weight="duotone" />
+                          </button>
+                        </>
+                      )}
                     </div>
                   </td>
                 </tr>

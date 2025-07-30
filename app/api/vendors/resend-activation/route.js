@@ -34,7 +34,7 @@ export async function POST(req) {
 
     await sendInviteEmail(email, token);
 
-    return NextResponse.json({ success: true, message: "Activation link resent." });
+    return NextResponse.json({ success: true, message: "Activation link sent." });
   } catch (error) {
     console.error("Resend activation error:", error);
     return NextResponse.json({ error: "Something went wrong" }, { status: 500 });

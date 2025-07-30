@@ -4,8 +4,8 @@ import { v4 as uuid } from "uuid";
 import fs from "fs";
 import path from "path";
 
-export async function DELETE(req, context) {
-  const { id } = context.params;
+export async function DELETE(req, {params}) {
+  const { id } = await params;
 
   if (!id) {
     return new NextResponse(JSON.stringify({ error: "Category ID missing" }));

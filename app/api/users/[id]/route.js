@@ -1,8 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function DELETE(req, context) {
-  const { id } = context.params;
+export async function DELETE(req, {params}) {
+  const { id } = await params;
 
   if (!id) {
     return new NextResponse(JSON.stringify({ error: "User Id missing" }));

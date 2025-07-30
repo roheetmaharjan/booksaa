@@ -97,7 +97,7 @@ export default function Users() {
       setImageUrl("");
       setError("");
       setOpen(false);
-      toast("Category has been created.");
+      toast.success("Category has been created.");
 
       const updated = await fetch("/api/categories").then((res) => res.json());
       setCategories(updated);
