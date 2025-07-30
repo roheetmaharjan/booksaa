@@ -38,6 +38,32 @@ export async function GET(req, { params }) {
     });
   }
 }
+export async function PATCH(req, { params }) {
+  const { id } = await params;
+  if(!id) {
+    return NextResponse(JSON.stringify(
+      {error : "Vendor Id is missing"},
+      {status : 400}
+    ))
+  }
+  try{
+    const formData = await req.formdata();
+
+    const name = formData.get("name");
+    const description = formData.get("description");
+    const phone = formData.get("phone");
+    const cancellation_policy = formData.get("cancellation_policy");
+
+    if(!name){
+      return NextResponse(JSON.stringify(
+        {error: "Name is required"},
+        {status: 400}
+      ))
+    }
+  }catch{
+
+  }
+}
 
 export async function DELETE(req, { params }) {
   const { id } = await params;
@@ -47,7 +73,6 @@ export async function DELETE(req, { params }) {
   }
 
   try {
-    
     const vendor = await prisma.vendors.findUnique({
       where: { id },
       include: { user: true },
@@ -66,16 +91,20 @@ export async function DELETE(req, { params }) {
     await prisma.vendors.delete({
       where: { id },
     });
-    
+
     await prisma.users.delete({
       where: { id: vendor.userId },
     });
 
-
-    return NextResponse.json({ success: true, message: "Vendor and user deleted" }, { status: 200 });
-
+    return NextResponse.json(
+      { success: true, message: "Vendor and user deleted" },
+      { status: 200 }
+    );
   } catch (error) {
     console.error("Delete error:", error);
-    return NextResponse.json({ error: "Failed to delete vendor or user" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to delete vendor or user" },
+      { status: 500 }
+    );
   }
 }
