@@ -8,14 +8,21 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { validateForm } from "@/utils/formValidator";
-import {Select,SelectTrigger,SelectValue,SelectContent,SelectItem,} from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function EditVendor() {
   const { id } = useParams();
   const router = useRouter();
   const [form, setForm] = useState({
-    user:{
+    user: {
       firstname: "",
       lastname: "",
       email: "",
@@ -33,9 +40,9 @@ export default function EditVendor() {
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const validationRules = {
-    firstname: { required: true, message: "First name is required" },
-    lastname: { required: true, message: "Last name is required" },
-    email: {
+    "user.firstname": { required: true, message: "First name is required" },
+    "user.lastname": { required: true, message: "Last name is required" },
+    "user.email": {
       required: true,
       pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
       message: "Valid email is required",
@@ -102,6 +109,7 @@ export default function EditVendor() {
     e.preventDefault();
     const errors = validateForm(form, validationRules);
     setFormErrors(errors);
+    console.log(errors);
 
     if (Object.keys(errors).length > 0) return;
     const res = await fetch(`/api/vendors/${id}`, {
@@ -110,7 +118,7 @@ export default function EditVendor() {
       body: JSON.stringify(form),
     });
     if (res.ok) {
-      toast.success("vendor updated successfully!");
+      toast.success("Vendor updated successfully!");
       router.push("/admin/users/vendors");
     } else {
       toast.error("failed to update vendor");
@@ -185,111 +193,147 @@ export default function EditVendor() {
                       <p className="text-sm text-red-500">{formErrors.name}</p>
                     )}
                   </div>
+                  <div className="grid grid-cols-12 mb-2 gap-2">
+                    <div className="col-span-6 mb-2">
+                      <Label htmlFor="categoryId">
+                        Category <span className="astrick">*</span>
+                      </Label>
+                      <Select
+                        id="categoryId"
+                        name="categoryId"
+                        value={form.categoryId}
+                        onValueChange={(value) =>
+                          setForm((prev) => ({ ...prev, categoryId: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Category" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {categories.length === 0 ? (
+                            <SelectItem key="No-category" value="No-Category">
+                              No categories found. Please add one to get
+                              started.
+                            </SelectItem>
+                          ) : (
+                            categories.map((category) => (
+                              <SelectItem key={category.id} value={category.id}>
+                                {category.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {formErrors && formErrors.categoryId && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.categoryId}
+                        </p>
+                      )}
+                    </div>
+                    <div className="col-span-6 mb-2">
+                      <Label htmlFor="planId">
+                        Plan <span className="astrick">*</span>
+                      </Label>
+                      <Select
+                        id="planId"
+                        name="planId"
+                        value={form.planId}
+                        onValueChange={(value) =>
+                          setForm((prev) => ({ ...prev, planId: value }))
+                        }
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select Plans"></SelectValue>
+                        </SelectTrigger>
+                        <SelectContent>
+                          {plans.length === 0 ? (
+                            <SelectItem key="no-plans" value="no-plans">
+                              No plans found. Please add one to get started.
+                            </SelectItem>
+                          ) : (
+                            plans.map((plan) => (
+                              <SelectItem key={plan.id} value={plan.id}>
+                                {plan.name}
+                              </SelectItem>
+                            ))
+                          )}
+                        </SelectContent>
+                      </Select>
+                      {formErrors && formErrors.planId && (
+                        <p className="text-sm text-red-500">
+                          {formErrors.planId}
+                        </p>
+                      )}
+                    </div>
+                  </div>
                   <div className="mb-2">
-                    <Label htmlFor="firstname">
-                      Email <span className="astrick">*</span>
-                    </Label>
+                    <Label htmlFor="phone">Phone</Label>
                     <Input
-                      name="email"
-                      value={form.user.email || ""}
+                      name="phone"
+                      value={form.phone || ""}
                       onChange={handleChange}
-                      placeholder="Email"
-                      disabled
+                      placeholder="Enter phone number"
                     />
                   </div>
-                  <div className="grid grid-cols-12 mb-2 gap-2">
-                    <div className="col-span-6">
+                  <div className="mb-2">
+                    <Label htmlFor="description">Description</Label>
+                    <Textarea
+                      name="description"
+                      value={form.description || ""}
+                      onChange={handleChange}
+                    />
+                  </div>
+                  <hr />
+                  <div className="border p-4">
+                    <h4 className="font-bold mb-3 text-base">
+                      User Information
+                    </h4>
+                    <div className="mb-2">
                       <Label htmlFor="firstname">
-                        Firstname <span className="astrick">*</span>
+                        Email <span className="astrick">*</span>
                       </Label>
                       <Input
-                        name="firstname"
-                        value={form.user.firstname || ""}
+                        name="email"
+                        value={form.user.email || ""}
                         onChange={handleChange}
-                        placeholder="Firstname"
+                        placeholder="Email"
+                        disabled
                       />
                     </div>
-                    <div className="col-span-6">
-                      <Label htmlFor="lastname">
-                        Lastname <span className="astrick">*</span>
-                      </Label>
-                      <Input
-                        name="lastname"
-                        value={form.user.lastname || ""}
-                        onChange={handleChange}
-                        placeholder="Lastname"
-                      />
+                    <div className="grid grid-cols-12 mb-2 gap-2">
+                      <div className="col-span-6">
+                        <Label htmlFor="firstname">
+                          Firstname <span className="astrick">*</span>
+                        </Label>
+                        <Input
+                          name="firstname"
+                          value={form.user.firstname || ""}
+                          onChange={handleChange}
+                          placeholder="Firstname"
+                        />
+                        {formErrors && formErrors["user.firstname"] && (
+                          <p className="text-sm text-red-500">
+                            {formErrors["user.firstname"]}
+                          </p>
+                        )}
+                      </div>
+                      <div className="col-span-6">
+                        <Label htmlFor="lastname">
+                          Lastname <span className="astrick">*</span>
+                        </Label>
+                        <Input
+                          name="lastname"
+                          value={form.user.lastname || ""}
+                          onChange={handleChange}
+                          placeholder="Lastname"
+                        />
+                        {formErrors && formErrors["user.lastname"] && (
+                          <p className="text-sm text-red-500">
+                            {formErrors["user.lastname"]}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                  <div className="mb-2">
-                    <Label htmlFor="categoryId">
-                      Category <span className="astrick">*</span>
-                    </Label>
-                    <Select
-                      id="categoryId"
-                      name="categoryId"
-                      value={form.categoryId}
-                      onValueChange={(value) =>
-                        setForm((prev) => ({ ...prev, categoryId: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Category" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {categories.length === 0 ? (
-                          <SelectItem key="No-category" value="No-Category">
-                            No categories found. Please add one to get started.
-                          </SelectItem>
-                        ) : (
-                          categories.map((category) => (
-                            <SelectItem key={category.id} value={category.id}>
-                              {category.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {formErrors && formErrors.categoryId && (
-                      <p className="text-sm text-red-500">
-                        {formErrors.categoryId}
-                      </p>
-                    )}
-                  </div>
-                  <div className="mb-2">
-                    <Label htmlFor="planId">
-                      Plan <span className="astrick">*</span>
-                    </Label>
-                    <Select
-                      id="planId"
-                      name="planId"
-                      value={form.planId}
-                      onValueChange={(value) =>
-                        setForm((prev) => ({ ...prev, planId: value }))
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select Plans"></SelectValue>
-                      </SelectTrigger>
-                      <SelectContent>
-                        {plans.length === 0 ? (
-                          <SelectItem key="no-plans" value="no-plans">
-                            No plans found. Please add one to get started.
-                          </SelectItem>
-                        ) : (
-                          plans.map((plan) => (
-                            <SelectItem key={plan.id} value={plan.id}>
-                              {plan.name}
-                            </SelectItem>
-                          ))
-                        )}
-                      </SelectContent>
-                    </Select>
-                    {formErrors && formErrors.planId && (
-                      <p className="text-sm text-red-500">
-                        {formErrors.planId}
-                      </p>
-                    )}
                   </div>
                   <hr />
                   <div className="py-2">
@@ -298,7 +342,7 @@ export default function EditVendor() {
                 </form>
               </div>
             </TabsContent>
-            <TabsContent value="services">comming soon</TabsContent>
+            <TabsContent value="services"></TabsContent>
             <TabsContent value="professionals">Coming Soon</TabsContent>
             <TabsContent value="photos">Coming Soon</TabsContent>
             <TabsContent value="reviews">Review Comming Soon</TabsContent>

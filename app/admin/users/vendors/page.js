@@ -105,7 +105,7 @@ export default function VendorsList() {
                     Name
                   </th>
                   <th className="text-left text-sm px-2 py-1 border-gray-300">
-                    Location
+                    Plan
                   </th>
                   <th className="text-left text-sm px-2 py-1 border-gray-300">
                     Phone
@@ -154,7 +154,7 @@ export default function VendorsList() {
                         <h5 className="font-semibold">{`${vendor.user.firstname} ${vendor.user.lastname}`}</h5>
                         <p>{vendor.user.email || "-"}</p>
                       </td>
-                      <td className="p-2">{vendor.location || "-"}</td>
+                      <td className="p-2">{vendor.plan.name || "-"}</td>
                       <td className="p-2">{vendor.phone || "-"}</td>
                       <td className="p-2">
                         {vendor.status === "ACTIVE" ? (

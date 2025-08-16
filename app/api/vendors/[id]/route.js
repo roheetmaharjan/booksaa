@@ -38,30 +38,73 @@ export async function GET(req, { params }) {
     });
   }
 }
-export async function PATCH(req, { params }) {
+export async function PUT(req, { params }) {
   const { id } = await params;
-  if(!id) {
-    return NextResponse(JSON.stringify(
-      {error : "Vendor Id is missing"},
-      {status : 400}
-    ))
+
+  if (!id) {
+    return NextResponse.json(
+      { error: "Vendor Id is missing" },
+      { status: 400 }
+    );
   }
-  try{
-    const formData = await req.formdata();
 
-    const name = formData.get("name");
-    const description = formData.get("description");
-    const phone = formData.get("phone");
-    const cancellation_policy = formData.get("cancellation_policy");
+  try {
+    const data = await req.json();
 
-    if(!name){
-      return NextResponse(JSON.stringify(
-        {error: "Name is required"},
-        {status: 400}
-      ))
+    const name = data.name;
+    const description = data.description;
+    const phone = data.phone;
+    const cancellation_policy = data.cancellation_policy;
+    const location = data.location;
+    const planId = data.planId;
+    const categoryId = data.categoryId
+
+    const userFirstname = data.user?.firstname;
+    const userLastname = data.user?.lastname;
+    const userEmail = data.user?.email;
+
+    if (!name) {
+      return NextResponse.json(
+        { error: "Name is required" },
+        { status: 400 }
+      );
     }
-  }catch{
 
+    const updatedVendor = await prisma.vendors.update({
+      where: { id },
+      data: {
+        name,
+        description,
+        phone,
+        cancellation_policy,
+        location,
+        planId,
+        categoryId
+      },
+      include:{user:true}
+    });
+
+    if (updatedVendor.userId && (userFirstname||userLastname)){
+      await prisma.users.update({
+        where:{id : updatedVendor.userId},
+        data:{
+          firstname: userFirstname,
+          lastname:userLastname
+        }
+      })
+    }
+
+    return NextResponse.json(
+      { message: "Vendor updated successfully" },
+      { status: 200 }
+    );
+
+  } catch (error) {
+    console.error("Error updating vendor:", error);
+    return NextResponse.json(
+      { error: "Failed to update vendor" },
+      { status: 500 }
+    );
   }
 }
 
@@ -83,7 +126,7 @@ export async function DELETE(req, { params }) {
     }
     if (vendor.status === "ACTIVE") {
       return NextResponse.json(
-        { error: "Vendor is active. Please deactivate before deleting." },
+        { error: "You cannot delete active vendors." },
         { status: 403 }
       );
     }

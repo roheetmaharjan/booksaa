@@ -17,7 +17,7 @@ export default function AdminHeader({startTransition}) {
     <div className="flex border-b py-3 px-4 flex-row justify-between sticky top-0 bg-white">
       <div className="w-full flex flex-row gap-5 item-center justify-between">
         <div className="flex">
-          <Image src="/logo.png" width="150" height="150" alt="Bookaroo" />
+          <Image src="/logo.png" width="120" height="100" alt="Bookaroo" style="width: 100%; height: auto " />
         </div>
         <nav className="hidden md:flex flex-row gap-3">
           <button className="flex gap-2 items-center" onClick={handleNav("/admin")}><SquaresFourIcon size={25} weight="duotone"/>Dashboard</button>

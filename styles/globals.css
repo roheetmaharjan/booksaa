@@ -103,6 +103,10 @@ body {
   @apply uppercase bg-gray-100 text-sm py-2
 }
 
+.container{
+  margin: 0 auto;
+}
+
 @layer base {
   * {
     @apply border-border;
