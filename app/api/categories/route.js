@@ -3,7 +3,13 @@ const prisma = new PrismaClient();
 
 export async function GET(req) {
   try {
-    const results = await prisma.category.findMany();
+    const results = await prisma.category.findMany({
+            include:{
+                _count :{
+                    select:{vendors: true}
+                }
+            }
+        });
     return new Response(JSON.stringify(results), {
       status: "200",
       headers: {

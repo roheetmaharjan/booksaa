@@ -22,12 +22,12 @@ const items = [
   },
   {
     title: "Vendors",
-    url: "/admin/users/vendors",
+    url: "/admin/vendors",
     icon: StorefrontIcon,  
   },
   {
     title: "Customers",
-    url: "/admin/users/customers",
+    url: "/admin/customers",
     icon: UsersFourIcon,
   },
 ];

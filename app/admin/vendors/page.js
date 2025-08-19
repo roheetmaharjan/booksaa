@@ -66,7 +66,7 @@ export default function VendorsList() {
   };
   const handleEditClick = (vendorId) => {
     setEditLoading(true);
-    router.push(`/admin/users/vendors/${vendorId}/edit-vendor`);
+    router.push(`/admin/vendors/${vendorId}/edit-vendor`);
   };
 
   return (
@@ -144,7 +144,7 @@ export default function VendorsList() {
 
                       <td className="p-2 font-semibold">
                         <Link
-                          href={`/admin/users/vendors/${vendor.id}`}
+                          href={`/admin/vendors/${vendor.id}`}
                           className="text-blue-600 underline"
                         >
                           {vendor.name || "N/A"}

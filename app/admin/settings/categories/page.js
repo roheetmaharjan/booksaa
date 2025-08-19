@@ -258,7 +258,7 @@ export default function Users() {
               <th className="text-sm w-16">S.N</th>
               <th className="text-left w-44 text-sm">Image</th>
               <th className="text-left w-1/3 text-sm">Name</th>
-              <th className="text-left w-1/3 text-sm">Vendor</th>
+              <th className="text-left w-1/3 text-sm">Vendors</th>
               <th className="text-left text-sm">Action</th>
             </tr>
           </thead>
@@ -291,7 +291,7 @@ export default function Users() {
                   <td className="p-2 text-base">
                     <div className="font-bold">{category.name}</div>
                   </td>
-                  <td></td>
+                  <td>{category._count?.vendors || 0}</td>
                   <td>
                     <div className="flex gap-2">
                       <a

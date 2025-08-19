@@ -55,7 +55,7 @@ export default function VendorDetail() {
 
   const handleEditClick = (vendorId)=>{
     setEditLoading(true);
-    router.push(`/admin/users/vendors/${vendorId}/edit-vendor`)
+    router.push(`/admin/vendors/${vendorId}/edit-vendor`)
   }
 
   return (
@@ -88,7 +88,7 @@ export default function VendorDetail() {
             </div>
             <div className="flex gap-2 ml-auto">
               <Button onClick={() => handleResend(vendor.id)}>Send Activation Link</Button>
-              <Button variant="outline">Edit Profile</Button>
+              <Button onClick={() => handleEditClick(vendor.id)} variant="outline" >Edit Profile</Button>
             </div>
           </div>
           <Tabs defaultValue="detail">

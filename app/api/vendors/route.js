@@ -23,7 +23,7 @@ export async function GET(req) {
             lastname: true,
             email: true,
           }
-        },
+        }
       }
     });
     return new Response(JSON.stringify(vendors), {
