@@ -10,11 +10,14 @@ import Loading from "@/components/common/Loading";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
+import { useRouter } from "next/navigation";
 
 export default function VendorDetail() {
   const { id: vendorId } = useParams();
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [editLoading, setEditLoading] = useState(false);
+    const router = useRouter();
 
   const handleResend = async (vendorId) => {
     try {
@@ -49,6 +52,11 @@ export default function VendorDetail() {
       })
       .finally(() => setLoading(false));
   }, [vendorId]);
+
+  const handleEditClick = (vendorId)=>{
+    setEditLoading(true);
+    router.push(`/admin/users/vendors/${vendorId}/edit-vendor`)
+  }
 
   return (
     <UsersLayout>
