@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req) {
   try {
-    const { name, price, duration, description } = await req.json();
+    const { name, price, duration, description,vendorId } = await req.json();
     if (!vendorId) {
       return NextResponse.json(
         { error: "Vendor ID is required" },
