@@ -2,7 +2,13 @@
 import { UsersLayout } from "@/app/admin/layout";
 import Loading from "@/components/common/Loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {Dialog,DialogContent,DialogHeader,DialogTitle,DialogFooter} from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -11,8 +17,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { validateForm } from "@/utils/formValidator";
-import {Select,SelectTrigger,SelectValue,SelectContent,SelectItem,} from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { PriceField } from "@/components/common/PriceField";
+import { useFormState } from "@/hooks/useFormState";
 
 export default function EditVendor() {
   const { id } = useParams();
@@ -34,6 +47,7 @@ export default function EditVendor() {
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [categories, setCategories] = useState([]);
+  const [services, setServices] = useState([]);
   const [plans, setPlans] = useState([]);
   const [openLocation, setLocationOpen] = useState(false);
   const [openAddService, setAddServiceOpen] = useState(false);
@@ -103,6 +117,13 @@ export default function EditVendor() {
       }));
     }
   };
+  const { formState: serviceForm, handleChange: handleServiceChange } =
+    useFormState({
+      name: "",
+      description: "",
+      price: "",
+      duration: "",
+    });
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(form, validationRules);
@@ -125,34 +146,38 @@ export default function EditVendor() {
   const handleAddService = async (e) => {
     e.preventDefault();
     setError("");
+    setLoading(true);
 
     try {
-      const categoryRes = await fetch("/api/service/create", {
+      const res = await fetch("/api/services/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, image: uploadData.url }),
+        body: JSON.stringify(serviceForm),
       });
 
-      const categoryData = await categoryRes.json();
-      if (!categoryRes.ok) {
-        setError(categoryData.error || "Category creation failed");
+      const data = await res.json();
+      if (!res.ok) {
+        setError(data.error || "Service creation failed");
+        setLoading(false);
         return;
       }
 
-      // If its success reset form and refresh category list
-      setForm({ id: "", name: "", image: "" });
-      setImageUrl("");
-      setError("");
-      setOpen(false);
-      toast.success("Category has been created.");
+      // Success: reset form, close dialog, show toast
+      resetForm(); // if you're using useFormState
+      setAddServiceOpen(false);
+      toast.success("Service has been created.");
 
-      const updated = await fetch("/api/categories").then((res) => res.json());
-      setCategories(updated);
+      // Refresh list
+      const updated = await fetch("/api/services").then((res) => res.json());
+      setServices(updated);
     } catch (err) {
       console.error("Submit error:", err);
       setError("Something went wrong.");
+    } finally{
+      setLoading(false);
     }
-  }
+  };
+
   return (
     <UsersLayout>
       <div className="flex flex-row justify-between w-full items-center mb-4">
@@ -432,31 +457,34 @@ export default function EditVendor() {
             </DialogContent>
           </Dialog>
           <Dialog open={openAddService} onOpenChange={setAddServiceOpen}>
-            <DialogContent className="sm:max-w-[650px]">
-              <DialogHeader>
-                <DialogTitle>Add Service</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleAddService}>
+            <form onSubmit={handleAddService}>
+              <DialogContent className="sm:max-w-[650px]">
+                <DialogHeader>
+                  <DialogTitle>Add Service</DialogTitle>
+                </DialogHeader>
                 <div className="mb-3">
                   <Label htmlFor="name">Service Name</Label>
                   <Input
                     id="name"
                     name="name"
-                    value=""
-                    onChange={handleChange}
+                    onChange={handleServiceChange}
+                    value={serviceForm.name}
                   />
                 </div>
                 <div className="mb-2">
                   <Label htmlFor="description">Description</Label>
                   <Textarea
                     name="description"
-                    value=""
-                    onChange={handleChange}
+                    onChange={handleServiceChange}
+                    value={serviceForm.description}
                   />
                 </div>
                 <div className="grid gap-2 grid-cols-12">
                   <div className="col-span-6">
-                    <PriceField onChange={handleChange} />
+                    <PriceField
+                      onChange={handleServiceChange}
+                      value={serviceForm.price}
+                    />
                   </div>
                   <div className="col-span-6">
                     <Label htmlFor="price">Duration</Label>
@@ -465,8 +493,9 @@ export default function EditVendor() {
                         type="number"
                         id="duration"
                         name="duration"
+                        value={serviceForm.duration}
                         placeholder="Enter duration"
-                        onChange={handleChange}
+                        onChange={handleServiceChange}
                         className="rounded-r-none"
                       />
                       <span className="px-3 py-[7px] bg-muted text-muted-foreground rounded-r-md border border-l-0">
@@ -475,12 +504,14 @@ export default function EditVendor() {
                     </div>
                   </div>
                 </div>
-              </form>
-              <DialogFooter className="mt-4">
-                <Button variant="secondary">Cancel</Button>
-                <Button onClick={() => setAddServiceOpen(false)}>Save</Button>
-              </DialogFooter>
-            </DialogContent>
+                <DialogFooter className="mt-4">
+                  <Button variant="secondary">Cancel</Button>
+                  <Button type="submit" disabled={loading}>
+                    {loading ? "Saving..." : "Save"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </form>
           </Dialog>
         </>
       )}

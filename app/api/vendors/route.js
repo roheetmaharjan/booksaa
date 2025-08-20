@@ -3,14 +3,13 @@ import { prisma } from "@/lib/prisma";
 export async function GET(req) {
   try {
     const vendors = await prisma.vendors.findMany({
-      include: {
+      select:{
+        id:true,
+        name: true,
+        status: true,
+        image:true,
+        phone: true,
         plan:{
-          select:{
-            id:true,
-            name: true,
-          }
-        },
-        category:{
           select:{
             id:true,
             name: true,
