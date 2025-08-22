@@ -44,10 +44,21 @@ export default function EditVendor() {
     status: "",
     image: "",
   });
+  const {
+    formState: serviceForm,
+    handleChange: handleServiceChange,
+    resetForm,
+  } = useFormState({
+    name: "",
+    description: "",
+    price: "",
+    duration: "",
+  });
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [categories, setCategories] = useState([]);
   const [services, setServices] = useState([]);
+  const [error, setError] = useState("");
   const [plans, setPlans] = useState([]);
   const [openLocation, setLocationOpen] = useState(false);
   const [openAddService, setAddServiceOpen] = useState(false);
@@ -62,6 +73,9 @@ export default function EditVendor() {
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
     planId: { required: true, message: "Plan is required" },
+    serviceName: {required:true, message: "Service name is require"},
+    price: {required:true,message: "Price is required"},
+    duration: {required: true, message: "Duration is required"},
   };
   useEffect(() => {
     const fetchCategories = async () => {
@@ -117,13 +131,6 @@ export default function EditVendor() {
       }));
     }
   };
-  const { formState: serviceForm, handleChange: handleServiceChange } =
-    useFormState({
-      name: "",
-      description: "",
-      price: "",
-      duration: "",
-    });
   const handleSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(form, validationRules);
@@ -152,7 +159,7 @@ export default function EditVendor() {
       const res = await fetch("/api/services/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(serviceForm),
+        body: JSON.stringify({...serviceForm, vendorId: id}),
       });
 
       const data = await res.json();
@@ -439,23 +446,6 @@ export default function EditVendor() {
               <TabsContent value="reviews">Review Comming Soon</TabsContent>
             </div>
           </Tabs>
-          <Dialog open={openLocation} onOpenChange={setLocationOpen}>
-            <DialogContent className="sm:max-w-[650px]">
-              <DialogHeader>
-                <DialogTitle>Set Location</DialogTitle>
-              </DialogHeader>
-              <form onSubmit={handleSubmit}></form>
-              <DialogFooter className="mt-4">
-                <Button
-                  variant="secondary"
-                  onClick={() => setLocationOpen(false)}
-                >
-                  Cancel
-                </Button>
-                <Button>Save</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
           <Dialog open={openAddService} onOpenChange={setAddServiceOpen}>
             <form onSubmit={handleAddService}>
               <DialogContent className="sm:max-w-[650px]">
@@ -506,8 +496,8 @@ export default function EditVendor() {
                 </div>
                 <DialogFooter className="mt-4">
                   <Button variant="secondary">Cancel</Button>
-                  <Button type="submit" disabled={loading}>
-                    {loading ? "Saving..." : "Save"}
+                  <Button type="submit" onClick={handleAddService}>
+                    Save
                   </Button>
                 </DialogFooter>
               </DialogContent>

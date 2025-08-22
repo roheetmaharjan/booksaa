@@ -103,7 +103,7 @@ model Location {
 
 model Service{
   id        String @id @default(cuid())
-  name      String
+  name      String @unique
   description String?
   vendorId  String
   vendor    Vendors @relation(fields: [vendorId],references: [id])

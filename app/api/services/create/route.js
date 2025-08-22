@@ -3,29 +3,28 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req) {
   try {
-    const { name, price, duration, description,vendorId } = await req.json();
+    const { name, price, duration, description, vendorId } = await req.json();
     if (!vendorId) {
       return NextResponse.json(
         { error: "Vendor ID is required" },
         { status: 400 }
       );
     }
-    
-    if (!name?.trim() || isNaN(price) || isNaN(duration)) {
+
+    if (!name?.trim() || isNaN(Number(price)) || isNaN(Number(duration))) {
       return NextResponse.json(
         { error: "Invalid input: name, price, duration are required" },
         { status: 400 }
       );
     }
 
-    const vendorExists = await prisma.vendor.findUnique({
+    const vendorExists = await prisma.vendors.findUnique({
       where: { id: vendorId },
     });
 
     if (!vendorExists) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
     }
-
 
     const exists = await prisma.service.findUnique({
       where: { name },
@@ -39,7 +38,13 @@ export async function POST(req) {
     }
 
     const service = await prisma.service.create({
-      data: { name, description, price, duration,vendorId },
+      data: {
+        name,
+        description,
+        price: parseFloat(price),
+        duration: parseFloat(duration, 10),
+        vendorId,
+      },
     });
 
     return NextResponse.json(service, { status: 201 });

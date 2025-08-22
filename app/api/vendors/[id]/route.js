@@ -7,9 +7,25 @@ export async function GET(req, { params }) {
     const vendor = await prisma.vendors.findUnique({
       where: { id },
       include: {
-        plan: true,
-        category: true,
-        user: true,
+        plan: {
+          select: {
+            id: true,
+            name: true,
+          }
+        },
+        category: {
+          select: {
+            id: true,
+            name: true
+          }
+        },
+        user: {
+          select: {
+            firstname: true,
+            lastname: true,
+            email: true,
+          }
+        },
       },
     });
 
