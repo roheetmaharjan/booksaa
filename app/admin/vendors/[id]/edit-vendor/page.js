@@ -73,9 +73,9 @@ export default function EditVendor() {
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
     planId: { required: true, message: "Plan is required" },
-    serviceName: {required:true, message: "Service name is require"},
-    price: {required:true,message: "Price is required"},
-    duration: {required: true, message: "Duration is required"},
+    serviceName: { required: true, message: "Service name is require" },
+    price: { required: true, message: "Price is required" },
+    duration: { required: true, message: "Duration is required" },
   };
   useEffect(() => {
     const fetchCategories = async () => {
@@ -102,6 +102,11 @@ export default function EditVendor() {
     };
     fetchPlans();
     fetchCategories();
+    fetch(`/api/services/`)
+      .then((res) => res.json())
+      .then((data) => {
+        setServices(data);
+      });
     fetch(`/api/vendors/${id}`)
       .then((res) => res.json())
       .then((data) => {
@@ -159,7 +164,7 @@ export default function EditVendor() {
       const res = await fetch("/api/services/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({...serviceForm, vendorId: id}),
+        body: JSON.stringify({ ...serviceForm, vendorId: id }),
       });
 
       const data = await res.json();
@@ -180,7 +185,7 @@ export default function EditVendor() {
     } catch (err) {
       console.error("Submit error:", err);
       setError("Something went wrong.");
-    } finally{
+    } finally {
       setLoading(false);
     }
   };
@@ -418,6 +423,9 @@ export default function EditVendor() {
                 </form>
               </TabsContent>
               <TabsContent value="services">
+                {services.map((service) => {
+                  <h4 key={id}>{service.name}</h4>;
+                })}
                 <Button onClick={() => setAddServiceOpen(true)}>
                   Add Service
                 </Button>

@@ -32,7 +32,6 @@ const Hero = () => {
                     ]}
                     wrapper="span"
                     speed={50}
-										style={{ marginLeft: '10px'}}
                     repeat={Infinity}
                   />
                 </h1>

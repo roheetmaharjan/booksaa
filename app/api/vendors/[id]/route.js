@@ -162,7 +162,7 @@ export async function DELETE(req, { params }) {
   } catch (error) {
     console.error("Delete error:", error);
     return NextResponse.json(
-      { error: "Failed to delete vendor or user" },
+      { error: "Failed to delete vendor" },
       { status: 500 }
     );
   }
