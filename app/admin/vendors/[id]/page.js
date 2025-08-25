@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
+import ServiceList from "@/components/common/ServiceList";
 
 export default function VendorDetail() {
   const { id: vendorId } = useParams();
@@ -220,7 +221,9 @@ export default function VendorDetail() {
                 </div>
               </div>
             </TabsContent>
-            <TabsContent value="services">comming soon</TabsContent>
+            <TabsContent value="services">
+              <ServiceList vendorId={vendor.id}/>
+            </TabsContent>
             <TabsContent value="professionals">Coming Soon</TabsContent>
             <TabsContent value="photos">Coming Soon</TabsContent>
             <TabsContent value="reviews">Review Comming Soon</TabsContent>

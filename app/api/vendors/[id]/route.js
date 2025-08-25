@@ -26,6 +26,15 @@ export async function GET(req, { params }) {
             email: true,
           }
         },
+        services:{
+          select:{
+            id:true,
+            name:true,
+            description: true,
+            duration: true,
+            price:true,
+          }
+        }
       },
     });
 

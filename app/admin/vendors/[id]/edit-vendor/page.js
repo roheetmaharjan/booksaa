@@ -2,13 +2,6 @@
 import { UsersLayout } from "@/app/admin/layout";
 import Loading from "@/components/common/Loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
 import { useParams, useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
@@ -24,8 +17,8 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { PriceField } from "@/components/common/PriceField";
-import { useFormState } from "@/hooks/useFormState";
+import ServiceList from "@/components/common/ServiceList";
+
 
 export default function EditVendor() {
   const { id } = useParams();
@@ -44,24 +37,10 @@ export default function EditVendor() {
     status: "",
     image: "",
   });
-  const {
-    formState: serviceForm,
-    handleChange: handleServiceChange,
-    resetForm,
-  } = useFormState({
-    name: "",
-    description: "",
-    price: "",
-    duration: "",
-  });
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [categories, setCategories] = useState([]);
-  const [services, setServices] = useState([]);
-  const [error, setError] = useState("");
   const [plans, setPlans] = useState([]);
-  const [openLocation, setLocationOpen] = useState(false);
-  const [openAddService, setAddServiceOpen] = useState(false);
   const validationRules = {
     "user.firstname": { required: true, message: "First name is required" },
     "user.lastname": { required: true, message: "Last name is required" },
@@ -73,9 +52,7 @@ export default function EditVendor() {
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
     planId: { required: true, message: "Plan is required" },
-    serviceName: { required: true, message: "Service name is require" },
-    price: { required: true, message: "Price is required" },
-    duration: { required: true, message: "Duration is required" },
+    
   };
   useEffect(() => {
     const fetchCategories = async () => {
@@ -102,11 +79,6 @@ export default function EditVendor() {
     };
     fetchPlans();
     fetchCategories();
-    fetch(`/api/services/`)
-      .then((res) => res.json())
-      .then((data) => {
-        setServices(data);
-      });
     fetch(`/api/vendors/${id}`)
       .then((res) => res.json())
       .then((data) => {
@@ -136,7 +108,7 @@ export default function EditVendor() {
       }));
     }
   };
-  const handleSubmit = async (e) => {
+  const handleDetailSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(form, validationRules);
     setFormErrors(errors);
@@ -155,40 +127,6 @@ export default function EditVendor() {
       toast.error("failed to update vendor");
     }
   };
-  const handleAddService = async (e) => {
-    e.preventDefault();
-    setError("");
-    setLoading(true);
-
-    try {
-      const res = await fetch("/api/services/create", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...serviceForm, vendorId: id }),
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
-        setError(data.error || "Service creation failed");
-        setLoading(false);
-        return;
-      }
-
-      // Success: reset form, close dialog, show toast
-      resetForm(); // if you're using useFormState
-      setAddServiceOpen(false);
-      toast.success("Service has been created.");
-
-      // Refresh list
-      const updated = await fetch("/api/services").then((res) => res.json());
-      setServices(updated);
-    } catch (err) {
-      console.error("Submit error:", err);
-      setError("Something went wrong.");
-    } finally {
-      setLoading(false);
-    }
-  };
 
   return (
     <UsersLayout>
@@ -201,11 +139,8 @@ export default function EditVendor() {
         <div>Vendor not found</div>
       ) : (
         <>
-          <Tabs
-            defaultValue="detail"
-            className="grid grid-cols-12 gap-2 items-start"
-          >
-            <TabsList className="col-span-2 flex-col h-auto bg-transparent">
+          <Tabs defaultValue="detail" className="gap-2 items-start">
+            <TabsList className="h-auto bg-transparent">
               <TabsTrigger className="block w-full text-left" value="detail">
                 Detail
               </TabsTrigger>
@@ -234,10 +169,10 @@ export default function EditVendor() {
                 Location
               </TabsTrigger>
             </TabsList>
-            <div className="col-span-9 px-3">
+            <div className="px-3">
               <TabsContent value="detail">
-                <form onSubmit={handleSubmit}>
-                  <div className="max-w-2xl m-auto">
+                <form onSubmit={handleDetailSubmit}>
+                  <div className="max-w-2xl">
                     <div className="flex gap-2 items-center mb-3 justify-start">
                       <figure>
                         {form.image ? (
@@ -417,22 +352,17 @@ export default function EditVendor() {
                     </div>
                     <hr />
                     <div className="py-2">
-                      <Button>Save</Button>
+                      <Button onClick={handleDetailSubmit}>Save</Button>
                     </div>
                   </div>
                 </form>
               </TabsContent>
               <TabsContent value="services">
-                {services.map((service) => {
-                  <h4 key={id}>{service.name}</h4>;
-                })}
-                <Button onClick={() => setAddServiceOpen(true)}>
-                  Add Service
-                </Button>
+                <ServiceList vendorId={form.id}/>
               </TabsContent>
               <TabsContent value="location">
                 {form.location ? (
-                  <p>{vendor.address}</p>
+                  <p>{form.address}</p>
                 ) : (
                   <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
                     <h4 className="font-bold text-lg">No Location added</h4>
@@ -454,63 +384,6 @@ export default function EditVendor() {
               <TabsContent value="reviews">Review Comming Soon</TabsContent>
             </div>
           </Tabs>
-          <Dialog open={openAddService} onOpenChange={setAddServiceOpen}>
-            <form onSubmit={handleAddService}>
-              <DialogContent className="sm:max-w-[650px]">
-                <DialogHeader>
-                  <DialogTitle>Add Service</DialogTitle>
-                </DialogHeader>
-                <div className="mb-3">
-                  <Label htmlFor="name">Service Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    onChange={handleServiceChange}
-                    value={serviceForm.name}
-                  />
-                </div>
-                <div className="mb-2">
-                  <Label htmlFor="description">Description</Label>
-                  <Textarea
-                    name="description"
-                    onChange={handleServiceChange}
-                    value={serviceForm.description}
-                  />
-                </div>
-                <div className="grid gap-2 grid-cols-12">
-                  <div className="col-span-6">
-                    <PriceField
-                      onChange={handleServiceChange}
-                      value={serviceForm.price}
-                    />
-                  </div>
-                  <div className="col-span-6">
-                    <Label htmlFor="price">Duration</Label>
-                    <div className="flex items-center">
-                      <Input
-                        type="number"
-                        id="duration"
-                        name="duration"
-                        value={serviceForm.duration}
-                        placeholder="Enter duration"
-                        onChange={handleServiceChange}
-                        className="rounded-r-none"
-                      />
-                      <span className="px-3 py-[7px] bg-muted text-muted-foreground rounded-r-md border border-l-0">
-                        min
-                      </span>
-                    </div>
-                  </div>
-                </div>
-                <DialogFooter className="mt-4">
-                  <Button variant="secondary">Cancel</Button>
-                  <Button type="submit" onClick={handleAddService}>
-                    Save
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </form>
-          </Dialog>
         </>
       )}
     </UsersLayout>

@@ -4,7 +4,7 @@ import { Label } from "@/components/ui/label"
 export function PriceField({ value, onChange }) {
   return (
     <div className="grid w-full max-w-sm items-center gap-2">
-      <Label htmlFor="price">Price</Label>
+      <Label htmlFor="price">Price <span className="astrick">*</span></Label>
       <div className="flex items-center">
         <span className="px-3 py-[7px] bg-muted text-muted-foreground rounded-l-md border border-r-0">
           $

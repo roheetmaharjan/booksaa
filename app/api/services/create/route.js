@@ -4,6 +4,8 @@ import { prisma } from "@/lib/prisma";
 export async function POST(req) {
   try {
     const { name, price, duration, description, vendorId } = await req.json();
+
+    // Validate required fields
     if (!vendorId) {
       return NextResponse.json(
         { error: "Vendor ID is required" },
@@ -13,11 +15,12 @@ export async function POST(req) {
 
     if (!name?.trim() || isNaN(Number(price)) || isNaN(Number(duration))) {
       return NextResponse.json(
-        { error: "Invalid input: name, price, duration are required" },
+        { error: "Invalid input: name, price, and duration are required" },
         { status: 400 }
       );
     }
 
+    // Check vendor exists
     const vendorExists = await prisma.vendors.findUnique({
       where: { id: vendorId },
     });
@@ -26,13 +29,19 @@ export async function POST(req) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
     }
 
+    // Check if service name already exists for this vendor
     const exists = await prisma.service.findUnique({
-      where: { name },
+      where: {
+        name_vendorId: {
+          name,
+          vendorId,
+        },
+      },
     });
 
     if (exists) {
       return NextResponse.json(
-        { error: "Name already exists" },
+        { error: "Service name is already taken" },
         { status: 409 }
       );
     }
@@ -42,7 +51,7 @@ export async function POST(req) {
         name,
         description,
         price: parseFloat(price),
-        duration: parseFloat(duration, 10),
+        duration: parseFloat(duration),
         vendorId,
       },
     });
