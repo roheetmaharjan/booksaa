@@ -33,7 +33,7 @@ export default function AddService({ open, setAddServiceOpen,vendorId }) {
     duration: "",
   });
   const validationRules = {
-    serviceName: { required: true, message: "Service name is require" },
+    name: { required: true, message: "Service name is required" },
     price: { required: true, message: "Price is required" },
     duration: { required: true, message: "Duration is required" },
   };
@@ -62,9 +62,6 @@ export default function AddService({ open, setAddServiceOpen,vendorId }) {
       setAddServiceOpen(false);
       toast.success("Service has been created.");
 
-      // Refresh list
-      const updated = await fetch(`"/api/vendors/${id}"`).then((res) => res.json());
-      setServices(updated);
     } catch (err) {
       console.error("Submit error:", err);
       setError("Something went wrong.");
@@ -88,8 +85,8 @@ export default function AddService({ open, setAddServiceOpen,vendorId }) {
                 onChange={handleServiceChange}
                 value={serviceForm.name}
               />
-              {formErrors && formErrors.serviceName && (
-                <p className="text-sm text-red-500">{formErrors.serviceName}</p>
+              {formErrors && formErrors.name && (
+                <p className="text-sm text-red-500">{formErrors.name}</p>
               )}
             </div>
             <div className="mb-2">
