@@ -19,7 +19,6 @@ import {
 } from "@/components/ui/select";
 import ServiceList from "@/components/common/ServiceList";
 
-
 export default function EditVendor() {
   const { id } = useParams();
   const router = useRouter();
@@ -52,7 +51,6 @@ export default function EditVendor() {
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
     planId: { required: true, message: "Plan is required" },
-    
   };
   useEffect(() => {
     const fetchCategories = async () => {
@@ -172,193 +170,201 @@ export default function EditVendor() {
             <div className="px-3">
               <TabsContent value="detail">
                 <form onSubmit={handleDetailSubmit}>
-                  <div className="max-w-2xl">
-                    <div className="flex gap-2 items-center mb-3 justify-start">
-                      <figure>
-                        {form.image ? (
-                          <img
-                            src={form.image}
-                            alt={`${form.name} Image`}
-                            className="h-10 w-10 object-cover rounded"
-                          />
-                        ) : (
-                          <span className="w-24 h-24 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
-                            {form.name?.charAt(0)}
-                          </span>
-                        )}
-                      </figure>
-                      <Button variant="outline">Change Image</Button>
-                    </div>
-                    <div className="mb-2">
-                      <Label htmlFor="name">
-                        Business Name <span className="astrick">*</span>
-                      </Label>
-                      <Input
-                        name="name"
-                        value={form.name || ""}
-                        onChange={handleChange}
-                        placeholder="Business Name"
-                      />
-                      {formErrors && formErrors.name && (
-                        <p className="text-sm text-red-500">
-                          {formErrors.name}
-                        </p>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-12 mb-2 gap-2">
-                      <div className="col-span-6 mb-2">
-                        <Label htmlFor="categoryId">
-                          Category <span className="astrick">*</span>
-                        </Label>
-                        <Select
-                          id="categoryId"
-                          name="categoryId"
-                          value={form.categoryId}
-                          onValueChange={(value) =>
-                            setForm((prev) => ({ ...prev, categoryId: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Category" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {categories.length === 0 ? (
-                              <SelectItem key="No-category" value="No-Category">
-                                No categories found. Please add one to get
-                                started.
-                              </SelectItem>
-                            ) : (
-                              categories.map((category) => (
-                                <SelectItem
-                                  key={category.id}
-                                  value={category.id}
-                                >
-                                  {category.name}
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        {formErrors && formErrors.categoryId && (
-                          <p className="text-sm text-red-500">
-                            {formErrors.categoryId}
-                          </p>
-                        )}
+                  <div className="grid grid-cols-12 gap-3">
+                    <div className="col-span-12 md:col-span-12 lg:col-span-7">
+                      <div className="flex gap-2 items-center mb-3 justify-start">
+                        <figure>
+                          {form.image ? (
+                            <img
+                              src={form.image}
+                              alt={`${form.name} Image`}
+                              className="h-10 w-10 object-cover rounded"
+                            />
+                          ) : (
+                            <span className="w-24 h-24 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
+                              {form.name?.charAt(0)}
+                            </span>
+                          )}
+                        </figure>
+                        <Button variant="outline">Change Image</Button>
                       </div>
-                      <div className="col-span-6 mb-2">
-                        <Label htmlFor="planId">
-                          Plan <span className="astrick">*</span>
-                        </Label>
-                        <Select
-                          id="planId"
-                          name="planId"
-                          value={form.planId}
-                          onValueChange={(value) =>
-                            setForm((prev) => ({ ...prev, planId: value }))
-                          }
-                        >
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select Plans"></SelectValue>
-                          </SelectTrigger>
-                          <SelectContent>
-                            {plans.length === 0 ? (
-                              <SelectItem key="no-plans" value="no-plans">
-                                No plans found. Please add one to get started.
-                              </SelectItem>
-                            ) : (
-                              plans.map((plan) => (
-                                <SelectItem key={plan.id} value={plan.id}>
-                                  {plan.name}
-                                </SelectItem>
-                              ))
-                            )}
-                          </SelectContent>
-                        </Select>
-                        {formErrors && formErrors.planId && (
-                          <p className="text-sm text-red-500">
-                            {formErrors.planId}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                    <div className="mb-2">
-                      <Label htmlFor="phone">Phone</Label>
-                      <Input
-                        name="phone"
-                        value={form.phone || ""}
-                        onChange={handleChange}
-                        placeholder="Enter phone number"
-                      />
-                    </div>
-                    <div className="mb-2">
-                      <Label htmlFor="description">Description</Label>
-                      <Textarea
-                        name="description"
-                        value={form.description || ""}
-                        onChange={handleChange}
-                      />
-                    </div>
-                    <hr />
-                    <div className="border p-4">
-                      <h4 className="font-bold mb-3 text-base">
-                        User Information
-                      </h4>
                       <div className="mb-2">
-                        <Label htmlFor="firstname">
-                          Email <span className="astrick">*</span>
+                        <Label htmlFor="name">
+                          Business Name <span className="astrick">*</span>
                         </Label>
                         <Input
-                          name="email"
-                          value={form.user.email || ""}
+                          name="name"
+                          value={form.name || ""}
                           onChange={handleChange}
-                          placeholder="Email"
-                          disabled
+                          placeholder="Business Name"
                         />
+                        {formErrors && formErrors.name && (
+                          <p className="text-sm text-red-500">
+                            {formErrors.name}
+                          </p>
+                        )}
                       </div>
                       <div className="grid grid-cols-12 mb-2 gap-2">
-                        <div className="col-span-6">
-                          <Label htmlFor="firstname">
-                            Firstname <span className="astrick">*</span>
+                        <div className="col-span-6 mb-2">
+                          <Label htmlFor="categoryId">
+                            Category <span className="astrick">*</span>
                           </Label>
-                          <Input
-                            name="firstname"
-                            value={form.user.firstname || ""}
-                            onChange={handleChange}
-                            placeholder="Firstname"
-                          />
-                          {formErrors && formErrors["user.firstname"] && (
+                          <Select
+                            id="categoryId"
+                            name="categoryId"
+                            value={form.categoryId}
+                            onValueChange={(value) =>
+                              setForm((prev) => ({
+                                ...prev,
+                                categoryId: value,
+                              }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Category" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {categories.length === 0 ? (
+                                <SelectItem
+                                  key="No-category"
+                                  value="No-Category"
+                                >
+                                  No categories found. Please add one to get
+                                  started.
+                                </SelectItem>
+                              ) : (
+                                categories.map((category) => (
+                                  <SelectItem
+                                    key={category.id}
+                                    value={category.id}
+                                  >
+                                    {category.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {formErrors && formErrors.categoryId && (
                             <p className="text-sm text-red-500">
-                              {formErrors["user.firstname"]}
+                              {formErrors.categoryId}
                             </p>
                           )}
                         </div>
-                        <div className="col-span-6">
-                          <Label htmlFor="lastname">
-                            Lastname <span className="astrick">*</span>
+                        <div className="col-span-6 mb-2">
+                          <Label htmlFor="planId">
+                            Plan <span className="astrick">*</span>
                           </Label>
-                          <Input
-                            name="lastname"
-                            value={form.user.lastname || ""}
-                            onChange={handleChange}
-                            placeholder="Lastname"
-                          />
-                          {formErrors && formErrors["user.lastname"] && (
+                          <Select
+                            id="planId"
+                            name="planId"
+                            value={form.planId}
+                            onValueChange={(value) =>
+                              setForm((prev) => ({ ...prev, planId: value }))
+                            }
+                          >
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select Plans"></SelectValue>
+                            </SelectTrigger>
+                            <SelectContent>
+                              {plans.length === 0 ? (
+                                <SelectItem key="no-plans" value="no-plans">
+                                  No plans found. Please add one to get started.
+                                </SelectItem>
+                              ) : (
+                                plans.map((plan) => (
+                                  <SelectItem key={plan.id} value={plan.id}>
+                                    {plan.name}
+                                  </SelectItem>
+                                ))
+                              )}
+                            </SelectContent>
+                          </Select>
+                          {formErrors && formErrors.planId && (
                             <p className="text-sm text-red-500">
-                              {formErrors["user.lastname"]}
+                              {formErrors.planId}
                             </p>
                           )}
                         </div>
                       </div>
+                      <div className="mb-2">
+                        <Label htmlFor="phone">Phone</Label>
+                        <Input
+                          name="phone"
+                          value={form.phone || ""}
+                          onChange={handleChange}
+                          placeholder="Enter phone number"
+                        />
+                      </div>
+                      <div className="mb-2">
+                        <Label htmlFor="description">Description</Label>
+                        <Textarea
+                          name="description"
+                          value={form.description || ""}
+                          onChange={handleChange}
+                        />
+                      </div>
                     </div>
-                    <hr />
-                    <div className="py-2">
-                      <Button onClick={handleDetailSubmit}>Save</Button>
+                    <div className="col-span-12 md:col-span-12 lg:col-span-5">
+                      <div className="border p-4">
+                        <h4 className="font-bold mb-3 text-base">
+                          User Information
+                        </h4>
+                        <div className="mb-2">
+                          <Label htmlFor="firstname">
+                            Email <span className="astrick">*</span>
+                          </Label>
+                          <Input
+                            name="email"
+                            value={form.user.email || ""}
+                            onChange={handleChange}
+                            placeholder="Email"
+                            disabled
+                          />
+                        </div>
+                        <div className="grid grid-cols-12 mb-2 gap-2">
+                          <div className="col-span-6">
+                            <Label htmlFor="firstname">
+                              Firstname <span className="astrick">*</span>
+                            </Label>
+                            <Input
+                              name="firstname"
+                              value={form.user.firstname || ""}
+                              onChange={handleChange}
+                              placeholder="Firstname"
+                            />
+                            {formErrors && formErrors["user.firstname"] && (
+                              <p className="text-sm text-red-500">
+                                {formErrors["user.firstname"]}
+                              </p>
+                            )}
+                          </div>
+                          <div className="col-span-6">
+                            <Label htmlFor="lastname">
+                              Lastname <span className="astrick">*</span>
+                            </Label>
+                            <Input
+                              name="lastname"
+                              value={form.user.lastname || ""}
+                              onChange={handleChange}
+                              placeholder="Lastname"
+                            />
+                            {formErrors && formErrors["user.lastname"] && (
+                              <p className="text-sm text-red-500">
+                                {formErrors["user.lastname"]}
+                              </p>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
+                  </div>
+                  <div className="py-2">
+                    <Button onClick={handleDetailSubmit}>Save</Button>
                   </div>
                 </form>
               </TabsContent>
               <TabsContent value="services">
-                <ServiceList vendorId={form.id}/>
+                <ServiceList vendorId={form.id} />
               </TabsContent>
               <TabsContent value="location">
                 {form.location ? (

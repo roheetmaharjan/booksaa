@@ -13,56 +13,74 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { PriceField } from "@/components/common/PriceField";
 import { useFormState } from "@/hooks/useFormState";
+import { useState, useEffect } from "react";
+import { validateForm } from "@/utils/formValidator";
 
-export default function EditService() {
-  const [editOpen, setEditOpen] = useState(false);
-  const [newName, setNewName] = useState("");
-  const [selectedCategory, setSelectedCategory] = useState(null);
-  const [form, setForm] = useState({
+export default function EditService({
+  openEdit,
+  setEditServiceOpen,
+  vendorId,
+  service,
+}) {
+  const [formErrors, setFormErrors] = useState({});
+
+  const {
+    formState: serviceForm,
+    handleChange: handleServiceChange,
+    resetForm,
+  } = useFormState({
     id: "",
     name: "",
     description: "",
     price: "",
     duration: "",
   });
-  const handleEditClick = (category) => {
-    setSelectedCategory(category);
-    setNewName(category?.name || "");
-    setEditOpen(true);
-  };
-  const handleUpdate = async () => {
-    if (!newName.trim()) {
-      toast.error("Name cannot be empty");
-      return;
+
+  useEffect(() => {
+    if (service) {
+      resetForm({
+        id: service.id || "",
+        name: service.name || "",
+        description: service.description || "",
+        price: service.price || "",
+        duration: service.duration || "",
+      });
     }
-    const formData = new FormData();
-    formData.append("name", newName);
-    
-    const serviceId = selectedService?.id;
+  }, [service]);
+
+  const validationRules = {
+    name: { required: true, message: "Service name is required" },
+    price: { required: true, message: "Price is required" },
+    duration: { required: true, message: "Duration is required" },
+  };
+  const handleUpdate = async (e) => {
+    e.preventDefault();
+    // Validate form
+    const errors = validateForm(serviceForm, validationRules);
+    setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+
     try {
-      const res = await fetch(`/api/services/${serviceId}`, {
+      const res = await fetch(`/api/services/${service.id}`, {
         method: "PATCH",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(serviceForm),
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success("Category updated successfully");
-        setEditOpen(false);
-        const updated = await fetch("/api/categories").then((res) =>
-          res.json()
-        );
-        setCategories(updated);
+        toast.success("Service updated successfully");
+        setEditServiceOpen(false);
       } else {
-        toast.error(data.error || "failed to update user");
+        toast.error(data.error || "failed to update service");
       }
-    } catch {
+    } catch (error) {
       console.error("Update error", error);
-      toast.error("An error occured");
+      toast.error("An error occurred");
     }
   };
   return (
-    <Dialog>
-      <form>
+    <Dialog open={openEdit} onOpenChange={setEditServiceOpen}>
+      <form onSubmit={handleUpdate}>
         <DialogContent className="sm:max-w-[650px]">
           <DialogHeader>
             <DialogTitle>Edit Service</DialogTitle>
@@ -71,18 +89,30 @@ export default function EditService() {
             <Label htmlFor="name">
               Service Name <span className="astrick">*</span>
             </Label>
-            <Input id="name" name="name" onChange={handleServiceChange} />
-            {formErrors && formErrors.serviceName && (
-              <p className="text-sm text-red-500">{formErrors.serviceName}</p>
+            <Input
+              id="name"
+              name="name"
+              onChange={handleServiceChange}
+              value={serviceForm.name}
+            />
+            {formErrors && formErrors.name && (
+              <p className="text-sm text-red-500">{formErrors.name}</p>
             )}
           </div>
           <div className="mb-2">
             <Label htmlFor="description">Description</Label>
-            <Textarea name="description" onChange={handleServiceChange} />
+            <Textarea
+              name="description"
+              onChange={handleServiceChange}
+              value={serviceForm.description}
+            />
           </div>
           <div className="grid gap-2 grid-cols-12">
             <div className="col-span-6">
-              <PriceField onChange={handleServiceChange} />
+              <PriceField
+                onChange={handleServiceChange}
+                value={serviceForm.price}
+              />
               {formErrors && formErrors.price && (
                 <p className="text-sm text-red-500">{formErrors.price}</p>
               )}
@@ -99,6 +129,7 @@ export default function EditService() {
                   placeholder="Enter duration"
                   onChange={handleServiceChange}
                   className="rounded-r-none"
+                  value={serviceForm.duration}
                 />
                 <span className="px-3 py-[7px] bg-muted text-muted-foreground rounded-r-md border border-l-0">
                   min
@@ -111,9 +142,7 @@ export default function EditService() {
           </div>
           <DialogFooter className="mt-4">
             <Button variant="secondary">Cancel</Button>
-            <Button type="submit" onClick={handleAddService}>
-              Save
-            </Button>
+            <Button type="submit" onClick={handleUpdate}>Save</Button>
           </DialogFooter>
         </DialogContent>
       </form>
