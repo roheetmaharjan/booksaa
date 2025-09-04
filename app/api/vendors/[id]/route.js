@@ -34,6 +34,16 @@ export async function GET(req, { params }) {
             duration: true,
             price:true,
           }
+        },
+        professionals:{
+          select:{
+            id: true,
+            name: true,
+            email: true,
+            role : true,
+            status: true,
+            phone: true
+          }
         }
       },
     });

@@ -63,7 +63,7 @@ export function SettingsSidebar({startTransition}) {
   }
   return (
     
-    <Sidebar className="top-[53px]" collapsible="icon">
+    <Sidebar collapsible="icon" className="pt-[49px]">
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Settings</SidebarGroupLabel>

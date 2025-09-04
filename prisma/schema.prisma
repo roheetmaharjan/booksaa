@@ -2,6 +2,11 @@ generator client {
   provider = "prisma-client-js"
 }
 
+generator enum {
+  provider = "prisma-enum-generator"
+  output   = "./constants/enums.js"
+}
+
 datasource db {
   provider = "postgresql"
   url      = env("DATABASE_URL")
@@ -46,6 +51,7 @@ model Vendors {
   userId              String        @unique
   user                Users         @relation(fields: [userId], references: [id])
   isComplete          Boolean       @default(false)
+  professionals       Professional[]
 }
 
 model Category {
@@ -63,6 +69,7 @@ model Plans {
   trial_period Int
   billing_cycle String
   createdAt  DateTime @default(now())
+  professional   Int        @default(1)
   vendors     Vendors[]
 }
 
@@ -113,6 +120,26 @@ model Service{
   @@unique([name, vendorId])
 }
 
+model Professional {
+  id         String   @id @default(uuid())
+  name       String
+  email      String?  @unique
+  phone      String?
+  vendorId   String
+  vendor     Vendors  @relation(fields: [vendorId], references: [id])
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+  roleId   String
+  role     ProfessionalRole @relation(fields: [roleId], references: [id])
+  status    ProfessionalStatus @default(INACTIVE)
+}
+
+model ProfessionalRole {
+  id    String @id @default(cuid())
+  name  String @unique
+  professionals Professional[]
+}
+
 enum UserStatus {
   ACTIVE
   INACTIVE
@@ -133,3 +160,10 @@ enum AccountStatus {
   INACTIVE
   PENDING
 }
+
+enum ProfessionalStatus {
+  ACTIVE
+  INACTIVE
+  PENDING
+}
+

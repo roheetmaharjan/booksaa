@@ -10,7 +10,7 @@ import { usePathname } from "next/navigation";
 export default function ServiceList({ vendorId }) {
   const [openAddService, setAddServiceOpen] = useState(false);
   const [openEditService, setEditServiceOpen] = useState(false);
-  const [selectedService, setSelectedService] = useState(null); // 🔑 whole service
+  const [selectedService, setSelectedService] = useState(null); 
   const [vendor, setVendorDetail] = useState(null);
   const [openAlert, setAlertOpen] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -46,7 +46,7 @@ export default function ServiceList({ vendorId }) {
   };
 
   const handleEditServiceClick = (service) => {
-    setSelectedService(service);   // 🔑 store service in state
+    setSelectedService(service);  
     setEditServiceOpen(true);
   };
 

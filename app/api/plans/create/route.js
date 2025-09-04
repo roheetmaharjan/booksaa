@@ -11,7 +11,7 @@ export async function POST(req) {
       return NextResponse.json(
         {
           error:
-            "Name, price, trial period, billing cycle and duration are required",
+            "Name, price, trial period, billing cycle, professional and duration are required",
         },
         { status: 400 }
       );
@@ -35,6 +35,7 @@ export async function POST(req) {
         trial_period: parseInt(trial_period),
         billing_cycle,
         duration: parseInt(duration),
+        professional: professional ?? 1
       },
     });
 

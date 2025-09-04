@@ -18,6 +18,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import ServiceList from "@/components/common/ServiceList";
+import ProfessionalList from "@/components/common/ProfessionalList";
 
 export default function EditVendor() {
   const { id } = useParams();
@@ -138,7 +139,7 @@ export default function EditVendor() {
       ) : (
         <>
           <Tabs defaultValue="detail" className="gap-2 items-start">
-            <TabsList className="h-auto bg-transparent">
+            <TabsList>
               <TabsTrigger className="block w-full text-left" value="detail">
                 Detail
               </TabsTrigger>
@@ -385,7 +386,9 @@ export default function EditVendor() {
               <TabsContent value="businesshours">
                 this is business hours
               </TabsContent>
-              <TabsContent value="professionals">Coming Soon</TabsContent>
+              <TabsContent value="professionals">
+                  <ProfessionalList vendorId={form.id} />
+              </TabsContent>
               <TabsContent value="photos">Coming Soon</TabsContent>
               <TabsContent value="reviews">Review Comming Soon</TabsContent>
             </div>
