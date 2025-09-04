@@ -33,7 +33,7 @@ export default function BusinessHours() {
     }))
   );
 
-  const updateDay = (index: number, key: string, value: any) => {
+  const updateDay = (index, key, value) => {
     setHours((prev) => {
       const updated = [...prev];
       updated[index] = { ...updated[index], [key]: value };
