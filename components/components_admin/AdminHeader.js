@@ -14,7 +14,7 @@ export default function AdminHeader({startTransition}) {
     })
   }
   return (
-    <div className="flex border-b py-3 px-4 flex-row justify-between sticky top-0 bg-white">
+    <header className="flex border-b py-3 px-4 flex-row justify-between fixed w-full top-0 bg-white z-20">
       <div className="w-full flex flex-row gap-5 item-center justify-between">
         <div className="flex">
           <Image src="/logo.png" width="120" height="100" alt="Bookaroo" style="width: 100%; height: auto " />
@@ -33,7 +33,7 @@ export default function AdminHeader({startTransition}) {
           Menu
         </div>
       </div>
-    </div>
+    </header>
   );
 }
   

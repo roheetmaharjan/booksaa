@@ -11,7 +11,13 @@ export default function AdminLayout({ children }) {
   return (
     <div>
       <AdminHeader startTransition={startTransition} />
-        {isPending ? <Loading /> : <main>{children}</main>}
+      {isPending ? (
+        <main className="flex-1 h-[100vh - 49px] mt-[49px]">
+          <Loading />
+        </main>
+      ) : (
+        <main className="flex-1 h-[100vh - 49px] mt-[49px]">{children}</main>
+      )}
     </div>
   );
 }
@@ -21,16 +27,14 @@ export function UsersLayout({ children }) {
   return (
     <SidebarProvider className="min-h-fit">
       <UsersSidebar startTransition={startTransition} />
-      {isPending ?
-        <Loading />
-       : 
-        <main className="flex-1">
-          <SidebarTrigger className="flex md:hidden"  />
-          <div className="container-fluid">
-            {children}
-          </div>
-        </main>
-      }
+      {isPending ? (
+          <Loading />
+      ) : (
+        <div className="flex-1">
+          <SidebarTrigger className="flex md:hidden" />
+          <div className="container-fluid">{children}</div>
+        </div>
+      )}
     </SidebarProvider>
   );
 }
@@ -39,16 +43,14 @@ export function SettingsLayout({ children }) {
   return (
     <SidebarProvider className="min-h-fit">
       <SettingsSidebar startTransition={startTransition} />
-      {isPending ?
-        <Loading />
-       : 
-        <main className="flex-1">
+      {isPending ? (
+          <Loading />
+      ) : (
+        <div className="flex-1">
           <SidebarTrigger className="flex md:hidden" />
-          <div className="container-fluid">
-            {children}
-          </div>
-        </main>
-      }
+          <div className="container-fluid">{children}</div>
+        </div>
+      )}
     </SidebarProvider>
   );
 }

@@ -32,8 +32,8 @@ export default function Plan() {
               <th className="text-left w-40 text-sm">Billing Cycle</th>
               <th className="text-left w-40 text-sm">Trial Period</th>
               <th className="text-left w-40 text-sm">Duration</th>
-              <th className="text-left w-1/5 text-sm">Enrolled Vendors</th>
-              <th className="text-left text-sm">Action</th>
+              <th className="text-left w-1/6 text-sm">Enrolled Vendors</th>
+              <th className="text-left w-40 text-sm">Professionals</th>
             </tr>
           </thead>
           <tbody>
@@ -59,6 +59,8 @@ export default function Plan() {
                   <td>{plan.trial_period}</td>
                   <td>{plan.duration}</td>
                   <td>{plan._count?.vendors || 0}</td>
+                  <td>{plan.professional}</td>
+                  <td></td>
                 </tr>
               ))
             )}

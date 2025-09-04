@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState,useCallback } from "react";
 
 export function useFormState(initialState) {
   const [formState, setFormState] = useState(initialState);
@@ -26,7 +26,10 @@ export function useFormState(initialState) {
     }
   };
 
-  const resetForm = () => setFormState(initialState);
+  const resetForm = useCallback(
+    (newState = initialState) => setFormState(newState),
+    [initialState]
+  );
 
   return { formState, setFormState, handleChange, resetForm };
 }

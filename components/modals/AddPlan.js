@@ -15,6 +15,7 @@ export default function AddPlans({ open, setAdd }) {
     trial_period: "",
     duration:"",
     billing_cycle: "",
+    professional : 1,
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -25,6 +26,7 @@ export default function AddPlans({ open, setAdd }) {
     duration: { required: true, message: "Duration is required" },
     trial_period: { required: true, message: "Trial period is required" },
     billing_cycle: { required: true, message: "Billing Cycle is required" },
+    professional: {required: true, message: "Professional is required"}
   };
 
 
@@ -56,7 +58,8 @@ export default function AddPlans({ open, setAdd }) {
         price: "",
         duration:"",
         billing_cycle: "",
-        trial_period: ""
+        trial_period: "",
+        professional: 1,
       });
       // setExpiryDate(new Date());
     } catch (err) {
@@ -159,6 +162,20 @@ export default function AddPlans({ open, setAdd }) {
                   {formErrors.trial_period}
                 </p>
               )}
+            </div>
+            <div>
+              <Label htmlFor="professional">
+                Professionals<span className="astrick">*</span>
+              </Label>
+              <Input
+                id="professional"
+                name="professional"
+                type="number"
+                min={1}
+                value={form.professional}
+                onChange={handleChange}
+                placeholder="14"
+              />
             </div>
           </div>
           <DialogFooter className="mt-2 pt-2">
