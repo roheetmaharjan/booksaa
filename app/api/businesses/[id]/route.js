@@ -1,5 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { AccountStatus } from "@/constants/enums";
 
 export async function GET(req, { params }) {
   const { id } = await params;
@@ -11,6 +12,7 @@ export async function GET(req, { params }) {
           select: {
             id: true,
             name: true,
+            professional: true,
           }
         },
         category: {
@@ -56,11 +58,33 @@ export async function GET(req, { params }) {
 
     const joinedAtDateOnly = vendor.joinedAt.toISOString().slice(0, 10);
     const trialEndsAtDateOnly = vendor.trialEndsAt.toISOString().slice(0, 10);
+    
+    //Check the status
+    const now = new Date();
+    const trialEnd = new Date(vendor.trialEndsAt);
+
+    let accountStatus = vendor.status;
+
+    if(vendor.trialEndsAt){
+      if(now > trialEnd){
+        accountStatus = AccountStatus.TRIAL_EXPIRED;
+      }else{
+        const diffMs = trialEnd - now;
+        const diffDays = Math.ceil (diffMs / (1000 * 60 * 60 * 24));
+        accountStatus =
+          diffDays <=3 
+            ? AccountStatus.TRIAL_EXPIRING
+            : AccountStatus.TRIAL_ACTIVE;
+      }
+    }
+
+
 
     const result = {
       ...vendor,
       joinedAt: joinedAtDateOnly,
       trialEndsAt: trialEndsAtDateOnly,
+      status : accountStatus
     };
 
     return new Response(JSON.stringify(result), {
@@ -96,7 +120,7 @@ export async function PUT(req, { params }) {
 
     const userFirstname = data.user?.firstname;
     const userLastname = data.user?.lastname;
-    const userEmail = data.user?.email;
+
 
     if (!name) {
       return NextResponse.json(

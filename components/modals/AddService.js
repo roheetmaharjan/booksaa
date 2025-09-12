@@ -61,7 +61,6 @@ export default function AddService({ open, setAddServiceOpen,vendorId }) {
       resetForm();
       setAddServiceOpen(false);
       toast.success("Service has been created.");
-
     } catch (err) {
       console.error("Submit error:", err);
       setError("Something went wrong.");

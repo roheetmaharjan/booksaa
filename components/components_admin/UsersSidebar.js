@@ -21,8 +21,8 @@ const items = [
     icon: UsersIcon,
   },
   {
-    title: "Vendors",
-    url: "/admin/vendors",
+    title: "Businesses",
+    url: "/admin/businesses",
     icon: StorefrontIcon,  
   },
   {

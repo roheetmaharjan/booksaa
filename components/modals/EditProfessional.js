@@ -22,7 +22,6 @@ export default function EditProfessional({
   openEdit,
   setEditProfessionalOpen,
   professional,
-  vendorId,
   roles, 
   loading: rolesLoading,
   error: rolesError,
@@ -42,14 +41,13 @@ export default function EditProfessional({
     status: "",
   });
 
-  // Populate form when professional is passed
   useEffect(() => {
     if (professional) {
       resetForm({
         id: professional.id || "",
         name: professional.name || "",
         email: professional.email || "",
-        role: professional.roleId || "",
+        role: professional.role ? String(professional.role.id) : "",
         status: professional.status || "",
         phone: professional.phone || "",
       });
@@ -65,7 +63,6 @@ export default function EditProfessional({
     status: { required: true, message: "Status is required" },
   };
 
-  // Mutation hook at top level
   const {
     mutate: editProfessional,
     loading: editLoading,
@@ -82,9 +79,20 @@ export default function EditProfessional({
     if (Object.keys(errors).length > 0) return;
 
     try {
-      await editProfessional(professionalForm);
-      toast.success("Professional updated successfully");
+      await editProfessional({
+        ...professionalForm,
+        roleId : professionalForm.role
+      });
       setEditProfessionalOpen(false);
+      toast.success("Professional updated successfully");
+      professionalForm({
+        id: "",
+        name: "",
+        email: "",
+        role: "",
+        phone: "",
+        status: "",
+      });
     } catch (err) {
       toast.error(err.message || "Failed to update professional");
     }
@@ -98,7 +106,6 @@ export default function EditProfessional({
             <DialogTitle>Edit Professional</DialogTitle>
           </DialogHeader>
 
-          {/* Name */}
           <div className="mb-3">
             <Label htmlFor="name">Professional Name <span className="astrick">*</span></Label>
             <Input
@@ -110,7 +117,6 @@ export default function EditProfessional({
             {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
           </div>
 
-          {/* Email */}
           <div className="mb-3">
             <Label htmlFor="email">Email <span className="astrick">*</span></Label>
             <Input
@@ -122,7 +128,6 @@ export default function EditProfessional({
             {formErrors.email && <p className="text-sm text-red-500">{formErrors.email}</p>}
           </div>
 
-          {/* Phone */}
           <div className="mb-3">
             <Label htmlFor="phone">Phone <span className="astrick">*</span></Label>
             <Input
@@ -135,7 +140,6 @@ export default function EditProfessional({
           </div>
 
           <div className="grid grid-cols-12 gap-3">
-            {/* Role */}
             <div className="mb-3 col-span-6">
               <Label htmlFor="role">Role <span className="astrick">*</span></Label>
               <Select
@@ -152,7 +156,7 @@ export default function EditProfessional({
                     {rolesLoading && <SelectItem disabled>Loading...</SelectItem>}
                     {rolesError && <SelectItem disabled>Error loading roles</SelectItem>}
                     {roles?.map((role) => (
-                      <SelectItem key={role.id} value={role.id}>
+                      <SelectItem key={role.id} value={String(role.id)}>
                         {role.name}
                       </SelectItem>
                     ))}
@@ -162,7 +166,6 @@ export default function EditProfessional({
               {formErrors.role && <p className="text-sm text-red-500">{formErrors.role}</p>}
             </div>
 
-            {/* Status */}
             <div className="mb-3 col-span-6">
               <Label htmlFor="status">Status <span className="astrick">*</span></Label>
               <Select

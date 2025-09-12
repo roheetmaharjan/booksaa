@@ -36,7 +36,7 @@ export default function ProfessionalList({ vendorId }) {
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    fetch(`/api/vendors/${vendorId}`)
+    fetch(`/api/businesses/${vendorId}`)
       .then((res) => res.json())
       .then((data) => {
         setVendorDetail(data);
@@ -53,8 +53,8 @@ export default function ProfessionalList({ vendorId }) {
   if (!vendor) return <p>No vendor found.</p>;
 
   // show button only if pathname contains "edit-vendor"
-  const showAddButton = pathname.includes("edit-vendor");
-  const showActionButton = pathname.includes("edit-vendor");
+  const showAddButton = pathname.includes("edit-business");
+  const showActionButton = pathname.includes("edit-business");
 
   const handleDeleteProfessionalClick = (professional) => {
     setSelectedProfessional(professional);
@@ -74,7 +74,7 @@ export default function ProfessionalList({ vendorId }) {
       const data = await res.json();
       if (res.ok) {
         toast.success("Professional deleted successfully");
-        const updated = await fetch(`/api/vendors/${vendorId}`).then((res) =>
+        const updated = await fetch(`/api/businesses/${vendorId}`).then((res) =>
           res.json()
         );
         setVendorDetail(updated);
@@ -99,6 +99,7 @@ export default function ProfessionalList({ vendorId }) {
             setAddProfessionalOpen={setAddProfessionalOpen}
             vendorId={vendorId}
             roles={roles}
+            vendor={vendor}
           />
         </>
       )}

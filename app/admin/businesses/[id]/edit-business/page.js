@@ -14,11 +14,14 @@ import {
   Select,
   SelectTrigger,
   SelectValue,
+  SelectGroup,
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
 import ServiceList from "@/components/common/ServiceList";
 import ProfessionalList from "@/components/common/ProfessionalList";
+import BusinessHours from "@/components/common/BusinessHour";
+import { useFormState } from "@/hooks/useFormState";
 
 export default function EditVendor() {
   const { id } = useParams();
@@ -36,19 +39,22 @@ export default function EditVendor() {
     categoryId: "",
     status: "",
     image: "",
+    joinedAt: "",
+    cancellation_policy: "",
+    trialEndsAt:""
   });
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const validationRules = {
-    "user.firstname": { required: true, message: "First name is required" },
-    "user.lastname": { required: true, message: "Last name is required" },
-    "user.email": {
-      required: true,
-      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-      message: "Valid email is required",
-    },
+    // "user.firstname": { required: true, message: "First name is required" },
+    // "user.lastname": { required: true, message: "Last name is required" },
+    // "user.email": {
+    //   required: true,
+    //   pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+    //   message: "Valid email is required",
+    // },
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
     planId: { required: true, message: "Plan is required" },
@@ -78,7 +84,7 @@ export default function EditVendor() {
     };
     fetchPlans();
     fetchCategories();
-    fetch(`/api/vendors/${id}`)
+    fetch(`/api/businesses/${id}`)
       .then((res) => res.json())
       .then((data) => {
         setForm(data);
@@ -92,7 +98,7 @@ export default function EditVendor() {
   }, [id]);
   const handleChange = (e) => {
     const { name, value } = e.target;
-    if (["firstname", "lastname", "email"].includes(name)) {
+    if (["firstname", "lastname"].includes(name)) {
       setForm((prev) => ({
         ...prev,
         user: {
@@ -107,6 +113,27 @@ export default function EditVendor() {
       }));
     }
   };
+  // const { formState, handleChange, resetForm } = useFormState(form);
+  const handleResend = async (vendorId) => {
+    try {
+      const res = await fetch("/api/resend-activation", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ vendorId }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to resend activation link");
+      }
+
+      toast.success(data.message);
+    } catch (error) {
+      console.error("Resend failed:", error);
+      toast.error(error.message);
+    }
+  };
   const handleDetailSubmit = async (e) => {
     e.preventDefault();
     const errors = validateForm(form, validationRules);
@@ -114,14 +141,14 @@ export default function EditVendor() {
     console.log(errors);
 
     if (Object.keys(errors).length > 0) return;
-    const res = await fetch(`/api/vendors/${id}`, {
+    const res = await fetch(`/api/businesses/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
     if (res.ok) {
       toast.success("Vendor updated successfully!");
-      router.push("/admin/vendors");
+      router.push("/admin/businesses");
     } else {
       toast.error("failed to update vendor");
     }
@@ -130,14 +157,37 @@ export default function EditVendor() {
   return (
     <UsersLayout>
       <div className="flex flex-row justify-between w-full items-center mb-4">
-        <h4 className="page-title">Edit Vendor</h4>
+        <h4 className="page-title">Edit Business</h4>
       </div>
       {loading ? (
         <Loading />
       ) : !form ? (
-        <div>Vendor not found</div>
+        <div>Business not found</div>
       ) : (
         <>
+          <div className="flex gap-2 items-center mb-3 justify-start">
+            <figure>
+              {form.image ? (
+                <img
+                  src={form.image}
+                  alt={`${form.name} Image`}
+                  className="h-10 w-10 object-cover rounded"
+                />
+              ) : (
+                <span className="w-24 h-24 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
+                  {form.name?.charAt(0)}
+                </span>
+              )}
+            </figure>
+            <div className="flex flex-col gap-1">
+              <h4 className="text-2xl font-bold">{form.name}</h4>
+              {/* <p className="text-gray-500">{form.user.email}</p> */}
+            </div>
+            <Button onClick={() => handleResend(vendor.id)}>
+              Send Activation Link
+            </Button>
+            <Button variant="outline">Change Image</Button>
+          </div>
           <Tabs defaultValue="detail" className="gap-2 items-start">
             <TabsList>
               <TabsTrigger className="block w-full text-left" value="detail">
@@ -168,27 +218,14 @@ export default function EditVendor() {
                 Location
               </TabsTrigger>
             </TabsList>
-            <div className="px-3">
-              <TabsContent value="detail">
-                <form onSubmit={handleDetailSubmit}>
-                  <div className="grid grid-cols-12 gap-3">
-                    <div className="col-span-12 md:col-span-12 lg:col-span-7">
-                      <div className="flex gap-2 items-center mb-3 justify-start">
-                        <figure>
-                          {form.image ? (
-                            <img
-                              src={form.image}
-                              alt={`${form.name} Image`}
-                              className="h-10 w-10 object-cover rounded"
-                            />
-                          ) : (
-                            <span className="w-24 h-24 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
-                              {form.name?.charAt(0)}
-                            </span>
-                          )}
-                        </figure>
-                        <Button variant="outline">Change Image</Button>
-                      </div>
+            <TabsContent value="detail">
+              <form onSubmit={handleDetailSubmit}>
+                <div className="grid grid-cols-12 gap-3">
+                  <div className="col-span-12 md:col-span-12 lg:col-span-7">
+                    <div className="py-4 pr-6 border-r">
+                      <h4 className="font-bold mb-3 text-base">
+                        Company Information
+                      </h4>
                       <div className="mb-2">
                         <Label htmlFor="name">
                           Business Name <span className="astrick">*</span>
@@ -296,102 +333,144 @@ export default function EditVendor() {
                           placeholder="Enter phone number"
                         />
                       </div>
+                      <div className="grid grid-cols-12 gap-2">
+                        <div className="col-span-4">
+                          <div className="mb-2">
+                            <Label htmlFor="phone">Joined Date</Label>
+                            <Input
+                              disabled
+                              name="joineddate"
+                              value={form.joinedAt || ""}
+                              type="text"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-span-4">
+                          <div className="mb-2">
+                            <Label htmlFor="trailEndsAt">Trial Ends Date </Label>
+                            <Input
+                              disabled
+                              name="trailEndsAt"
+                              value={form.trialEndsAt || ""}
+                              type="text"
+                            />
+                          </div>
+                        </div>
+                        <div className="col-span-4">
+                          <div className="mb-2">
+                            <Label htmlFor="status">Status</Label>
+                            <Input
+                              disabled
+                              name="status"
+                              value={form.status || ""}
+                            />
+                          </div>
+                        </div>
+                      </div>
                       <div className="mb-2">
                         <Label htmlFor="description">Description</Label>
                         <Textarea
                           name="description"
                           value={form.description || ""}
                           onChange={handleChange}
+                          className="h-56"
+                        />
+                      </div>
+                      <div className="mb-2">
+                        <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
+                        <Textarea
+                          name="cancellation_policy"
+                          value={form.cancellation_policy || ""}
+                          onChange={handleChange}
+                          className="h-56"
                         />
                       </div>
                     </div>
-                    <div className="col-span-12 md:col-span-12 lg:col-span-5">
-                      <div className="border p-4">
-                        <h4 className="font-bold mb-3 text-base">
-                          User Information
-                        </h4>
-                        <div className="mb-2">
+                  </div>
+                  <div className="col-span-12 md:col-span-12 lg:col-span-5">
+                    <div className="pl-5 py-4">
+                      <h4 className="font-bold mb-3 text-base">
+                        User Information
+                      </h4>
+                      <div className="mb-2">
+                        <Label htmlFor="firstname">
+                          Email <span className="astrick">*</span>
+                        </Label>
+                        <Input
+                          name="email"
+                          value={form.user.email ?? "No email set"}
+                          onChange={handleChange}
+                          placeholder="Email"
+                          disabled
+                        />
+                      </div>
+                      <div className="grid grid-cols-12 mb-2 gap-2">
+                        <div className="col-span-6">
                           <Label htmlFor="firstname">
-                            Email <span className="astrick">*</span>
+                            Firstname <span className="astrick">*</span>
                           </Label>
                           <Input
-                            name="email"
-                            value={form.user.email || ""}
+                            name="firstname"
+                            value={form.user.firstname || ""}
                             onChange={handleChange}
-                            placeholder="Email"
-                            disabled
+                            placeholder="Firstname"
                           />
+                          {formErrors && formErrors["user.firstname"] && (
+                            <p className="text-sm text-red-500">
+                              {formErrors["user.firstname"]}
+                            </p>
+                          )}
                         </div>
-                        <div className="grid grid-cols-12 mb-2 gap-2">
-                          <div className="col-span-6">
-                            <Label htmlFor="firstname">
-                              Firstname <span className="astrick">*</span>
-                            </Label>
-                            <Input
-                              name="firstname"
-                              value={form.user.firstname || ""}
-                              onChange={handleChange}
-                              placeholder="Firstname"
-                            />
-                            {formErrors && formErrors["user.firstname"] && (
-                              <p className="text-sm text-red-500">
-                                {formErrors["user.firstname"]}
-                              </p>
-                            )}
-                          </div>
-                          <div className="col-span-6">
-                            <Label htmlFor="lastname">
-                              Lastname <span className="astrick">*</span>
-                            </Label>
-                            <Input
-                              name="lastname"
-                              value={form.user.lastname || ""}
-                              onChange={handleChange}
-                              placeholder="Lastname"
-                            />
-                            {formErrors && formErrors["user.lastname"] && (
-                              <p className="text-sm text-red-500">
-                                {formErrors["user.lastname"]}
-                              </p>
-                            )}
-                          </div>
+                        <div className="col-span-6">
+                          <Label htmlFor="lastname">
+                            Lastname <span className="astrick">*</span>
+                          </Label>
+                          <Input
+                            name="lastname"
+                            value={form.user.lastname || ""}
+                            onChange={handleChange}
+                            placeholder="Lastname"
+                          />
+                          {formErrors && formErrors["user.lastname"] && (
+                            <p className="text-sm text-red-500">
+                              {formErrors["user.lastname"]}
+                            </p>
+                          )}
                         </div>
                       </div>
                     </div>
                   </div>
-                  <div className="py-2">
-                    <Button onClick={handleDetailSubmit}>Save</Button>
-                  </div>
-                </form>
-              </TabsContent>
-              <TabsContent value="services">
-                <ServiceList vendorId={form.id} />
-              </TabsContent>
-              <TabsContent value="location">
-                {form.location ? (
-                  <p>{form.address}</p>
-                ) : (
-                  <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
-                    <h4 className="font-bold text-lg">No Location added</h4>
-                    <p className="text-base">
-                      You havent added a location yet.
-                    </p>
-                    <Button onClick={() => setLocationOpen(true)}>
-                      Set on map
-                    </Button>
-                  </div>
-                )}
-                {/* <Map/> */}
-              </TabsContent>
-              <TabsContent value="businesshours">
-                this is business hours
-              </TabsContent>
-              <TabsContent value="professionals">
-                  <ProfessionalList vendorId={form.id} />
-              </TabsContent>
-              <TabsContent value="photos">Coming Soon</TabsContent>
-              <TabsContent value="reviews">Review Comming Soon</TabsContent>
-            </div>
+                </div>
+                <div className="py-2">
+                  <Button onClick={handleDetailSubmit}>Save</Button>
+                </div>
+              </form>
+            </TabsContent>
+            <TabsContent value="services">
+              <ServiceList vendorId={form.id} />
+            </TabsContent>
+            <TabsContent value="location">
+              {form.location ? (
+                <p>{form.address}</p>
+              ) : (
+                <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
+                  <h4 className="font-bold text-lg">No Location added</h4>
+                  <p className="text-base">You havent added a location yet.</p>
+                  <Button onClick={() => setLocationOpen(true)}>
+                    Set on map
+                  </Button>
+                </div>
+              )}
+              {/* <Map/> */}
+            </TabsContent>
+            <TabsContent value="businesshours">
+              <BusinessHours />
+            </TabsContent>
+            <TabsContent value="professionals">
+              <ProfessionalList vendorId={form.id} />
+            </TabsContent>
+            <TabsContent value="photos">Coming Soon</TabsContent>
+            <TabsContent value="reviews">Review Comming Soon</TabsContent>
           </Tabs>
         </>
       )}

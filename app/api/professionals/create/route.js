@@ -23,6 +23,34 @@ export async function POST(req) {
       );
     }
 
+    const vendor = await prisma.vendors.findUnique({
+      where: { id: vendorId },
+      include: {
+        plan: true,
+        professionals: true,
+      },
+    });
+
+    if (!vendor) {
+      return NextResponse.json(
+        { message: "Vendor not found" },
+        { status: 404 }
+      );
+    }
+
+    const maxProfessionals = vendor.plan.professional;
+    const currentCount = vendor.professional.length;
+
+    if (currentCount >= maxProfessionals) {
+      return NextResponse.json(
+        {
+          message:
+            "You can add only one professional. Purchase more to add more professionals",
+        },
+        { status: 403 }
+      );
+    }
+
     const professional = await prisma.professional.create({
       data: { name, email, phone, roleId: role, status, vendorId },
     });

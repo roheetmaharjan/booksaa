@@ -21,15 +21,17 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Alert,AlertTitle } from "@/components/ui/alert"
+import { WarningDiamondIcon } from "@phosphor-icons/react";
 
 import { PROFESSIONAL_STATUS } from "@/constants/enums";
-// import { useFetch } from "@/hooks/useFetch";
 import { useMutation } from "@/hooks/useMutation";
 
 export default function AddProfessional({
   open,
   setAddProfessionalOpen,
   vendorId,
+  vendor,
   roles,
   loading: rolesLoading,
   error: rolesError,
@@ -37,18 +39,9 @@ export default function AddProfessional({
   const [formErrors, setFormErrors] = useState({});
   const [addloading, setAddLoading] = useState(false);
   const [adderror, setAddError] = useState(null);
-  // const {
-  //   data: fetchedRoles,
-  //   loading,
-  //   error,
-  // } = useFetch("/api/professional-roles");
-  // const [roles, setRoles] = useState([]);
   const [newRole, setNewRole] = useState("");
   const [openAddProfessionalRole, setAddProfessionalRoleOpen] = useState(false);
-
-  // useEffect(() => {
-  //   if (fetchedRoles) setRoles(fetchedRoles);
-  // }, [fetchedRoles]);
+  const [limitError , setLimitError] = useState("");
 
   const {
     formState: professionalForm,
@@ -62,6 +55,23 @@ export default function AddProfessional({
     role: "",
     status: "",
   });
+
+  useEffect(() => {
+    if (open) {
+      const maxProfessionals = vendor?.plan?.professional ?? 1;
+      const currentCount = vendor?.professionals?.length ?? 0;
+
+      if (currentCount >= maxProfessionals) {
+        setLimitError(
+          `You can only add ${maxProfessionals} professional${
+            maxProfessionals > 1 ? "s" : ""
+          }. Upgrade your plan to add more.`
+        );
+      } else {
+        setLimitError("");
+      }
+    }
+  }, [open, vendor]);
 
   const validationRules = {
     name: { required: true, message: "Name is required" },
@@ -111,9 +121,9 @@ export default function AddProfessional({
       await addProfessional({ ...professionalForm, vendorId });
       resetForm();
       setAddProfessionalOpen(false);
-      toast.success("Professional has been created.");
+      toast.success("Professional has been added.");
     } catch (err) {
-      toast.error(err.message || "Something went wrong.");
+      toast.error(err.message || "Cannot add professional.");
     }
   };
 
@@ -126,114 +136,128 @@ export default function AddProfessional({
             <DialogHeader>
               <DialogTitle>Add Professional</DialogTitle>
             </DialogHeader>
-            <div className="mb-3">
-              <Label htmlFor="name">
-                Professional Name <span className="astrick">*</span>
-              </Label>
-              <Input
-                id="name"
-                name="name"
-                onChange={handleProfessionalChange}
-                value={professionalForm.name}
-              />
-              {formErrors?.name && (
-                <p className="text-sm text-red-500">{formErrors.name}</p>
-              )}
-            </div>
-            <div className="mb-3">
-              <Label htmlFor="email">
-                Email <span className="astrick">*</span>
-              </Label>
-              <Input
-                id="email"
-                name="email"
-                onChange={handleProfessionalChange}
-                value={professionalForm.email}
-              />
-              {formErrors?.email && (
-                <p className="text-sm text-red-500">{formErrors.email}</p>
-              )}
-            </div>
-            <div className="mb-3">
-              <Label htmlFor="phone">
-                Phone <span className="astrick">*</span>
-              </Label>
-              <Input
-                id="phone"
-                name="phone"
-                onChange={handleProfessionalChange}
-                value={professionalForm.phone}
-              />
-              {formErrors.phone && (
-                <p className="text-sm text-red-500">{formErrors.phone}</p>
-              )}
-            </div>
-            <div className="grid grid-cols-12 gap-3">
-              {/* Role */}
-              <div className="mb-3 col-span-6">
-                <Label htmlFor="role">
-                  Role <span className="astrick">*</span>
+            {limitError && (
+              <>
+                <Alert variant="destructive" className="flex items-center">
+                  <WarningDiamondIcon size={20} className="!top-[10px]" />
+                  <AlertTitle>{limitError}</AlertTitle>
+                </Alert>
+              </>
+            )}
+            <fieldset disabled={!!limitError}>
+              <div className="mb-3">
+                <Label htmlFor="name">
+                  Professional Name <span className="astrick">*</span>
                 </Label>
-                <Select
-                  value={professionalForm.role}
-                  onValueChange={(value) => {
-                    if (value === "__add_new__") {
-                      setAddProfessionalRoleOpen(true);
-                    } else {
-                      handleProfessionalChange({
-                        target: { name: "role", value },
-                      });
-                    }
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {rolesLoading && <SelectItem disabled>Loading...</SelectItem>}
-                      {rolesError && <SelectItem disabled>Error loading roles</SelectItem>}
-                      {roles?.map((role) => (
-                        <SelectItem key={role.id} value={role.id}>
-                          {role.name}
-                        </SelectItem>
-                      ))}
-                      <SelectItem value="__add_new__">
-                        + Add New Role
-                      </SelectItem>
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                <Input
+                  id="name"
+                  name="name"
+                  onChange={handleProfessionalChange}
+                  value={professionalForm.name}
+                />
+                {formErrors?.name && (
+                  <p className="text-sm text-red-500">{formErrors.name}</p>
+                )}
               </div>
+              <div className="mb-3">
+                <Label htmlFor="email">
+                  Email <span className="astrick">*</span>
+                </Label>
+                <Input
+                  id="email"
+                  name="email"
+                  onChange={handleProfessionalChange}
+                  value={professionalForm.email}
+                />
+                {formErrors?.email && (
+                  <p className="text-sm text-red-500">{formErrors.email}</p>
+                )}
+              </div>
+              <div className="mb-3">
+                <Label htmlFor="phone">
+                  Phone <span className="astrick">*</span>
+                </Label>
+                <Input
+                  id="phone"
+                  name="phone"
+                  onChange={handleProfessionalChange}
+                  value={professionalForm.phone}
+                />
+                {formErrors.phone && (
+                  <p className="text-sm text-red-500">{formErrors.phone}</p>
+                )}
+              </div>
+              <div className="grid grid-cols-12 gap-3">
+                {/* Role */}
+                <div className="mb-3 col-span-6">
+                  <Label htmlFor="role">
+                    Role <span className="astrick">*</span>
+                  </Label>
+                  <Select
+                    value={professionalForm.role}
+                    onValueChange={(value) => {
+                      if (value === "__add_new__") {
+                        setAddProfessionalRoleOpen(true);
+                      } else {
+                        handleProfessionalChange({
+                          target: { name: "role", value },
+                        });
+                      }
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a role" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {rolesLoading && (
+                          <SelectItem disabled>Loading...</SelectItem>
+                        )}
+                        {rolesError && (
+                          <SelectItem disabled>Error loading roles</SelectItem>
+                        )}
+                        {roles?.map((role) => (
+                          <SelectItem key={role.id} value={role.id}>
+                            {role.name}
+                          </SelectItem>
+                        ))}
+                        <SelectItem value="__add_new__">
+                          + Add New Role
+                        </SelectItem>
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
 
-              {/* Status */}
-              <div className="mb-3 col-span-6">
-                <Label htmlFor="status">
-                  Status <span className="astrick">*</span>
-                </Label>
-                <Select
-                  value={professionalForm.status}
-                  onValueChange={(value) =>
-                    handleProfessionalChange({
-                      target: { name: "status", value },
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {PROFESSIONAL_STATUS.map((status) => (
-                        <SelectItem key={status} value={status}>
-                          {status.charAt(0) + status.slice(1).toLowerCase()}
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
+                {/* Status */}
+                <div className="mb-3 col-span-6">
+                  <Label htmlFor="status">
+                    Status <span className="astrick">*</span>
+                  </Label>
+                  <Select
+                    value={professionalForm.status}
+                    onValueChange={(value) =>
+                      handleProfessionalChange({
+                        target: { name: "status", value },
+                      })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select a status" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectGroup>
+                        {PROFESSIONAL_STATUS.map((status) => (
+                          <SelectItem key={status} value={status}>
+                            {status.charAt(0) + status.slice(1).toLowerCase()}
+                          </SelectItem>
+                        ))}
+                      </SelectGroup>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-            </div>
+            </fieldset>
             <DialogFooter className="mt-4">
               <Button
                 type="button"
@@ -242,7 +266,11 @@ export default function AddProfessional({
               >
                 Cancel
               </Button>
-              <Button type="submit" onClick={handleAddProfessional} disabled={addloading}>
+              <Button
+                type="submit"
+                onClick={handleAddProfessional}
+                disabled={addloading}
+              >
                 {addloading ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>
@@ -266,7 +294,10 @@ export default function AddProfessional({
           />
           <DialogFooter>
             <Button
-              onClick={() =>{ resetForm(); setAddProfessionalRoleOpen(false)}}
+              onClick={() => {
+                resetForm();
+                setAddProfessionalRoleOpen(false);
+              }}
               variant="outline"
             >
               Cancel

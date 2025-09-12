@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import AddService from "@/components/modals/AddService";
 import EditService from "@/components/modals/EditService";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
@@ -14,13 +14,15 @@ export default function ServiceList({ vendorId }) {
   const [vendor, setVendorDetail] = useState(null);
   const [openAlert, setAlertOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-
   const pathname = usePathname();
+  const fetched = useRef(false)
 
   useEffect(() => {
+    if (fetched.current) return;
+    fetched.current = true;
     if (!vendorId) return;
     setLoading(true);
-    fetch(`/api/vendors/${vendorId}`)
+    fetch(`/api/businesses/${vendorId}`)
       .then((res) => res.json())
       .then((data) => {
         setVendorDetail(data);
@@ -36,9 +38,9 @@ export default function ServiceList({ vendorId }) {
   if (loading) return <p>Loading...</p>;
   if (!vendor) return <p>No vendor found.</p>;
 
-  // show button only if pathname contains "edit-vendor"
-  const showAddButton = pathname.includes("edit-vendor");
-  const showActionButton = pathname.includes("edit-vendor");
+  // show button only if pathname contains "edit-business"
+  const showAddButton = pathname.includes("edit-business");
+  const showActionButton = pathname.includes("edit-business");
 
   const handleDeleteServiceClick = (service) => {
     setSelectedService(service);
@@ -58,7 +60,7 @@ export default function ServiceList({ vendorId }) {
       const data = await res.json();
       if (res.ok) {
         toast.success("Service deleted successfully");
-        const updated = await fetch(`/api/vendors/${vendorId}`).then((res) =>
+        const updated = await fetch(`/api/businesses/${vendorId}`).then((res) =>
           res.json()
         );
         setVendorDetail(updated);
@@ -89,9 +91,9 @@ export default function ServiceList({ vendorId }) {
           <tr className="bg-gray-100">
             <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">S.N</th>
             <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">Service Name</th>
-            <th className="text-left w-full text-sm px-2 py-1 border-gray-300">Description</th>
+            <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">Description</th>
             <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">Price</th>
-            <th className="text-left w-52 text-sm px-2 py-1 border-gray-300">Duration (min)</th>
+            <th className="text-left w-1/2 text-sm px-2 py-1 border-gray-300">Duration (min)</th>
             {showActionButton && <th className="text-left text-sm px-2 py-1 w-1/5">Action</th>}
           </tr>
         </thead>

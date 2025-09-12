@@ -23,7 +23,7 @@ export default function VendorsList() {
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const res = await fetch("/api/vendors");
+        const res = await fetch("/api/businesses");
         if (!res.ok) throw new Error("Failed to fetch vendors");
         const data = await res.json();
         setVendors(data.vendors || data);
@@ -45,13 +45,13 @@ export default function VendorsList() {
 
   const handleDelete = async (vendorId) => {
     try {
-      const res = await fetch(`/api/vendors/${vendorId}`, {
+      const res = await fetch(`/api/businesses/${vendorId}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
-        toast.success("Vendor deleted successfully");
-        const updated = await fetch("/api/vendors").then((res) => res.json());
+        toast.success("Business deleted successfully");
+        const updated = await fetch("/api/businesses").then((res) => res.json());
         setVendors(updated);
       } else {
         toast.error(data.error || "failed to delete vendor");
@@ -66,7 +66,7 @@ export default function VendorsList() {
   };
   const handleEditClick = (vendorId) => {
     setEditLoading(true);
-    router.push(`/admin/vendors/${vendorId}/edit-vendor`);
+    router.push(`/admin/businesses/${vendorId}/edit-business`);
   };
 
   return (
@@ -76,7 +76,7 @@ export default function VendorsList() {
       ) : (
         <>
           <div className="flex flex-row justify-between w-full items-center mb-4">
-            <h4 className="page-title">Vendors</h4>
+            <h4 className="page-title">Businesses</h4>
             <Button onClick={() => setAddOpen(true)}>Add Vendor</Button>
             <AddVendor open={addOpen} setAddOpen={setAddOpen} />
           </div>
@@ -99,7 +99,7 @@ export default function VendorsList() {
                     Image
                   </th>
                   <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
-                    Vendor Name
+                    Business Name
                   </th>
                   <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
                     Name
@@ -143,12 +143,12 @@ export default function VendorsList() {
                       </td>
 
                       <td className="p-2 font-semibold">
-                        <Link
-                          href={`/admin/vendors/${vendor.id}`}
+                        <button
+                          onClick={() => handleEditClick(vendor.id)}
                           className="text-blue-600 underline"
                         >
                           {vendor.name || "N/A"}
-                        </Link>
+                        </button>
                       </td>
                       <td>
                         <h5 className="font-semibold">{`${vendor.user.firstname} ${vendor.user.lastname}`}</h5>

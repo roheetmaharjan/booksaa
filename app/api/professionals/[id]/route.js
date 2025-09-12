@@ -22,16 +22,16 @@ export async function DELETE(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json({ error: "Professional ID missing" }, { status: 400 });
   }
 
   try {
-    const { name, role, status, phone } = await req.json();
+    const { name, roleId, status, phone } = await req.json();
     
-    if (!name || !role || !status || !phone) {
+    if (!name || !roleId || !status || !phone) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
 
@@ -39,7 +39,7 @@ export async function PATCH(req, { params }) {
       where: { id },
       data: {
         name,
-        role,
+        roleId,
         status,
         phone,
       },
@@ -56,7 +56,7 @@ export async function PATCH(req, { params }) {
 }
 
 export async function GET(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Professional ID missing" }, { status: 400 });
   }
