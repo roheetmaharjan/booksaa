@@ -27,7 +27,9 @@ export async function middleware(request) {
 
   // Not logged in
   if (!token) {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
+    const loginUrl = new URL('/auth/login', request.url);
+    loginUrl.searchParams.set('url', pathname);
+    return NextResponse.redirect(loginUrl);
   }
 
   // Already logged in, trying to access /auth/login

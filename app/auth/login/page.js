@@ -1,6 +1,6 @@
 "use client";
 import { signIn } from "next-auth/react";
-import { useRouter } from "next/navigation";
+import { useRouter,useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
 import { Loader2 } from "lucide-react";
@@ -10,6 +10,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [role, setRole] = useState("ADMIN");
+  const searchParams = useSearchParams();
+  const redirectUrl = searchParams.get("url");
 
   const handleLogin = async (e) => {
     e.preventDefault();
@@ -50,7 +52,7 @@ export default function LoginPage() {
             <Image src="/logo.png" width={100} height={30} alt="bookaroo" />
           </div>
         </div>
-        <div className="mb-10">
+        <div className="mb-5">
           <h2 className="mb-2 font-bold text-3xl">Welcome back!</h2>
           <p className="font-semibold heading-text">
             Please enter your credentials to Log in!
@@ -81,14 +83,16 @@ export default function LoginPage() {
                   required
                 />
               </div>
-              <div className="mb-7 mt-2 text-right">
-                <a
-                  className="hover:underline font-semibold heading-text underline"
-                  href="/forgot-password"
-                >
-                  Forgot password?
-                </a>
-              </div>
+              {redirectUrl !== "/admin" && (
+                <div className="mb-7 mt-2 text-right">
+                  <a
+                    className="hover:underline font-semibold heading-text underline"
+                    href="/forgot-password"
+                  >
+                    Forgot password?
+                  </a>
+                </div>
+              )}
               {error && (
                 <p className="text-red-600 text-sm mb-4">{error}</p>
               )}
@@ -103,12 +107,14 @@ export default function LoginPage() {
             </div>
           </form>
         </div>
-        <div className="mt-6 text-center">
-          <span>Don&apos;t have an account yet? </span>
-          <a className="hover:underline font-bold" href="/sign-up">
-            Sign up
-          </a>
-        </div>
+        {redirectUrl !== "/admin" && (
+          <div className="mt-6 text-center">
+            <span>Don&apos;t have an account yet? </span>
+            <a className="hover:underline font-bold" href="/sign-up">
+              Sign up
+            </a>
+          </div>
+        )}
       </div>
     </div>
   );
