@@ -33,6 +33,7 @@ export default function AddProfessional({
   vendorId,
   vendor,
   roles,
+  onAdded,
   loading: rolesLoading,
   error: rolesError,
 }) {
@@ -122,6 +123,7 @@ export default function AddProfessional({
       resetForm();
       setAddProfessionalOpen(false);
       toast.success("Professional has been added.");
+      if (onAdded) onAdded();
     } catch (err) {
       toast.error(err.message || "Cannot add professional.");
     }
@@ -279,38 +281,40 @@ export default function AddProfessional({
       </Dialog>
 
       {/* Add New Role Dialog */}
-      <Dialog
-        open={openAddProfessionalRole}
-        onOpenChange={setAddProfessionalRoleOpen}
-      >
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Add New Role</DialogTitle>
-          </DialogHeader>
-          <Input
-            placeholder="Enter role name"
-            value={newRole}
-            onChange={(e) => setNewRole(e.target.value)}
-          />
-          <DialogFooter>
-            <Button
-              onClick={() => {
-                resetForm();
-                setAddProfessionalRoleOpen(false);
-              }}
-              variant="outline"
-            >
-              Cancel
-            </Button>
-            <Button
-              onClick={handleAddProfessionalRole}
-              disabled={!newRole || addloading}
-            >
-              {addloading ? "Saving..." : "Save"}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      {openAddProfessionalRole && (
+        <Dialog
+          open={openAddProfessionalRole}
+          onOpenChange={setAddProfessionalRoleOpen}
+        >
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Add New Role</DialogTitle>
+            </DialogHeader>
+            <Input
+              placeholder="Enter role name"
+              value={newRole}
+              onChange={(e) => setNewRole(e.target.value)}
+            />
+            <DialogFooter>
+              <Button
+                onClick={() => {
+                  resetForm();
+                  setAddProfessionalRoleOpen(false);
+                }}
+                variant="outline"
+              >
+                Cancel
+              </Button>
+              <Button
+                onClick={handleAddProfessionalRole}
+                disabled={!newRole || addloading}
+              >
+                {addloading ? "Saving..." : "Save"}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
+      )}
     </>
   );
 }

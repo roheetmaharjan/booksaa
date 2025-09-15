@@ -82,6 +82,12 @@ export default function ServiceList({ vendorId }) {
             open={openAddService}
             setAddServiceOpen={setAddServiceOpen}
             vendorId={vendorId}
+            onAdded={async () => {
+              const updatedVendor = await fetch(
+                `/api/businesses/${vendorId}`
+              ).then((r) => r.json());
+              setVendorDetail(updatedVendor);
+            }}
           />
         </>
       )}
@@ -89,12 +95,24 @@ export default function ServiceList({ vendorId }) {
       <table className="w-full boo-table mt-3 border-collapse border border-gray-300">
         <thead>
           <tr className="bg-gray-100">
-            <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">S.N</th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">Service Name</th>
-            <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">Description</th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">Price</th>
-            <th className="text-left w-1/2 text-sm px-2 py-1 border-gray-300">Duration (min)</th>
-            {showActionButton && <th className="text-left text-sm px-2 py-1 w-1/5">Action</th>}
+            <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">
+              S.N
+            </th>
+            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
+              Service Name
+            </th>
+            <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
+              Description
+            </th>
+            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
+              Price
+            </th>
+            <th className="text-left w-1/2 text-sm px-2 py-1 border-gray-300">
+              Duration (min)
+            </th>
+            {showActionButton && (
+              <th className="text-left text-sm px-2 py-1 w-1/5">Action</th>
+            )}
           </tr>
         </thead>
         <tbody>
@@ -142,21 +160,29 @@ export default function ServiceList({ vendorId }) {
           setEditServiceOpen={setEditServiceOpen}
           vendorId={vendorId}
           service={selectedService}
+          onEdited={async () => {
+            const updatedVendor = await fetch(
+              `/api/businesses/${vendorId}`
+            ).then((r) => r.json());
+            setVendorDetail(updatedVendor);
+          }}
         />
       )}
-      <ConfirmAlert
-        open={openAlert}
-        onOpenChange={setAlertOpen}
-        title="Delete Service?"
-        description={
-          selectedService
-            ? `Are you sure you want to delete service "${selectedService.name}"?`
-            : "Are you sure you want to delete this service?"
-        }
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        onConfirm={handleDeleteService}
-      />
+      {openAlert && (
+        <ConfirmAlert
+          open={openAlert}
+          onOpenChange={setAlertOpen}
+          title="Delete Service?"
+          description={
+            selectedService
+              ? `Are you sure you want to delete service "${selectedService.name}"?`
+              : "Are you sure you want to delete this service?"
+          }
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteService}
+        />
+      )}
     </>
   );
 }

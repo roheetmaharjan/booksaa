@@ -20,7 +20,7 @@ export function useMutation(url, options = {}) {
       });
 
       const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Request failed");
+      if (!res.ok) throw new Error(data.message || "Request failed");
 
       return data;
     } catch (err) {

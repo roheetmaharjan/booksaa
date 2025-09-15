@@ -16,7 +16,7 @@ import { PriceField } from "@/components/common/PriceField";
 import { useFormState } from "@/hooks/useFormState";
 import { useState } from "react";
 
-export default function AddService({ open, setAddServiceOpen,vendorId }) {
+export default function AddService({ open, setAddServiceOpen,vendorId,onAdded }) {
   const [formErrors, setFormErrors] = useState({});
   const [services,setServices] = useState();
   const [loading, setLoading] = useState();
@@ -61,6 +61,7 @@ export default function AddService({ open, setAddServiceOpen,vendorId }) {
       resetForm();
       setAddServiceOpen(false);
       toast.success("Service has been created.");
+      if(onAdded) onAdded();
     } catch (err) {
       console.error("Submit error:", err);
       setError("Something went wrong.");

@@ -22,7 +22,7 @@ export async function DELETE(req, { params }) {
 }
 
 export async function PATCH(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
 
   if (!id) {
     return NextResponse.json({ error: "Service ID missing" }, { status: 400 });
@@ -56,7 +56,7 @@ export async function PATCH(req, { params }) {
 }
 
 export async function GET(req, { params }) {
-  const { id } = params;
+  const { id } = await params;
   if (!id) {
     return NextResponse.json({ error: "Service ID missing" }, { status: 400 });
   }

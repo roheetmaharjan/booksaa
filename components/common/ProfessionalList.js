@@ -24,6 +24,7 @@ export default function ProfessionalList({ vendorId }) {
   } = useFetch("/api/professional-roles", {
     lazy: true,
   });
+
   const [roles, setRoles] = useState([]);
   useEffect(() => {
     if (open && fetchedRoles) {
@@ -94,13 +95,21 @@ export default function ProfessionalList({ vendorId }) {
           <Button onClick={() => setAddProfessionalOpen(true)}>
             Add Professional
           </Button>
-          <AddProfessional
-            open={openAddProfessional}
-            setAddProfessionalOpen={setAddProfessionalOpen}
-            vendorId={vendorId}
-            roles={roles}
-            vendor={vendor}
-          />
+          {openAddProfessional && (
+            <AddProfessional
+              open={openAddProfessional}
+              setAddProfessionalOpen={setAddProfessionalOpen}
+              vendorId={vendorId}
+              roles={roles}
+              vendor={vendor}
+              onAdded={async () => {
+                const updatedVendor = await fetch(
+                  `/api/businesses/${vendorId}`
+                ).then((r) => r.json());
+                setVendorDetail(updatedVendor);
+              }}
+            />
+          )}
         </>
       )}
 
@@ -199,21 +208,29 @@ export default function ProfessionalList({ vendorId }) {
           vendorId={vendorId}
           professional={selectedProfessional}
           roles={roles}
+          onEdited={async () => {
+            const updatedVendor = await fetch(
+              `/api/businesses/${vendorId}`
+            ).then((r) => r.json());
+            setVendorDetail(updatedVendor);
+          }}
         />
       )}
-      <ConfirmAlert
-        open={openAlert}
-        onOpenChange={setAlertOpen}
-        title="Delete Professional?"
-        description={
-          selectedProfessional
-            ? `Are you sure you want to delete professional "${selectedProfessional.name}"?`
-            : "Are you sure you want to delete this professional?"
-        }
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        onConfirm={handleDeleteProfessional}
-      />
+      {openAlert && (
+        <ConfirmAlert
+          open={openAlert}
+          onOpenChange={setAlertOpen}
+          title="Delete Professional?"
+          description={
+            selectedProfessional
+              ? `Are you sure you want to delete professional "${selectedProfessional.name}"?`
+              : "Are you sure you want to delete this professional?"
+          }
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={handleDeleteProfessional}
+        />
+      )}
     </>
   );
 }

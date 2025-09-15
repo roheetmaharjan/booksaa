@@ -26,6 +26,7 @@ export default function AddVendor({ open, setAddOpen }) {
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [formErrors, setFormErrors] = useState({});
+  const [addloading, setAddLoading] = useState(false);
 
   const validationRules = {
     firstname: { required: true, message: "First name is required" },
@@ -80,7 +81,8 @@ export default function AddVendor({ open, setAddOpen }) {
     if (Object.keys(errors).length > 0) return;
 
     try {
-      const res = await fetch("/api/vendors/create", {
+      setAddLoading(true);
+      const res = await fetch("/api/businesses/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
@@ -92,7 +94,7 @@ export default function AddVendor({ open, setAddOpen }) {
       }
 
       setAddOpen(false);
-      toast.success("Vendor created sucessful")
+      toast.success("Business created sucessfully")
       setForm({
         firstname: "",
         lastname: "",
@@ -108,6 +110,8 @@ export default function AddVendor({ open, setAddOpen }) {
     } catch (err) {
       console.error("Submission error:", err);
       toast.error(err.message);
+    } finally{
+      setAddLoading(false)
     }
   };
   if (!form) return null;
@@ -116,7 +120,7 @@ export default function AddVendor({ open, setAddOpen }) {
     <Dialog onOpenChange={setAddOpen} open={open}>
       <DialogContent className="sm:max-w-[625px]">
         <DialogHeader className="mb-2 pb-2">
-          <DialogTitle>Add Vendors</DialogTitle>
+          <DialogTitle>Add Business</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit}>
@@ -168,9 +172,9 @@ export default function AddVendor({ open, setAddOpen }) {
             </div>
           </div>
 
-          {/* Vendor Details */}
+          {/* Business Details */}
           <h5 className="my-4 uppercase text-gray-500 text-xs">
-            Vendor Detail
+            Business Detail
           </h5>
           <div className="grid gap-4">
             <div>
@@ -259,7 +263,7 @@ export default function AddVendor({ open, setAddOpen }) {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit">Add</Button>
+            <Button type="submit" disabled={addloading}>{addloading ? 'Loading...': 'Add'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

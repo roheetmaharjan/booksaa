@@ -1,13 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 
 export function useFetch(url) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
-  useEffect(() => {
+  const fetchData = useCallback(() => {
     if (!url) return;
-
     setLoading(true);
     setError(null);
 
@@ -21,5 +20,9 @@ export function useFetch(url) {
       .finally(() => setLoading(false));
   }, [url]);
 
-  return { data, loading, error, setData }; 
+  useEffect(() => {
+    fetchData();
+  }, [fetchData]);
+
+  return { data, loading, error, setData, refetch: fetchData };
 }

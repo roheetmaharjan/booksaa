@@ -3,7 +3,7 @@
 import { UsersLayout } from "@/app/admin/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import AddVendor from "@/components/modals/AddVendor";
+import AddBusiness from "@/components/modals/AddBusiness";
 import { toast } from "sonner";
 import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
@@ -51,7 +51,9 @@ export default function VendorsList() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Business deleted successfully");
-        const updated = await fetch("/api/businesses").then((res) => res.json());
+        const updated = await fetch("/api/businesses").then((res) =>
+          res.json()
+        );
         setVendors(updated);
       } else {
         toast.error(data.error || "failed to delete vendor");
@@ -78,7 +80,7 @@ export default function VendorsList() {
           <div className="flex flex-row justify-between w-full items-center mb-4">
             <h4 className="page-title">Businesses</h4>
             <Button onClick={() => setAddOpen(true)}>Add Vendor</Button>
-            <AddVendor open={addOpen} setAddOpen={setAddOpen} />
+            {addOpen && <AddBusiness open={addOpen} setAddOpen={setAddOpen} />}
           </div>
           <div className="mb-4">
             <input
@@ -157,22 +159,45 @@ export default function VendorsList() {
                       <td className="p-2">{vendor.plan.name || "-"}</td>
                       <td className="p-2">{vendor.phone || "-"}</td>
                       <td className="p-2">
-                        {vendor.status === "ACTIVE" ? (
+                        {vendor.accountStatus === "ACTIVE" && (
                           <Badge
                             variant="default"
                             className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
                           >
                             Active
                           </Badge>
-                        ) : (
-                          (
-                            <Badge
-                              variant="default"
-                              className="bg-gray-500 hover:bg-gray-500"
-                            >
-                              Inactive
-                            </Badge>
-                          ) || "-"
+                        )}
+                        {vendor.accountStatus === "TRIAL_ACTIVE" && (
+                          <Badge
+                            variant="default"
+                            className="text-blue-700 bg-blue-100 hover:bg-blue-200 uppercase text-[10px]"
+                          >
+                            Trial Active
+                          </Badge>
+                        )}
+                        {vendor.accountStatus === "TRIAL_EXPIRING" && (
+                          <Badge
+                            variant="default"
+                            className="text-red-700 bg-red-200 hover:bg-red-200 uppercase text-[10px]"
+                          >
+                            Trial Active
+                          </Badge>
+                        )}
+                        {vendor.accountStatus === "TRIAL_EXPIRED" && (
+                          <Badge
+                            variant="default"
+                            className="text-red-500 bg-red-200 hover:bg-red-300 uppercase text-[10px]"
+                          >
+                            Trial Expired
+                          </Badge>
+                        )}
+                        {vendor.accountStatus === "INACTIVE" && (
+                          <Badge
+                            variant="default"
+                            className="text-white bg-gray-500 hover:bg-gray-700 uppercase text-[10px]"
+                          >
+                            Inactive
+                          </Badge>
                         )}
                       </td>
                       <td className="p-2">
@@ -200,15 +225,17 @@ export default function VendorsList() {
               </tbody>
             </table>
           </div>
-          <ConfirmAlert
-            open={open}
-            onOpenChange={setOpen}
-            title="Delete Vendor?"
-            description={`Are you sure you want to delete vendor ID: ${selectedVendorId}?`}
-            confirmLabel="Delete"
-            cancelLabel="Cancel"
-            onConfirm={() => handleDelete(selectedVendorId)}
-          />
+          {open && (
+            <ConfirmAlert
+              open={open}
+              onOpenChange={setOpen}
+              title="Delete Vendor?"
+              description={`Are you sure you want to delete vendor ID: ${selectedVendorId}?`}
+              confirmLabel="Delete"
+              cancelLabel="Cancel"
+              onConfirm={() => handleDelete(selectedVendorId)}
+            />
+          )}
         </>
       )}
     </UsersLayout>

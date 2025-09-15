@@ -19,8 +19,8 @@ import { validateForm } from "@/utils/formValidator";
 export default function EditService({
   openEdit,
   setEditServiceOpen,
-  vendorId,
   service,
+  onEdited
 }) {
   const [formErrors, setFormErrors] = useState({});
 
@@ -70,6 +70,7 @@ export default function EditService({
       if (res.ok) {
         toast.success("Service updated successfully");
         setEditServiceOpen(false);
+        if(onEdited)onEdited();
       } else {
         toast.error(data.error || "failed to update service");
       }

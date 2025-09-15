@@ -240,15 +240,17 @@ export default function Users() {
           </tbody>
         </table>
       </div>
-      <ConfirmAlert
-        open={open}
-        onOpenChange={setOpen}
-        title="Delete User?"
-        description={`Are you sure you want to delete vendor ID: ${selectedUserId}?`}
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
-        onConfirm={() => handleDelete(selectedUserId)}
-      />
+      {open && (
+        <ConfirmAlert
+          open={open}
+          onOpenChange={setOpen}
+          title="Delete User?"
+          description={`Are you sure you want to delete vendor ID: ${selectedUserId}?`}
+          confirmLabel="Delete"
+          cancelLabel="Cancel"
+          onConfirm={() => handleDelete(selectedUserId)}
+        />
+      )}
     </UsersLayout>
   );
 }

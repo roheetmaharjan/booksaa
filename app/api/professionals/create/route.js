@@ -30,7 +30,6 @@ export async function POST(req) {
         professionals: true,
       },
     });
-
     if (!vendor) {
       return NextResponse.json(
         { message: "Vendor not found" },
@@ -39,7 +38,7 @@ export async function POST(req) {
     }
 
     const maxProfessionals = vendor.plan.professional;
-    const currentCount = vendor.professional.length;
+    const currentCount = vendor.professionals.length;
 
     if (currentCount >= maxProfessionals) {
       return NextResponse.json(

@@ -25,6 +25,7 @@ export default function EditProfessional({
   roles, 
   loading: rolesLoading,
   error: rolesError,
+  onEdited
 }) {
   const [formErrors, setFormErrors] = useState({});
 
@@ -85,7 +86,7 @@ export default function EditProfessional({
       });
       setEditProfessionalOpen(false);
       toast.success("Professional updated successfully");
-      professionalForm({
+      resetForm({
         id: "",
         name: "",
         email: "",
@@ -93,6 +94,7 @@ export default function EditProfessional({
         phone: "",
         status: "",
       });
+      if (onEdited) onEdited();
     } catch (err) {
       toast.error(err.message || "Failed to update professional");
     }

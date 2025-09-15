@@ -10,6 +10,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { validateForm } from "@/utils/formValidator";
+import { Badge } from "@/components/ui/badge";
 import {
   Select,
   SelectTrigger,
@@ -22,6 +23,9 @@ import ServiceList from "@/components/common/ServiceList";
 import ProfessionalList from "@/components/common/ProfessionalList";
 import BusinessHours from "@/components/common/BusinessHour";
 import { useFormState } from "@/hooks/useFormState";
+import AddLocation from "@/components/modals/AddLocation";
+import { CameraIcon } from "@phosphor-icons/react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 export default function EditVendor() {
   const { id } = useParams();
@@ -41,20 +45,14 @@ export default function EditVendor() {
     image: "",
     joinedAt: "",
     cancellation_policy: "",
-    trialEndsAt:""
+    trialEndsAt: "",
   });
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [openAddLocation, setAddLocationOpen] = useState(false);
   const validationRules = {
-    // "user.firstname": { required: true, message: "First name is required" },
-    // "user.lastname": { required: true, message: "Last name is required" },
-    // "user.email": {
-    //   required: true,
-    //   pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
-    //   message: "Valid email is required",
-    // },
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
     planId: { required: true, message: "Plan is required" },
@@ -165,31 +163,98 @@ export default function EditVendor() {
         <div>Business not found</div>
       ) : (
         <>
-          <div className="flex gap-2 items-center mb-3 justify-start">
-            <figure>
+          <div className="flex gap-5 items-center mb-7 justify-start">
+            <div className="relative">
               {form.image ? (
-                <img
-                  src={form.image}
-                  alt={`${form.name} Image`}
-                  className="h-10 w-10 object-cover rounded"
-                />
+                <figure className="w-32 h-32 object-cover rounded-md">
+                  <img
+                    src={form.image}
+                    alt={`${form.name} Image`}
+                    className="h-10 w-10 object-cover rounded"
+                  />
+                </figure>
               ) : (
-                <span className="w-24 h-24 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
+                <span className="w-32 h-32 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
                   {form.name?.charAt(0)}
                 </span>
               )}
-            </figure>
-            <div className="flex flex-col gap-1">
-              <h4 className="text-2xl font-bold">{form.name}</h4>
-              {/* <p className="text-gray-500">{form.user.email}</p> */}
+              <Button className="absolute -bottom-1 -right-1 w-8 h-8 flex items-center justify-center shadow-none p-0 rounded-full border-2 border-white hover:shadow-lg">
+                <CameraIcon />
+              </Button>
             </div>
-            <Button onClick={() => handleResend(vendor.id)}>
-              Send Activation Link
-            </Button>
-            <Button variant="outline">Change Image</Button>
+            <div className="flex flex-col gap-4">
+              <div className="flex flex-col gap-1">
+                <h4 className="text-2xl font-bold">{form.name}</h4>
+                <p className="text-base text-gray-500">{form.user.email}</p>
+              </div>
+              <div className="grid grid-cols-12 gap-2">
+                <div className="col-span-4">
+                  <div className="mb-2">
+                    <p className="text-muted-foreground">Joined Date</p>
+                    <p>{form.joinedAt || ""}</p>
+                  </div>
+                </div>
+                <div className="col-span-4">
+                  <div className="mb-2">
+                    <p className="text-muted-foreground">Trial Ends On </p>
+                    <p>{form.trialEndsAt || ""}</p>
+                  </div>
+                </div>
+                <div className="col-span-4">
+                  <div className="mb-2">
+                    <p className="text-muted-foreground">Status</p>
+                    {form.status === "ACTIVE" && (
+                      <Badge
+                        variant="default"
+                        className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
+                      >
+                        Active
+                      </Badge>
+                    )}
+                    {form.status === "TRIAL_ACTIVE" && (
+                      <Badge
+                        variant="default"
+                        className="text-blue-700 bg-blue-100 hover:bg-blue-200 uppercase text-[10px]"
+                      >
+                        Trial Active
+                      </Badge>
+                    )}
+                    {form.status === "TRIAL_EXPIRING" && (
+                      <Badge
+                        variant="default"
+                        className="text-red-700 bg-red-200 hover:bg-red-200 uppercase text-[10px]"
+                      >
+                        Trial Active
+                      </Badge>
+                    )}
+                    {form.status === "TRIAL_EXPIRED" && (
+                      <Badge
+                        variant="default"
+                        className="text-red-500 bg-red-200 hover:bg-red-300 uppercase text-[10px]"
+                      >
+                        Trial Expired
+                      </Badge>
+                    )}
+                    {form.status === "INACTIVE" && (
+                      <Badge
+                        variant="default"
+                        className="text-white bg-gray-500 hover:bg-gray-700 uppercase text-[10px]"
+                      >
+                        Inactive
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div className="ml-auto">
+              <Button onClick={() => handleResend(vendor.id)}>
+                Send Activation Link
+              </Button>
+            </div>
           </div>
           <Tabs defaultValue="detail" className="gap-2 items-start">
-            <TabsList>
+            <TabsList className="mb-5">
               <TabsTrigger className="block w-full text-left" value="detail">
                 Detail
               </TabsTrigger>
@@ -220,191 +285,151 @@ export default function EditVendor() {
             </TabsList>
             <TabsContent value="detail">
               <form onSubmit={handleDetailSubmit}>
-                <div className="grid grid-cols-12 gap-3">
-                  <div className="col-span-12 md:col-span-12 lg:col-span-7">
-                    <div className="py-4 pr-6 border-r">
-                      <h4 className="font-bold mb-3 text-base">
-                        Company Information
-                      </h4>
-                      <div className="mb-2">
-                        <Label htmlFor="name">
-                          Business Name <span className="astrick">*</span>
-                        </Label>
-                        <Input
-                          name="name"
-                          value={form.name || ""}
-                          onChange={handleChange}
-                          placeholder="Business Name"
-                        />
-                        {formErrors && formErrors.name && (
-                          <p className="text-sm text-red-500">
-                            {formErrors.name}
-                          </p>
-                        )}
-                      </div>
-                      <div className="grid grid-cols-12 mb-2 gap-2">
-                        <div className="col-span-6 mb-2">
-                          <Label htmlFor="categoryId">
-                            Category <span className="astrick">*</span>
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12 lg:col-span-6">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>
+                          Company Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="mb-2">
+                          <Label htmlFor="name">
+                            Business Name <span className="astrick">*</span>
                           </Label>
-                          <Select
-                            id="categoryId"
-                            name="categoryId"
-                            value={form.categoryId}
-                            onValueChange={(value) =>
-                              setForm((prev) => ({
-                                ...prev,
-                                categoryId: value,
-                              }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories.length === 0 ? (
-                                <SelectItem
-                                  key="No-category"
-                                  value="No-Category"
-                                >
-                                  No categories found. Please add one to get
-                                  started.
-                                </SelectItem>
-                              ) : (
-                                categories.map((category) => (
+                          <Input
+                            name="name"
+                            value={form.name || ""}
+                            onChange={handleChange}
+                            placeholder="Business Name"
+                          />
+                          {formErrors && formErrors.name && (
+                            <p className="text-sm text-red-500">
+                              {formErrors.name}
+                            </p>
+                          )}
+                        </div>
+                        <div className="grid grid-cols-12 mb-2 gap-2">
+                          <div className="col-span-6 mb-2">
+                            <Label htmlFor="categoryId">
+                              Category <span className="astrick">*</span>
+                            </Label>
+                            <Select
+                              id="categoryId"
+                              name="categoryId"
+                              value={form.categoryId}
+                              onValueChange={(value) =>
+                                setForm((prev) => ({
+                                  ...prev,
+                                  categoryId: value,
+                                }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select Category" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {categories.length === 0 ? (
                                   <SelectItem
-                                    key={category.id}
-                                    value={category.id}
+                                    key="No-category"
+                                    value="No-Category"
                                   >
-                                    {category.name}
+                                    No categories found. Please add one to get
+                                    started.
                                   </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                          {formErrors && formErrors.categoryId && (
-                            <p className="text-sm text-red-500">
-                              {formErrors.categoryId}
-                            </p>
-                          )}
+                                ) : (
+                                  categories.map((category) => (
+                                    <SelectItem
+                                      key={category.id}
+                                      value={category.id}
+                                    >
+                                      {category.name}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            {formErrors && formErrors.categoryId && (
+                              <p className="text-sm text-red-500">
+                                {formErrors.categoryId}
+                              </p>
+                            )}
+                          </div>
+                          <div className="col-span-6 mb-2">
+                            <Label htmlFor="planId">
+                              Plan <span className="astrick">*</span>
+                            </Label>
+                            <Select
+                              id="planId"
+                              name="planId"
+                              value={form.planId}
+                              onValueChange={(value) =>
+                                setForm((prev) => ({ ...prev, planId: value }))
+                              }
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select Plans"></SelectValue>
+                              </SelectTrigger>
+                              <SelectContent>
+                                {plans.length === 0 ? (
+                                  <SelectItem key="no-plans" value="no-plans">
+                                    No plans found. Please add one to get started.
+                                  </SelectItem>
+                                ) : (
+                                  plans.map((plan) => (
+                                    <SelectItem key={plan.id} value={plan.id}>
+                                      {plan.name}
+                                    </SelectItem>
+                                  ))
+                                )}
+                              </SelectContent>
+                            </Select>
+                            {formErrors && formErrors.planId && (
+                              <p className="text-sm text-red-500">
+                                {formErrors.planId}
+                              </p>
+                            )}
+                          </div>
                         </div>
-                        <div className="col-span-6 mb-2">
-                          <Label htmlFor="planId">
-                            Plan <span className="astrick">*</span>
+                        <div className="mb-2">
+                          <Label htmlFor="phone">Phone</Label>
+                          <Input
+                            name="phone"
+                            value={form.phone || ""}
+                            onChange={handleChange}
+                            placeholder="Enter phone number"
+                          />
+                        </div>
+                        <div className="mb-2">
+                          <Label htmlFor="description">Description</Label>
+                          <Textarea
+                            name="description"
+                            value={form.description || ""}
+                            onChange={handleChange}
+                            className="h-56"
+                          />
+                        </div>
+                        <div className="mb-2">
+                          <Label htmlFor="cancellation_policy">
+                            Cancellation Policy
                           </Label>
-                          <Select
-                            id="planId"
-                            name="planId"
-                            value={form.planId}
-                            onValueChange={(value) =>
-                              setForm((prev) => ({ ...prev, planId: value }))
-                            }
-                          >
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Plans"></SelectValue>
-                            </SelectTrigger>
-                            <SelectContent>
-                              {plans.length === 0 ? (
-                                <SelectItem key="no-plans" value="no-plans">
-                                  No plans found. Please add one to get started.
-                                </SelectItem>
-                              ) : (
-                                plans.map((plan) => (
-                                  <SelectItem key={plan.id} value={plan.id}>
-                                    {plan.name}
-                                  </SelectItem>
-                                ))
-                              )}
-                            </SelectContent>
-                          </Select>
-                          {formErrors && formErrors.planId && (
-                            <p className="text-sm text-red-500">
-                              {formErrors.planId}
-                            </p>
-                          )}
+                          <Textarea
+                            name="cancellation_policy"
+                            value={form.cancellation_policy || ""}
+                            onChange={handleChange}
+                            className="h-56"
+                          />
                         </div>
-                      </div>
-                      <div className="mb-2">
-                        <Label htmlFor="phone">Phone</Label>
-                        <Input
-                          name="phone"
-                          value={form.phone || ""}
-                          onChange={handleChange}
-                          placeholder="Enter phone number"
-                        />
-                      </div>
-                      <div className="grid grid-cols-12 gap-2">
-                        <div className="col-span-4">
-                          <div className="mb-2">
-                            <Label htmlFor="phone">Joined Date</Label>
-                            <Input
-                              disabled
-                              name="joineddate"
-                              value={form.joinedAt || ""}
-                              type="text"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-span-4">
-                          <div className="mb-2">
-                            <Label htmlFor="trailEndsAt">Trial Ends Date </Label>
-                            <Input
-                              disabled
-                              name="trailEndsAt"
-                              value={form.trialEndsAt || ""}
-                              type="text"
-                            />
-                          </div>
-                        </div>
-                        <div className="col-span-4">
-                          <div className="mb-2">
-                            <Label htmlFor="status">Status</Label>
-                            <Input
-                              disabled
-                              name="status"
-                              value={form.status || ""}
-                            />
-                          </div>
-                        </div>
-                      </div>
-                      <div className="mb-2">
-                        <Label htmlFor="description">Description</Label>
-                        <Textarea
-                          name="description"
-                          value={form.description || ""}
-                          onChange={handleChange}
-                          className="h-56"
-                        />
-                      </div>
-                      <div className="mb-2">
-                        <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
-                        <Textarea
-                          name="cancellation_policy"
-                          value={form.cancellation_policy || ""}
-                          onChange={handleChange}
-                          className="h-56"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                  <div className="col-span-12 md:col-span-12 lg:col-span-5">
-                    <div className="pl-5 py-4">
-                      <h4 className="font-bold mb-3 text-base">
-                        User Information
-                      </h4>
-                      <div className="mb-2">
-                        <Label htmlFor="firstname">
-                          Email <span className="astrick">*</span>
-                        </Label>
-                        <Input
-                          name="email"
-                          value={form.user.email ?? "No email set"}
-                          onChange={handleChange}
-                          placeholder="Email"
-                          disabled
-                        />
-                      </div>
-                      <div className="grid grid-cols-12 mb-2 gap-2">
+                      </CardContent>
+                    </Card>
+                    <Card className="my-5">
+                      <CardHeader>
+                        <CardTitle>
+                          User Information
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="grid grid-cols-12 mb-2 gap-2">
                         <div className="col-span-6">
                           <Label htmlFor="firstname">
                             Firstname <span className="astrick">*</span>
@@ -437,8 +462,8 @@ export default function EditVendor() {
                             </p>
                           )}
                         </div>
-                      </div>
-                    </div>
+                      </CardContent>
+                    </Card>
                   </div>
                 </div>
                 <div className="py-2">
@@ -456,9 +481,15 @@ export default function EditVendor() {
                 <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
                   <h4 className="font-bold text-lg">No Location added</h4>
                   <p className="text-base">You havent added a location yet.</p>
-                  <Button onClick={() => setLocationOpen(true)}>
-                    Set on map
+                  <Button onClick={() => setAddLocationOpen(true)}>
+                    Add Location
                   </Button>
+                  {openAddLocation && (
+                    <AddLocation
+                      setAddLocationOpen={setAddLocationOpen}
+                      open={openAddLocation}
+                    />
+                  )}
                 </div>
               )}
               {/* <Map/> */}
