@@ -187,20 +187,26 @@ export default function EditVendor() {
                 <h4 className="text-2xl font-bold">{form.name}</h4>
                 <p className="text-base text-gray-500">{form.user.email}</p>
               </div>
-              <div className="grid grid-cols-12 gap-2">
-                <div className="col-span-4">
+              <div className="grid grid-cols-12 gap-3">
+                <div className="col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Joined Date</p>
                     <p>{form.joinedAt || ""}</p>
                   </div>
                 </div>
-                <div className="col-span-4">
+                <div className="col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Trial Ends On </p>
                     <p>{form.trialEndsAt || ""}</p>
                   </div>
                 </div>
-                <div className="col-span-4">
+                <div className="col-span-3">
+                  <div className="mb-2">
+                    <p className="text-muted-foreground">Profile Completed </p>
+                    <p>{form.isCompleted ? "Yes" : "No"}</p>
+                  </div>
+                </div>
+                <div className="col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Status</p>
                     {form.status === "ACTIVE" && (
@@ -224,7 +230,7 @@ export default function EditVendor() {
                         variant="default"
                         className="text-red-700 bg-red-200 hover:bg-red-200 uppercase text-[10px]"
                       >
-                        Trial Active
+                        Trial Expiring
                       </Badge>
                     )}
                     {form.status === "TRIAL_EXPIRED" && (
@@ -256,7 +262,13 @@ export default function EditVendor() {
           <Tabs defaultValue="detail" className="gap-2 items-start">
             <TabsList className="mb-5">
               <TabsTrigger className="block w-full text-left" value="detail">
-                Detail
+                Business Profile
+              </TabsTrigger>
+              <TabsTrigger
+                className="block w-full text-left"
+                value="user-detail"
+              >
+                User Profile
               </TabsTrigger>
               <TabsTrigger className="block w-full text-left" value="services">
                 Services
@@ -280,7 +292,7 @@ export default function EditVendor() {
                 Business Hours
               </TabsTrigger>
               <TabsTrigger className="block w-full text-left" value="location">
-                Location
+                Business Location
               </TabsTrigger>
             </TabsList>
             <TabsContent value="detail">
@@ -288,12 +300,7 @@ export default function EditVendor() {
                 <div className="grid grid-cols-12 gap-4">
                   <div className="col-span-12 lg:col-span-6">
                     <Card>
-                      <CardHeader>
-                        <CardTitle>
-                          Company Information
-                        </CardTitle>
-                      </CardHeader>
-                      <CardContent>
+                      <CardContent className="pt-5">
                         <div className="mb-2">
                           <Label htmlFor="name">
                             Business Name <span className="astrick">*</span>
@@ -374,7 +381,8 @@ export default function EditVendor() {
                               <SelectContent>
                                 {plans.length === 0 ? (
                                   <SelectItem key="no-plans" value="no-plans">
-                                    No plans found. Please add one to get started.
+                                    No plans found. Please add one to get
+                                    started.
                                   </SelectItem>
                                 ) : (
                                   plans.map((plan) => (
@@ -423,11 +431,20 @@ export default function EditVendor() {
                         </div>
                       </CardContent>
                     </Card>
+                  </div>
+                </div>
+                <div className="py-2">
+                  <Button onClick={handleDetailSubmit}>Save</Button>
+                </div>
+              </form>
+            </TabsContent>
+            <TabsContent value="user-detail">
+              {/* <form> */}
+                <div className="grid grid-cols-12 gap-4">
+                  <div className="col-span-12 lg:col-span-6">
                     <Card className="my-5">
                       <CardHeader>
-                        <CardTitle>
-                          User Information
-                        </CardTitle>
+                        <CardTitle>User Information</CardTitle>
                       </CardHeader>
                       <CardContent className="grid grid-cols-12 mb-2 gap-2">
                         <div className="col-span-6">
@@ -439,6 +456,7 @@ export default function EditVendor() {
                             value={form.user.firstname || ""}
                             onChange={handleChange}
                             placeholder="Firstname"
+                            disabled
                           />
                           {formErrors && formErrors["user.firstname"] && (
                             <p className="text-sm text-red-500">
@@ -455,6 +473,7 @@ export default function EditVendor() {
                             value={form.user.lastname || ""}
                             onChange={handleChange}
                             placeholder="Lastname"
+                            disabled
                           />
                           {formErrors && formErrors["user.lastname"] && (
                             <p className="text-sm text-red-500">
@@ -466,10 +485,10 @@ export default function EditVendor() {
                     </Card>
                   </div>
                 </div>
-                <div className="py-2">
+                {/* <div className="py-2">
                   <Button onClick={handleDetailSubmit}>Save</Button>
-                </div>
-              </form>
+                </div> */}
+              {/* </form> */}
             </TabsContent>
             <TabsContent value="services">
               <ServiceList vendorId={form.id} />
@@ -479,15 +498,20 @@ export default function EditVendor() {
                 <p>{form.address}</p>
               ) : (
                 <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
-                  <h4 className="font-bold text-lg">No Location added</h4>
-                  <p className="text-base">You havent added a location yet.</p>
+                  <h4 className="font-bold text-lg">
+                    No Business Location added
+                  </h4>
+                  <p className="text-base">
+                    You haven`t added a business location yet.
+                  </p>
                   <Button onClick={() => setAddLocationOpen(true)}>
-                    Add Location
+                    Add business Location
                   </Button>
                   {openAddLocation && (
                     <AddLocation
                       setAddLocationOpen={setAddLocationOpen}
                       open={openAddLocation}
+                      vendorId={form.id}
                     />
                   )}
                 </div>

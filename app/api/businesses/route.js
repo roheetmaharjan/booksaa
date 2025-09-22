@@ -9,7 +9,7 @@ export async function GET(req) {
         id: true,
         name: true,
         image: true,
-        phone: true,
+        isComplete : true,
         plan: {
           select: {
             id: true,

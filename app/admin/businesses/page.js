@@ -103,14 +103,14 @@ export default function VendorsList() {
                   <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
                     Business Name
                   </th>
-                  <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
+                  <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
                     Name
                   </th>
                   <th className="text-left text-sm px-2 py-1 border-gray-300">
                     Plan
                   </th>
                   <th className="text-left text-sm px-2 py-1 border-gray-300">
-                    Phone
+                    Profile Completed
                   </th>
                   <th className="text-left text-sm px-2 py-1 border-gray-300">
                     Status
@@ -157,7 +157,7 @@ export default function VendorsList() {
                         <p>{vendor.user.email || "-"}</p>
                       </td>
                       <td className="p-2">{vendor.plan.name || "-"}</td>
-                      <td className="p-2">{vendor.phone || "-"}</td>
+                      <td className="p-2">{vendor.isComplete ? "Yes" : "No" }</td>  
                       <td className="p-2">
                         {vendor.accountStatus === "ACTIVE" && (
                           <Badge
@@ -180,13 +180,13 @@ export default function VendorsList() {
                             variant="default"
                             className="text-red-700 bg-red-200 hover:bg-red-200 uppercase text-[10px]"
                           >
-                            Trial Active
+                            Trial Expiring
                           </Badge>
                         )}
                         {vendor.accountStatus === "TRIAL_EXPIRED" && (
                           <Badge
                             variant="default"
-                            className="text-red-500 bg-red-200 hover:bg-red-300 uppercase text-[10px]"
+                            className="text-red-50 bg-red-700 hover:bg-red-600 uppercase text-[10px]"
                           >
                             Trial Expired
                           </Badge>

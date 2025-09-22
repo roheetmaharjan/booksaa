@@ -1,72 +1,25 @@
-import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { prisma } from "@/lib/prisma"; 
 
 export async function POST(req) {
-  const {
-    vendorId,
-    address,
-    latitude,
-    longitude,
-    city,
-    postal_code,
-    offerAtBusiness,
-    offerAtClient,
-    serviceAreas,
-  } = await req.json();
-
-  if (
-    !vendorId ||
-    !address ||
-    !latitude ||
-    !longitude ||
-    !city ||
-    !postal_code ||
-    !offerAtBusiness ||
-    !offerAtClient ||
-    !serviceAreas
-  ) {
-    return NextResponse.json(
-      { message: "All fields are required" },
-      { status: 400 }
-    );
-  }
-
   try {
-    const existing = await prisma.location.findUnique({
-      where: { latitude, longitude },
-    });
+    const {
+      vendorId,
+      address,
+      latitude,
+      longitude,
+      offerAtClient,
+      offerAtBusiness,
+      travelFee,
+      maxTravelDistance,
+      isActive,
+    } = await req.json();
 
-    if (existing) {
+    // Basic validation
+    if (!vendorId || !address) {
       return NextResponse.json(
-        { message: "Location already exists" },
+        { error: "vendorId and address are required" },
         { status: 400 }
-      );
-    }
-
-    const vendor = await prisma.vendors.findUnique({
-      where: { id: vendorId },
-      include: {
-        plan: true,
-        locations: true,
-      },
-    });
-    if (!vendor) {
-      return NextResponse.json(
-        { message: "Vendor not found" },
-        { status: 404 }
-      );
-    }
-
-    const maxLocations = vendor.plan.location;
-    const currentCount = vendor.locations.length;
-
-    if (currentCount >= maxLocations) {
-      return NextResponse.json(
-        {
-          message:
-            "You can add only one location. Purchase more to add more location",
-        },
-        { status: 403 }
       );
     }
 
@@ -74,11 +27,13 @@ export async function POST(req) {
       data: {
         vendorId,
         address,
-        latitude,
-        longitude,
-        offerAtBusiness,
-        offerAtClient,
-        serviceAreas,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
+        offerAtClient: !!offerAtClient,
+        offerAtBusiness: !!offerAtBusiness,
+        travelFee: travelFee ? Number(travelFee) : 0.0,
+        maxTravelDistance: maxTravelDistance ? Number(maxTravelDistance) : 5.0,
+        isActive: isActive !== undefined ? !!isActive : true,
       },
     });
 
@@ -86,7 +41,7 @@ export async function POST(req) {
   } catch (error) {
     console.error(error);
     return NextResponse.json(
-      { message: "Cannot added location" },
+      { error: "Failed to create location" },
       { status: 500 }
     );
   }

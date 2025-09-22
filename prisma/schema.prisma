@@ -99,43 +99,19 @@ model Location {
   vendorId        String
   vendor          Vendors     @relation(fields: [vendorId], references: [id])
 
-  // --- Physical Address for business locations ---
-  address         String?     // optional if service is only at client
-  latitude        Float?      // for map display / distance calculation
+  address         String
+  latitude        Float?
   longitude       Float?
 
-  // --- Service type flags ---
-  offerAtClient   Boolean     @default(false) // Business Provider travels to client
-  offerAtBusiness Boolean     @default(false) // client visits business
+  offerAtClient   Boolean     @default(false) 
+  offerAtBusiness Boolean     @default(false)
 
-  // --- Service Areas (only needed for client-based service) ---
-  businessAreas   BusinessArea[] // links to City table for serviceable areas
+  travelFee         Float     @default(0.0)  
+  maxTravelDistance Float     @default(5.0)  
 
-  // --- Optional metadata ---
-  phone           String?     
-  openHours       String?     
   isActive        Boolean     @default(true)
   createdAt       DateTime    @default(now())
   updatedAt       DateTime    @updatedAt
-}
-
-model City {
-  id        String          @id @default(cuid())
-  name      String
-  state     String?
-  country   String?
-  latitude  Float?
-  longitude Float?
-  locations BusinessArea[]
-}
-
-model BusinessArea {
-  id         String   @id @default(cuid())
-  locationId String
-  cityId     String
-  location   Location @relation(fields: [locationId], references: [id])
-  city       City     @relation(fields: [cityId], references: [id])
-  @@unique([locationId, cityId])
 }
 
 model Service{
