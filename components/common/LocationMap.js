@@ -4,31 +4,63 @@ import "leaflet/dist/leaflet.css";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
-  iconRetinaUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
+  iconRetinaUrl:
+    "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon-2x.png",
   iconUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-icon.png",
   shadowUrl: "https://unpkg.com/leaflet@1.9.4/dist/images/marker-shadow.png",
 });
 
-export default function LocationMap({ mapPosition, mapRef, locationForm, handleLocationChange,setMapPosition, }) {
+export default function LocationMap({
+  mapPosition,
+  mapRef,
+  locationForm,
+  updateSearchQuery,
+  handleLocationChange,
+  setMapPosition,
+}) {
   // Handler for marker drag
-  const handleMarkerDrag = async (e) => {
-    const latlng = e.target.getLatLng();
-    handleLocationChange({ target: { name: "latitude", value: latlng.lat } });
-    handleLocationChange({ target: { name: "longitude", value: latlng.lng } });
-    setMapPosition([latlng.lat, latlng.lng]);
+const handleMarkerDrag = async (e) => {
+  const latlng = e.target.getLatLng();
+  handleLocationChange({ target: { name: "latitude", value: latlng.lat } });
+  handleLocationChange({ target: { name: "longitude", value: latlng.lng } });
 
-    // Reverse geocode to get address
-    const res = await fetch(
-      `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latlng.lat}&lon=${latlng.lng}`
-    );
-    const data = await res.json();
-    if (data && data.display_name) {
-      handleLocationChange({ target: { name: "address", value: data.display_name } });
-      if (typeof updateSearchQuery === "function") {
+  // Reverse geocode to get address details
+  const res = await fetch(
+    `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latlng.lat}&lon=${latlng.lng}`
+  );
+  const data = await res.json();
+  if (data && data.display_name) {
+    handleLocationChange({ target: { name: "address", value: data.display_name } });
+    if (data.address) {
+      if (data.address.city || data.address.town || data.address.village) {
+        handleLocationChange({
+          target: {
+            name: "city",
+            value: data.address.city || data.address.town || data.address.village,
+          },
+        });
+      }
+      if (data.address.postcode) {
+        handleLocationChange({
+          target: { name: "postal_code", value: data.address.postcode },
+        });
+      }
+      if(data.address.country){
+        handleLocationChange({
+          target: {name: "country", value: data.address.country}
+        })
+      }
+      if(data.address.state){
+        handleLocationChange({
+          target: {name: "state", value: data.address.state}
+        })
+      }
+    }
+    if (typeof updateSearchQuery === "function") {
       updateSearchQuery(data.display_name);
     }
-    }
-  };
+  }
+};
 
   return (
     <MapContainer

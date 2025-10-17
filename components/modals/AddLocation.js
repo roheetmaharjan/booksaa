@@ -12,12 +12,12 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Alert,AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertTitle } from "@/components/ui/alert";
 import { validateForm } from "@/utils/formValidator";
 import { useMutation } from "@/hooks/useMutation";
 import { useFormState } from "@/hooks/useFormState";
 import { PriceField } from "../common/PriceField";
-import {WarningDiamondIcon} from "@phosphor-icons/react"
+import { WarningDiamondIcon } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 import {
   Select,
@@ -48,10 +48,11 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
     handleChange: handleLocationChange,
     resetForm,
   } = useFormState({
-    id: "",
     address: "",
     city: "",
     postal_code: "",
+    country: "",
+    state: "",
     latitude: "",
     longitude: "",
     offerAtBusiness: offerAtBusiness,
@@ -62,6 +63,8 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
     address: { required: true, message: "Address is required" },
     postal_code: { required: true, message: "Postal Code is required" },
     city: { required: true, message: "City is required" },
+    country: { required: true, message: "Country is required" },
+    state: { required: true, message: "State is required" },
   };
 
   const {
@@ -95,26 +98,6 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
     }
   }, 400);
 
-  // Search button handler
-  const handleSearch = async (e) => {
-    e.preventDefault();
-    if (!searchQuery) return;
-    const { OpenStreetMapProvider } = await import("leaflet-geosearch");
-    const provider = new OpenStreetMapProvider();
-    const results = await provider.search({ query: searchQuery });
-    if (results && results.length > 0) {
-      const { x, y, label } = results[0];
-      setSearchedLocation({ lat: y, lng: x, label });
-      setMapPosition([y, x]);
-      handleLocationChange({ target: { name: "latitude", value: y } });
-      handleLocationChange({ target: { name: "longitude", value: x } });
-      handleLocationChange({ target: { name: "address", value: label } });
-      setSearchQuery(label);
-      setShowMap(true);
-      setShowSuggestions(false);
-    }
-  };
-
   // Add location submit handler
   const handleAddLocation = async (e) => {
     e.preventDefault();
@@ -140,21 +123,19 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
           <DialogHeader>
             <DialogTitle>Add Business Location</DialogTitle>
           </DialogHeader>
-
           {addError && (
             <Alert variant="destructive" className="flex items-center">
               <WarningDiamondIcon size={20} className="!top-[10px]" />
               <AlertTitle>{addError.message}</AlertTitle>
             </Alert>
           )}
-
           {/* --- Service Options --- */}
           <div className="flex flex-col space-y-3">
             <Label className="text-md">
               Where does this business offer services?
             </Label>
             <div className="grid grid-cols-12">
-              <div className="flex items-center space-x-3 col-span-12 md:col-span-6">
+              <div className="flex items-start space-x-3 col-span-12 md:col-span-6">
                 <Checkbox
                   id="businessPlace"
                   checked={offerAtBusiness}
@@ -174,7 +155,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
                   </p>
                 </Label>
               </div>
-              <div className="flex items-center space-x-3 col-span-12 md:col-span-6">
+              <div className="flex items-start space-x-3 col-span-12 md:col-span-6">
                 <Checkbox
                   id="clientsPlace"
                   checked={offerAtClient}
@@ -213,13 +194,6 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
                   placeholder="Search address..."
                   autoComplete="off"
                 />
-                <Button
-                  type="button"
-                  variant="outline"
-                  onClick={handleSearch}
-                >
-                  Search
-                </Button>
               </div>
               {showSuggestions && (
                 <div className="bg-white border rounded shadow mt-1 absolute top-9 z-[111111] w-full max-h-80 overflow-y-auto">
@@ -249,6 +223,50 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
                           handleLocationChange({
                             target: { name: "address", value: item.label },
                           });
+
+                          // Extract city and postal code if available
+                          if (item.raw && item.raw.address) {
+                            if (
+                              item.raw.address.city ||
+                              item.raw.address.town ||
+                              item.raw.address.village
+                            ) {
+                              handleLocationChange({
+                                target: {
+                                  name: "city",
+                                  value:
+                                    item.raw.address.city ||
+                                    item.raw.address.town ||
+                                    item.raw.address.village,
+                                },
+                              });
+                            }
+                            if (item.raw.address.postcode) {
+                              handleLocationChange({
+                                target: {
+                                  name: "postal_code",
+                                  value: item.raw.address.postcode || "",
+                                },
+                              });
+                            }
+                            if (item.raw.address.country) {
+                              handleLocationChange({
+                                target: {
+                                  name: "country",
+                                  value: item.raw.address.country || "",
+                                },
+                              });
+                            }
+                            if (item.raw.address.state) {
+                              handleLocationChange({
+                                target: {
+                                  name: "state",
+                                  value: item.raw.address.state || "",
+                                },
+                              });
+                            }
+                          }
+
                           setShowMap(true);
                           setShowSuggestions(false);
                         }}
@@ -277,10 +295,11 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
           </div>
 
           {/* --- Business Location Details --- */}
-          {offerAtBusiness && (
+          {showMap && (
             <div className="border p-4 rounded-lg space-y-3">
+              <h5>Confirm Location Detail</h5>
               <div className="mb-2">
-                <Label htmlFor="address">Business Address</Label>
+                <Label htmlFor="address">Address</Label>
                 <Input
                   id="address"
                   name="address"
@@ -289,54 +308,76 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
                   value={locationForm.address}
                 />
                 {formErrors?.address && (
-                  <p className="text-sm text-red-500">
-                    {formErrors.address}
-                  </p>
+                  <p className="text-sm text-red-500">{formErrors.address}</p>
                 )}
               </div>
-              <div className="mb-2">
-                <Label htmlFor="city">City</Label>
-                <Input
-                  id="city"
-                  name="city"
-                  placeholder="City"
-                  onChange={handleLocationChange}
-                  value={locationForm.city}
-                />
-                {formErrors?.city && (
-                  <p className="text-sm text-red-500">
-                    {formErrors.city}
-                  </p>
-                )}
-              </div>
-              <div className="mb-2">
-                <Label htmlFor="postal_code">Postal Code</Label>
-                <Input
-                  id="postal_code"
-                  name="postal_code"
-                  placeholder="Postal Code"
-                  onChange={handleLocationChange}
-                  value={locationForm.postal_code}
-                />
-                {formErrors?.postal_code && (
-                  <p className="text-sm text-red-500">
-                    {formErrors.postal_code}
-                  </p>
-                )}
+              <div className="grid grid-cols-12 gap-3">
+                <div className="mb-2 col-span-12 md:col-span-6">
+                  <Label htmlFor="city">City</Label>
+                  <Input
+                    id="city"
+                    name="city"
+                    placeholder="City"
+                    onChange={handleLocationChange}
+                    value={locationForm.city}
+                  />
+                  {formErrors?.city && (
+                    <p className="text-sm text-red-500">{formErrors.city}</p>
+                  )}
+                </div>
+                <div className="mb-2 col-span-12 md:col-span-6">
+                  <Label htmlFor="postal_code">Postal Code</Label>
+                  <Input
+                    id="postal_code"
+                    name="postal_code"
+                    placeholder="Postal Code"
+                    onChange={handleLocationChange}
+                    value={locationForm.postal_code}
+                  />
+                  {formErrors?.postal_code && (
+                    <p className="text-sm text-red-500">
+                      {formErrors.postal_code}
+                    </p>
+                  )}
+                </div>
+                <div className="mb-2 col-span-12 md:col-span-6">
+                  <Label htmlFor="country">Country</Label>
+                  <Input
+                    id="country"
+                    name="country"
+                    placeholder="Country"
+                    onChange={handleLocationChange}
+                    value={locationForm.country}
+                  />
+                  {formErrors?.country && (
+                    <p className="text-sm text-red-500">{formErrors.country}</p>
+                  )}
+                </div>
+                <div className="mb-2 col-span-12 md:col-span-6">
+                  <Label htmlFor="state">State</Label>
+                  <Input
+                    id="state"
+                    name="state"
+                    placeholder="State"
+                    onChange={handleLocationChange}
+                    value={locationForm.state}
+                  />
+                  {formErrors?.state && (
+                    <p className="text-sm text-red-500">{formErrors.state}</p>
+                  )}
+                </div>
               </div>
             </div>
           )}
 
           {/* --- Client Service Areas --- */}
           {offerAtClient && (
-            <div className="">
-              <div className="mb-2">
+            <div className="grid grid-cols-12 gap-3">
+              <div className="col-span-12 md:col-span-6 mb-2">
                 <PriceField label={"Travel Fee"} />
               </div>
-              <div className="mb-2">
-                <Label htmlFor="serviceAreas">
-                  Maximum Travel Distance
-                </Label>
+              <div className="col-span-12 md:col-span-6 mb-2">
+                <Label htmlFor="serviceAreas">Maximum Travel Distance</Label>
                 <Select id="" name="" value="">
                   <SelectTrigger>
                     <SelectValue placeholder="Select distance" />
@@ -359,7 +400,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
             >
               Cancel
             </Button>
-            <Button type="submit" onClick={handleAddLocation}>
+            <Button type="submit" disabled={!offerAtBusiness && !offerAtClient} onClick={handleAddLocation}>
               {addLoading ? "Saving..." : "Save Location"}
             </Button>
           </DialogFooter>
