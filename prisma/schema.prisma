@@ -27,9 +27,9 @@ model Users {
 }
 
 model Vendors {
-  id                  String        @id @default(uuid())
+  id                  String         @id @default(uuid())
   name                String
-  locations           Location[]
+  location            Location?
   services            Service[]
   description         String?
   image               String?
@@ -37,15 +37,15 @@ model Vendors {
   photos              String?
   cancellation_policy String?
   categoryId          String
-  category            Category      @relation(fields: [categoryId], references: [id])
+  category            Category       @relation(fields: [categoryId], references: [id])
   planId              String
-  plan                Plans         @relation(fields: [planId], references: [id])
-  status              AccountStatus @default(ACTIVE)
-  joinedAt            DateTime      @default(now())
+  plan                Plans          @relation(fields: [planId], references: [id])
+  status              AccountStatus  @default(ACTIVE)
+  joinedAt            DateTime       @default(now())
   trialEndsAt         DateTime?
-  userId              String        @unique
-  user                Users         @relation(fields: [userId], references: [id])
-  isComplete          Boolean       @default(false)
+  userId              String         @unique
+  user                Users          @relation(fields: [userId], references: [id])
+  isComplete          Boolean        @default(false)
   professionals       Professional[]
 }
 
@@ -57,16 +57,16 @@ model Category {
 }
 
 model Plans {
-  id          String    @id @default(uuid())
-  name        String @unique
-  price       Float
-  duration    Int
-  trial_period Int
+  id            String    @id @default(uuid())
+  name          String    @unique
+  price         Float
+  duration      Int
+  trial_period  Int
   billing_cycle String
-  createdAt  DateTime @default(now())
-  professional   Int        @default(1)
-  vendors     Vendors[]
-  location Int @default(1)
+  createdAt     DateTime  @default(now())
+  professional  Int       @default(1)
+  vendors       Vendors[]
+  location      Int       @default(1)
 }
 
 model Role {
@@ -76,15 +76,15 @@ model Role {
 }
 
 model Bookings {
-  id        String        @id @default(cuid())
-  date      DateTime
-  createdAt DateTime      @default(now())
-  status    BookingStatus @default(PENDING)
+  id          String        @id @default(cuid())
+  date        DateTime
+  createdAt   DateTime      @default(now())
+  status      BookingStatus @default(PENDING)
   scheduledAt DateTime
-  userId    String
-  user      Users         @relation(fields: [userId], references: [id])
-  serviceId  String
-  service    Service       @relation(fields: [serviceId], references: [id])
+  userId      String
+  user        Users         @relation(fields: [userId], references: [id])
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
 }
 
 model Invitation {
@@ -94,56 +94,60 @@ model Invitation {
   expiresAt DateTime
   used      Boolean  @default(false)
 }
+
 model Location {
-  id              String      @id @default(cuid())
-  vendorId        String
-  vendor          Vendors     @relation(fields: [vendorId], references: [id])
+  id       String  @id @default(cuid())
+  vendorId String @unique
+  vendor   Vendors @relation(fields: [vendorId], references: [id])
 
-  address         String
-  latitude        Float?
-  longitude       Float?
+  address   String
+  latitude  Float?
+  longitude Float?
 
-  offerAtClient   Boolean     @default(false) 
-  offerAtBusiness Boolean     @default(false)
+  offerAtClient   Boolean @default(false)
+  offerAtBusiness Boolean @default(false)
 
-  travelFee         Float     @default(0.0)  
-  maxTravelDistance Float     @default(5.0)  
+  travelFee         Float @default(0.0)
+  maxTravelDistance Float @default(5.0)
 
-  isActive        Boolean     @default(true)
-  createdAt       DateTime    @default(now())
-  updatedAt       DateTime    @updatedAt
+  isActive  Boolean   @default(true)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  services  Service[]
 }
 
-model Service{
-  id        String @id @default(cuid())
-  name      String 
+model Service {
+  id          String     @id @default(cuid())
+  name        String
   description String?
-  vendorId  String
-  vendor    Vendors @relation(fields: [vendorId],references: [id])
-  price     Float
-  duration      Int
-  booking   Bookings[]
-  @@unique([name, vendorId])
-}
+  vendorId    String
+  vendor      Vendors    @relation(fields: [vendorId], references: [id])
+  locationId  String
+  location    Location   @relation(fields: [locationId], references: [id])
+  price       Float
+  duration    Int
+  booking     Bookings[]
 
+  @@unique([name, vendorId, locationId])
+}
 
 model Professional {
-  id         String   @id @default(uuid())
-  name       String
-  email      String?  @unique
-  phone      String?
-  vendorId   String
-  vendor     Vendors  @relation(fields: [vendorId], references: [id])
-  createdAt  DateTime @default(now())
-  updatedAt  DateTime @updatedAt
-  roleId   String
-  role     ProfessionalRole @relation(fields: [roleId], references: [id])
+  id        String             @id @default(uuid())
+  name      String
+  email     String?            @unique
+  phone     String?
+  vendorId  String
+  vendor    Vendors            @relation(fields: [vendorId], references: [id])
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  roleId    String
+  role      ProfessionalRole   @relation(fields: [roleId], references: [id])
   status    ProfessionalStatus @default(INACTIVE)
 }
 
 model ProfessionalRole {
-  id    String @id @default(cuid())
-  name  String @unique
+  id            String         @id @default(cuid())
+  name          String         @unique
   professionals Professional[]
 }
 
@@ -173,4 +177,3 @@ enum ProfessionalStatus {
   INACTIVE
   PENDING
 }
-

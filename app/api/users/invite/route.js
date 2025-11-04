@@ -6,7 +6,7 @@ export async function POST(request) {
 
     // Email content
     const mailOptions = {
-      from: `"Bookaroo" <${process.env.SMTP_USER}>`,
+      from: `"Booksaa" <${process.env.SMTP_USER}>`,
       to: email,
       subject: "You're Invited to Booksaa!",
       html: `

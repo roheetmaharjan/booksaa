@@ -98,17 +98,20 @@ export default function ServiceList({ vendorId }) {
             <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">
               S.N
             </th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
+            <th className="text-left w-1/6 text-sm px-2 py-1 border-gray-300">
               Service Name
             </th>
             <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
               Description
             </th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
+            <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
+              Location
+            </th>
+            <th className="text-left w-28 text-sm px-2 py-1 border-gray-300">
               Price
             </th>
-            <th className="text-left w-1/2 text-sm px-2 py-1 border-gray-300">
-              Duration (min)
+            <th className="text-left w-1/6 text-sm px-2 py-1 border-gray-300">
+              Duration <small>(min)</small>
             </th>
             {showActionButton && (
               <th className="text-left text-sm px-2 py-1 w-1/5">Action</th>
@@ -122,7 +125,8 @@ export default function ServiceList({ vendorId }) {
                 <td className="p-2 text-center">{index + 1}</td>
                 <td className="p-2">{service.name}</td>
                 <td className="p-2">{service.description || "-"}</td>
-                <td className="p-2">{service.price}</td>
+                <td className="p-2">{service.location.address}</td>
+                <td className="p-2">$ {service.price}</td>
                 <td className="p-2">{service.duration} min</td>
                 {showActionButton && (
                   <td className="p-2">

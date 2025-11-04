@@ -3,14 +3,13 @@
 import { UsersLayout } from "@/app/admin/layout";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
-import AddBusiness from "@/components/modals/AddBusiness";
 import { toast } from "sonner";
 import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
 import { Badge } from "@/components/ui/badge";
-import Link from "next/link";
 import Loading from "@/components/common/Loading";
 import { useRouter } from "next/navigation";
+import AddBusinessWizard from "@/components/modals/AddBusinessWizard";
 
 export default function VendorsList() {
   const [vendors, setVendors] = useState([]);
@@ -79,8 +78,8 @@ export default function VendorsList() {
         <>
           <div className="flex flex-row justify-between w-full items-center mb-4">
             <h4 className="page-title">Businesses</h4>
-            <Button onClick={() => setAddOpen(true)}>Add Vendor</Button>
-            {addOpen && <AddBusiness open={addOpen} setAddOpen={setAddOpen} />}
+            <Button onClick={() => setAddOpen(true)}>Add Business</Button>
+            {addOpen && <AddBusinessWizard open={addOpen} setAddOpen={setAddOpen} />}
           </div>
           <div className="mb-4">
             <input
@@ -121,8 +120,8 @@ export default function VendorsList() {
               <tbody>
                 {vendors.length === 0 ? (
                   <tr>
-                    <td colSpan="6" className="p-4 text-center text-gray-600">
-                      No vendors found.
+                    <td colSpan="7" className="p-4 text-center text-gray-600">
+                      No Businesses found.
                     </td>
                   </tr>
                 ) : (

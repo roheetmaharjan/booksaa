@@ -18,7 +18,7 @@ npx prisma migrate deploy
 Third, seed the Databse
 
 ```bash
-npx prisma db seed
+npm run seed
 ```
 
 

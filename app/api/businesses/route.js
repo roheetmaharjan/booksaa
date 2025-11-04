@@ -29,11 +29,11 @@ export async function GET(req) {
       },
     });
 
-    if (!vendors || vendors.length === 0) {
-      return new Response(JSON.stringify({ error: "Vendor not found" }), {
-        status: 404,
-      });
-    }
+    // if (!vendors || vendors.length === 0) {
+    //   return new Response(JSON.stringify({ error: "Vendor not found" }), {
+    //     status: 404,
+    //   });
+    // }
 
     // Process each vendor
     const processedVendors = vendors.map((vendor) => {

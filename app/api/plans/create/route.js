@@ -4,10 +4,10 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req) {
   try {
-    const { name, price, trial_period, billing_cycle, duration } =
+    const { name, price, trial_period, billing_cycle, duration,professional  } =
       await req.json();
 
-    if (!name || !price || !trial_period || !billing_cycle || !duration) {
+    if (!name || !price || !trial_period || !billing_cycle || !duration || !professional) {
       return NextResponse.json(
         {
           error:

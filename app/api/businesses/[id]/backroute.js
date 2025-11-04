@@ -209,9 +209,6 @@ export async function DELETE(req, { params }) {
     await prisma.users.delete({
       where: { id: vendor.userId },
     });
-    await prisma.location.delete({
-      where: {id: vendor.locationId}
-    })
 
     return NextResponse.json(
       { success: true, message: "Vendor and user deleted" },
