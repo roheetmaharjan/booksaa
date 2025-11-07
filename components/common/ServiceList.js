@@ -6,6 +6,7 @@ import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { usePathname } from "next/navigation";
+import { useFetch } from "@/hooks/useFetch";
 
 export default function ServiceList({ vendorId }) {
   const [openAddService, setAddServiceOpen] = useState(false);
@@ -16,6 +17,19 @@ export default function ServiceList({ vendorId }) {
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
   const fetched = useRef(false)
+
+  const {
+    data: fetchedLocations
+  } = useFetch(`/api/businesses/${vendorId}/locations`, {
+    lazy: true,
+  });
+  const [locations, setLocations] = useState([]);
+
+  useEffect(() => {
+    if (open && fetchedLocations) {
+      setLocations(fetchedLocations);
+    }
+  }, [open, fetchedLocations]);
 
   useEffect(() => {
     if (fetched.current) return;
@@ -82,6 +96,7 @@ export default function ServiceList({ vendorId }) {
             open={openAddService}
             setAddServiceOpen={setAddServiceOpen}
             vendorId={vendorId}
+            locations={locations}
             onAdded={async () => {
               const updatedVendor = await fetch(
                 `/api/businesses/${vendorId}`
@@ -104,9 +119,6 @@ export default function ServiceList({ vendorId }) {
             <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
               Description
             </th>
-            <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">
-              Location
-            </th>
             <th className="text-left w-28 text-sm px-2 py-1 border-gray-300">
               Price
             </th>
@@ -125,7 +137,7 @@ export default function ServiceList({ vendorId }) {
                 <td className="p-2 text-center">{index + 1}</td>
                 <td className="p-2">{service.name}</td>
                 <td className="p-2">{service.description || "-"}</td>
-                <td className="p-2">{service.location.address}</td>
+                {/* <td className="p-2">{service.location.address}</td> */}
                 <td className="p-2">$ {service.price}</td>
                 <td className="p-2">{service.duration} min</td>
                 {showActionButton && (
@@ -163,6 +175,7 @@ export default function ServiceList({ vendorId }) {
           openEdit={openEditService}
           setEditServiceOpen={setEditServiceOpen}
           vendorId={vendorId}
+          locations={locations}
           service={selectedService}
           onEdited={async () => {
             const updatedVendor = await fetch(

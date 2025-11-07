@@ -8,62 +8,23 @@ export async function GET(req, { params }) {
     const vendor = await prisma.vendors.findUnique({
       where: { id },
       include: {
-        plan: {
-          select: {
-            id: true,
-            name: true,
-            professional: true,
-          }
-        },
-        locations:{
-          select:{
-            id: true,
-            address: true,
-          }
-        },
-        category: {
-          select: {
-            id: true,
-            name: true
-          }
-        },
+        location: true,
+        category: true,
+        services: true,
+        plan: true,
+        professionals: true,
         user: {
           select: {
             firstname: true,
             lastname: true,
             email: true,
-          }
+          },
         },
-        services:{
-          select:{
-            id:true,
-            name:true,
-            description: true,
-            duration: true,
-            price:true,
-            location:{
-              select:{
-                address: true,
-                id: true,
-              }
-            }
-          }
-        },
-        professionals:{
-          select:{
-            id: true,
-            name: true,
-            email: true,
-            role : true,
-            status: true,
-            phone: true
-          }
-        }
       },
     });
 
     if (!vendor) {
-      return new Response(JSON.stringify({ error: "Vendor not found" }), {
+      return new Response(JSON.stringify({ error: "Business not found" }), {
         status: 404,
       });
     }
@@ -104,7 +65,7 @@ export async function GET(req, { params }) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
-    return new Response(JSON.stringify({ error: "Error fetching vendor" }), {
+    return new Response(JSON.stringify({ error: "Error fetching business" }), {
       status: 500,
     });
   }

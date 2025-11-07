@@ -16,7 +16,8 @@ import { PriceField } from "@/components/common/PriceField";
 import { useFormState } from "@/hooks/useFormState";
 import { useState } from "react";
 
-export default function AddService({ open, setAddServiceOpen,vendorId,onAdded }) {
+
+export default function AddService({ open, setAddServiceOpen,vendorId, locations = [],onAdded }) {
   const [formErrors, setFormErrors] = useState({});
   const [services,setServices] = useState();
   const [loading, setLoading] = useState();
@@ -31,12 +32,16 @@ export default function AddService({ open, setAddServiceOpen,vendorId,onAdded })
     description: "",
     price: "",
     duration: "",
+    locationId: ""
   });
+  console.log("locations is:", locations)
   const validationRules = {
     name: { required: true, message: "Service name is required" },
     price: { required: true, message: "Price is required" },
     duration: { required: true, message: "Duration is required" },
+    locationId: { required: true, message: "Location is required" },
   };
+
   const handleAddService = async (e) => {
     e.preventDefault();
     const errors = validateForm(serviceForm, validationRules);
@@ -78,7 +83,33 @@ export default function AddService({ open, setAddServiceOpen,vendorId,onAdded })
               <DialogTitle>Add Service</DialogTitle>
             </DialogHeader>
             <div className="mb-3">
-              <Label htmlFor="name">Service Name <span className="astrick">*</span></Label>
+              <Label htmlFor="locationId">
+                Select Location <span className="astrick">*</span>
+              </Label>
+              <select
+                id="locationId"
+                name="locationId"
+                value={serviceForm.locationId}
+                onChange={handleServiceChange}
+                className="w-full"
+              >
+                <option value="">-- Choose a location --</option>
+                {locations
+                  ?.filter((loc) => loc) // remove undefined
+                  .map((loc) => (
+                    <option key={loc.id} value={loc.id} className="w-full">
+                      {loc?.address || loc?.name || "-"}
+                    </option>
+                  ))}
+              </select>
+              {formErrors.locationId && (
+                <p className="text-sm text-red-500">{formErrors.locationId}</p>
+              )}
+            </div>
+            <div className="mb-3">
+              <Label htmlFor="name">
+                Service Name <span className="astrick">*</span>
+              </Label>
               <Input
                 id="name"
                 name="name"
@@ -108,7 +139,9 @@ export default function AddService({ open, setAddServiceOpen,vendorId,onAdded })
                 )}
               </div>
               <div className="col-span-6">
-                <Label htmlFor="price">Duration <span className="astrick">*</span></Label>
+                <Label htmlFor="price">
+                  Duration <span className="astrick">*</span>
+                </Label>
                 <div className="flex items-center">
                   <Input
                     type="number"
