@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Modern Agency</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- GSAP CDN -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0d0d0d;
+            visibility: hidden;
+            /* Prevent FOUC before GSAP runs */
+        }
+
+        /* Retaining CSS for high-performance hover states, but we could GSAP them if requested. 
+           CSS is generally better for simple hover states like this. */
+    </style>
+</head>
+
+<body class="bg-black text-white min-h-screen p-4 md:p-8 lg:p-12 flex flex-col justify-center">
+
+    <!-- Main Content -->
+
+
+    <script>
+        lucide.createIcons();
+
+        // GSAP Animations
+        window.addEventListener("load", () => {
+            document.body.style.visibility = "visible";
+
+            const tl = gsap.timeline();
+
+            // Hero Text Animation
+            tl.from(".hero-text-line", {
+                duration: 1,
+                y: 100,
+                opacity: 0,
+                ease: "power4.out",
+                stagger: 0.15
+            })
+                // Grids Info/Text Stagger
+                .from(".info-item", {
+                    duration: 0.8,
+                    y: 30,
+                    opacity: 0,
+                    ease: "power3.out",
+                    stagger: 0.1
+                }, "-=0.5")
+                // Cards Stagger
+                .from(".card-item", {
+                    duration: 0.8,
+                    scale: 0.9,
+                    y: 50,
+                    opacity: 0,
+                    ease: "back.out(1.2)",
+                    stagger: 0.1
+                }, "-=0.5");
+        });
+    </script>
+</body>
+
+</html>
