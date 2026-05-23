@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { v4 as uuidv4 } from "uuid";
 import { sendInviteEmail } from "@/lib/sendInviteEmail";
 import { NextResponse } from "next/server";
 
@@ -22,7 +21,7 @@ export async function POST(req) {
       return NextResponse.json({ error: "User is already active" }, { status: 400 });
     }
 
-    const token = uuidv4();
+    const token = crypto.randomUUID();
 
     await prisma.invitation.create({
       data: {

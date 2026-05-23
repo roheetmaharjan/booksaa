@@ -1,7 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { useSession } from 'next-auth/react';
+import { useState } from 'react';
+import { useSession } from '@/lib/auth-client';
 
 export default function UploadForm() {
   const { data: session, status } = useSession();

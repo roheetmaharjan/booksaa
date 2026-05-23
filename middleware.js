@@ -1,32 +1,32 @@
-import { NextResponse,NextRequest } from 'next/server';
-import { getToken } from 'next-auth/jwt';
-import {isRateLimited} from '@/lib/rate-limit'
+import { NextResponse } from "next/server";
+import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth-session";
 
-const blockedIPs = ['123.45.67.89'];
+const blockedIPs = ["123.45.67.89"];
 const validApiKey = process.env.API_KEY;
 
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
-  const ip = request.ip || request.headers.get('x-forwarded-for') || 'unknown';
+  const ip = request.ip || request.headers.get("x-forwarded-for") || "unknown";
 
   if (blockedIPs.includes(ip)) {
     return NextResponse.json({ error: "Blocked IP" }, { status: 403 });
   }
-  const rate = await isRateLimited(ip);
-  if (rate.isLimited) {
-    return NextResponse.json({ error: "Rate limit exceeded" }, { status: 429 });
-  }
 
-  const apiKey = request.headers.get('x-api-key');
+  const apiKey = request.headers.get("x-api-key");
 
-  if(apiKey && apiKey === validApiKey){
+  if (apiKey && apiKey === validApiKey) {
     return NextResponse.next();
   }
-  
-  const token = await getToken({ req: request, secret: process.env.NEXTAUTH_SECRET });
+
+  if (pathname.startsWith("/api/auth")) {
+    return NextResponse.next();
+  }
+
+  const token = request.cookies.get(AUTH_COOKIE_NAME)?.value;
+  const session = await verifySessionToken(token);
 
   // Not logged in
-  if (!token) {
+  if (!session) {
     const loginUrl = new URL('/auth/login', request.url);
     loginUrl.searchParams.set('url', pathname);
     return NextResponse.redirect(loginUrl);
@@ -35,25 +35,25 @@ export async function middleware(request) {
   // Already logged in, trying to access /auth/login
   if (pathname === '/auth/login') {
     const url = request.nextUrl.clone();
-    if (token.role === 'ADMIN') url.pathname = '/admin';
-    else if (token.role === 'VENDOR') url.pathname = '/vendor';
-    else if (token.role === 'CUSTOMER') url.pathname = '/customer';
+    if (session.role === 'ADMIN') url.pathname = '/admin';
+    else if (session.role === 'VENDOR') url.pathname = '/vendor';
+    else if (session.role === 'CUSTOMER') url.pathname = '/customer';
     return NextResponse.redirect(url);
   }
 
   // Role-based protection
-  if (pathname.startsWith('/api') && token.role !== 'ADMIN') {
+  if (pathname.startsWith('/api') && session.role !== 'ADMIN') {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
-  if (pathname.startsWith('/admin') && token.role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
-
-  if (pathname.startsWith('/vendor') && token.role !== 'VENDOR') {
+  if (pathname.startsWith('/admin') && session.role !== 'ADMIN') {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
-  if (pathname.startsWith('/customer') && token.role !== 'CUSTOMER') {
+  if (pathname.startsWith('/vendor') && session.role !== 'VENDOR') {
+    return NextResponse.redirect(new URL('/auth/login', request.url));
+  }
+
+  if (pathname.startsWith('/customer') && session.role !== 'CUSTOMER') {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 

@@ -1,5 +1,5 @@
 "use client";
-import { signIn } from "next-auth/react";
+import { signIn } from "@/lib/auth-client";
 import { useRouter,useSearchParams } from "next/navigation";
 import { useState } from "react";
 import Image from "next/image";
@@ -9,7 +9,6 @@ export default function LoginPage() {
   const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [role, setRole] = useState("ADMIN");
   const searchParams = useSearchParams();
   const redirectUrl = searchParams.get("url");
 
@@ -38,7 +37,9 @@ export default function LoginPage() {
       const role = session?.user?.role;
 
       // Redirect based on role
-      if (role === "ADMIN") router.replace("/admin");
+      if (redirectUrl && redirectUrl.startsWith("/")) {
+        router.replace(redirectUrl);
+      } else if (role === "ADMIN") router.replace("/admin");
       else if (role === "VENDOR") router.replace("/vendor");
       else router.replace("/customer");
     }
@@ -67,7 +68,7 @@ export default function LoginPage() {
                   className="w-full h-12 border rounded px-3 focus:ring-primary focus:border-primary"
                   placeholder="Username or Email"
                   autoComplete="off"
-                  type="email"
+                  type="text"
                   name="identifier"
                   required
                 />

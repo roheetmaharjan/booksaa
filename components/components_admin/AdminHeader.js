@@ -1,11 +1,10 @@
 import Image from "next/image";
 import { SquaresFourIcon, GearIcon, UsersIcon,ChartBarIcon,QuestionIcon } from "@phosphor-icons/react";
-import { signOut } from "next-auth/react";
-import { usePathname,useRouter } from "next/navigation";
+import { signOut } from "@/lib/auth-client";
+import { useRouter } from "next/navigation";
 
 export default function AdminHeader({startTransition}) {
   const router = useRouter();
-  const pathname = usePathname();
 
   const handleNav = (href) => (e) =>{
     e.preventDefault();
