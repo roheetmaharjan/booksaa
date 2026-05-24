@@ -22,6 +22,8 @@ import { validateForm } from "@/utils/formValidator";
 import { toast } from "sonner";
 import BusinessLocation from "@/components/common/BusinessLocation";
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AddBusinessWizard({ open, setAddOpen }) {
   const [form, setForm] = useState({
     firstname: "",
@@ -43,6 +45,7 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
   const [plans, setPlans] = useState([]);
   const [formErrors, setFormErrors] = useState({});
   const [addloading, setAddLoading] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
   const [step, setStep] = useState(1);
   const totalSteps = 3;
 
@@ -51,7 +54,7 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
     lastname: { required: true, message: "Last name is required" },
     email: {
       required: true,
-      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      pattern: EMAIL_PATTERN,
       message: "Valid email is required",
     },
     name: { required: true, message: "Business name is required" },
@@ -118,7 +121,47 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setFormErrors((prev) => ({ ...prev, [name]: "" }));
   };
+
+  const checkEmailAvailability = useCallback(async () => {
+    const email = form.email.trim();
+
+    if (!email || !EMAIL_PATTERN.test(email)) {
+      return false;
+    }
+
+    try {
+      setEmailChecking(true);
+      const res = await fetch(
+        `/api/auth/business-signup?email=${encodeURIComponent(email)}`
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to validate email.");
+      }
+
+      if (data.exists) {
+        setFormErrors((prev) => ({
+          ...prev,
+          email: "Email already exists.",
+        }));
+        return false;
+      }
+
+      setFormErrors((prev) => ({
+        ...prev,
+        email: prev.email === "Email already exists." ? "" : prev.email,
+      }));
+      return true;
+    } catch (error) {
+      toast.error(error.message);
+      return false;
+    } finally {
+      setEmailChecking(false);
+    }
+  }, [form.email]);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -143,11 +186,14 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
       }
     });
 
-    if (!locationData || !locationData.address) {
+    if (!locationData?.locationForm?.address) {
       errors.location = "Location (address) is required";
     }
 
     setFormErrors(errors);
+    if (Object.keys(errors).length > 0) return;
+    if (!(await checkEmailAvailability())) return;
+
     try {
       setAddLoading(true);
       const payload = {
@@ -225,10 +271,10 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
     setLocationData(data);
   }, []);
 
-  const nextStep = () => {
-    if (validateStep()) {
-      setStep(step + 1);
-    }
+  const nextStep = async () => {
+    if (!validateStep()) return;
+    if (step === 1 && !(await checkEmailAvailability())) return;
+    setStep(step + 1);
   };
 
   const prevStep = () => {
@@ -364,8 +410,14 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
                               id="email"
                               name="email"
                               value={form.email}
+                              onBlur={checkEmailAvailability}
                               onChange={handleChange}
                             />
+                            {emailChecking && (
+                              <p className="text-sm text-gray-500">
+                                Checking email...
+                              </p>
+                            )}
                             {formErrors && formErrors.email && (
                               <p className="text-sm text-red-500">
                                 {formErrors.email}
@@ -500,7 +552,11 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
                     </Button>
                   )}
                   {step < totalSteps && (
-                    <Button type="button" onClick={nextStep}>
+                    <Button
+                      type="button"
+                      onClick={nextStep}
+                      disabled={emailChecking}
+                    >
                       Next
                     </Button>
                   )}

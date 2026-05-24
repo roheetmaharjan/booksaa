@@ -9,6 +9,8 @@ import { useState, useEffect } from "react";
 import { validateForm } from "@/utils/formValidator";
 import { toast } from "sonner"
 
+const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
 export default function AddVendor({ open, setAddOpen }) {
   const [form, setForm] = useState({
     firstname: "",
@@ -27,13 +29,14 @@ export default function AddVendor({ open, setAddOpen }) {
   const [plans, setPlans] = useState([]);
   const [formErrors, setFormErrors] = useState({});
   const [addloading, setAddLoading] = useState(false);
+  const [emailChecking, setEmailChecking] = useState(false);
 
   const validationRules = {
     firstname: { required: true, message: "First name is required" },
     lastname: { required: true, message: "Last name is required" },
     email: {
       required: true,
-      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+      pattern: EMAIL_PATTERN,
       message: "Valid email is required",
     },
     name: { required: true, message: "Business name is required" },
@@ -71,6 +74,46 @@ export default function AddVendor({ open, setAddOpen }) {
   const handleChange = (e) => {
     const { name, value } = e.target;
     setForm((prev) => ({ ...prev, [name]: value }));
+    setFormErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+
+  const checkEmailAvailability = async () => {
+    const email = form.email.trim();
+
+    if (!email || !EMAIL_PATTERN.test(email)) {
+      return false;
+    }
+
+    try {
+      setEmailChecking(true);
+      const res = await fetch(
+        `/api/auth/business-signup?email=${encodeURIComponent(email)}`
+      );
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data.error || "Unable to validate email.");
+      }
+
+      if (data.exists) {
+        setFormErrors((prev) => ({
+          ...prev,
+          email: "Email already exists.",
+        }));
+        return false;
+      }
+
+      setFormErrors((prev) => ({
+        ...prev,
+        email: prev.email === "Email already exists." ? "" : prev.email,
+      }));
+      return true;
+    } catch (error) {
+      toast.error(error.message);
+      return false;
+    } finally {
+      setEmailChecking(false);
+    }
   };
   
   const handleSubmit = async (e) => {
@@ -79,6 +122,7 @@ export default function AddVendor({ open, setAddOpen }) {
     setFormErrors(errors);
 
     if (Object.keys(errors).length > 0) return;
+    if (!(await checkEmailAvailability())) return;
 
     try {
       setAddLoading(true);
@@ -164,8 +208,12 @@ export default function AddVendor({ open, setAddOpen }) {
                 id="email"
                 name="email"
                 value={form.email}
+                onBlur={checkEmailAvailability}
                 onChange={handleChange}
               />
+              {emailChecking && (
+                <p className="text-sm text-gray-500">Checking email...</p>
+              )}
               {formErrors && formErrors.email && (
                 <p className="text-sm text-red-500">{formErrors.email}</p>
               )}
@@ -263,7 +311,7 @@ export default function AddVendor({ open, setAddOpen }) {
                 Cancel
               </Button>
             </DialogClose>
-            <Button type="submit" disabled={addloading}>{addloading ? 'Loading...': 'Add'}</Button>
+            <Button type="submit" disabled={addloading || emailChecking}>{addloading ? 'Loading...': 'Add'}</Button>
           </DialogFooter>
         </form>
       </DialogContent>

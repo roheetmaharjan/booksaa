@@ -6,12 +6,15 @@ import { NextResponse } from "next/server";
 export async function POST(req) {
   const body = await req.json();
   const { firstname, lastname, email, categoryId, planId, name, userId } = body;
+  const normalizedEmail = email?.trim().toLowerCase();
 
-  if (!firstname || !lastname || !email || !categoryId || !planId || !name) {
+  if (!firstname || !lastname || !normalizedEmail || !categoryId || !planId || !name) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
   }
 
-  let user = await prisma.users.findUnique({ where: { email } });
+  let user = await prisma.users.findFirst({
+    where: { email: { equals: normalizedEmail, mode: "insensitive" } },
+  });
 
   if (user) {
     return NextResponse.json(
@@ -26,7 +29,7 @@ export async function POST(req) {
     data: {
       firstname,
       lastname,
-      email,
+      email: normalizedEmail,
       password: hashed,
       role: {
         connect: {
@@ -71,13 +74,13 @@ export async function POST(req) {
 
   await prisma.invitation.create({
     data: {
-      email,
+      email: normalizedEmail,
       token,
       expiresAt: new Date(Date.now() + 1000 * 60 * 60 * 24), // 24h
     },
   });
 
-  await sendInviteEmail(email, token);
+  await sendInviteEmail(normalizedEmail, token);
 
   return NextResponse.json({ success: true });
 }

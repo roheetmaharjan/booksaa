@@ -1,0 +1,60 @@
+
+> booksaa@0.1.0 dev
+> next dev --turbopack --hostname 127.0.0.1
+
+   ▲ Next.js 15.3.4 (Turbopack)
+   - Local:        http://127.0.0.1:3000
+   - Network:      http://127.0.0.1:3000
+   - Environments: .env.local, .env
+
+ ✓ Starting...
+Creating turbopack project { dir: 'D:\\works\\project\\booksaa', testMode: true }
+ ✓ Compiled middleware in 223ms
+ ✓ Ready in 1796ms
+ ○ Compiling /business-signup ...
+ GET /api/auth/business-signup 200 in 1668ms
+ GET /business-pro 200 in 4865ms
+ ✓ Compiled /business-signup in 4.9s
+ GET /business-signup 200 in 5196ms
+ ✓ Compiled in 483ms
+ GET /business-signup 200 in 180ms
+ ✓ Compiled /business-pro in 174ms
+ GET /business-pro 200 in 545ms
+ ○ Compiling / ...
+ ✓ Compiled / in 1127ms
+ GET / 200 in 1382ms
+ ✓ Compiled /api/auth/session in 496ms
+ GET /api/auth/session 200 in 587ms
+ GET / 200 in 99ms
+ GET /business-pro 200 in 147ms
+ GET /api/auth/session 200 in 110ms
+ GET /business-signup 200 in 93ms
+ GET /api/auth/business-signup 200 in 106ms
+ GET /api/auth/business-signup 200 in 78ms
+ POST /api/auth/business-signup 200 in 273ms
+ ○ Compiling /vendor ...
+ ✓ Compiled /vendor in 701ms
+ GET /vendor 200 in 774ms
+ ○ Compiling /api/auth/logout ...
+ ✓ Compiled /api/auth/logout in 818ms
+ POST /api/auth/logout 200 in 920ms
+ GET /api/auth/session 200 in 122ms
+ ○ Compiling /auth/login ...
+ ✓ Compiled /auth/login in 915ms
+ GET /auth/login 200 in 1079ms
+ GET /api/auth/session 200 in 118ms
+ GET /business-pro 200 in 154ms
+ GET /api/auth/session 200 in 89ms
+ GET /business-signup 200 in 105ms
+ GET /api/auth/business-signup 200 in 137ms
+ GET /api/auth/business-signup 200 in 79ms
+ ✓ Compiled in 1098ms
+ GET /api/auth/business-signup 200 in 740ms
+ GET /api/auth/business-signup?email=test@example.com 200 in 776ms
+ GET /business-signup 200 in 1336ms
+ GET /api/auth/business-signup?email=test@example.com 200 in 560ms
+ ✓ Compiled middleware in 70ms
+ ✓ Compiled middleware in 94ms
+ GET /business-signup 200 in 2743ms
+ GET /api/auth/business-signup 200 in 422ms
+ GET /api/auth/business-signup 200 in 191ms
