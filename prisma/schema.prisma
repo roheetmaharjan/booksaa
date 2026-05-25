@@ -43,6 +43,7 @@ model Vendors {
   status              AccountStatus  @default(ACTIVE)
   joinedAt            DateTime       @default(now())
   trialEndsAt         DateTime?
+  businessHours       BusinessHour[]
   userId              String         @unique
   user                Users          @relation(fields: [userId], references: [id])
   isComplete          Boolean        @default(false)
@@ -149,6 +150,20 @@ model ProfessionalRole {
   id            String         @id @default(cuid())
   name          String         @unique
   professionals Professional[]
+}
+
+model BusinessHour {
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendors  @relation(fields: [vendorId], references: [id])
+  day       String
+  isOpen    Boolean  @default(false)
+  openTime  String?
+  closeTime String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([vendorId, day])
 }
 
 enum UserStatus {

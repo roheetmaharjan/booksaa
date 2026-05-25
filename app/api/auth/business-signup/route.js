@@ -1,6 +1,8 @@
 import bcrypt from "bcrypt";
+import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { sendWelcomeEmail } from "@/lib/sendWelcomeEmail";
 import {
   AUTH_COOKIE_NAME,
   createSessionToken,
@@ -44,7 +46,7 @@ export async function GET(req) {
       return NextResponse.json({ exists: !!user });
     }
 
-    const [categories, plans] = await Promise.all([
+    const [categories, plans, professionalRoles] = await Promise.all([
       prisma.category.findMany({
         orderBy: { name: "asc" },
         select: { id: true, name: true },
@@ -62,9 +64,13 @@ export async function GET(req) {
           location: true,
         },
       }),
+      prisma.professionalRole.findMany({
+        orderBy: { name: "asc" },
+        select: { id: true, name: true },
+      }),
     ]);
 
-    return NextResponse.json({ categories, plans });
+    return NextResponse.json({ categories, plans, professionalRoles });
   } catch (error) {
     console.error("Business signup options failed:", error);
     return NextResponse.json(
@@ -152,6 +158,14 @@ export async function POST(req) {
       ? new Date(now.getTime() + Number(plan.trial_period) * 24 * 60 * 60 * 1000)
       : null;
     const password = await bcrypt.hash(body.password, 10);
+    const setup = body.setup || {};
+    const services = Array.isArray(setup.services) ? setup.services : [];
+    const professionals = Array.isArray(setup.professionals)
+      ? setup.professionals
+      : [];
+    const businessHours = Array.isArray(setup.businessHours)
+      ? setup.businessHours
+      : [];
 
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.users.create({
@@ -195,8 +209,84 @@ export async function POST(req) {
         },
       });
 
+      const serviceCreates = services
+        .filter(
+          (service) =>
+            isPresent(service.name) &&
+            isPresent(service.price) &&
+            isPresent(service.duration),
+        )
+        .map((service) =>
+          tx.service.create({
+            data: {
+              name: String(service.name).trim(),
+              description: isPresent(service.description)
+                ? String(service.description).trim()
+                : null,
+              price: Number(service.price),
+              duration: Number(service.duration),
+              vendorId: vendor.id,
+              locationId: location.id,
+            },
+          }),
+        );
+
+      const professionalCreates = professionals
+        .filter(
+          (professional) =>
+            isPresent(professional.name) &&
+            isPresent(professional.email) &&
+            isPresent(professional.phone) &&
+            isPresent(professional.roleId),
+        )
+        .map((professional) =>
+          tx.professional.create({
+            data: {
+              name: String(professional.name).trim(),
+              email: String(professional.email).trim().toLowerCase(),
+              phone: String(professional.phone).trim(),
+              roleId: professional.roleId,
+              status: professional.status || "ACTIVE",
+              vendorId: vendor.id,
+            },
+          }),
+        );
+
+      const hourCreates = businessHours
+        .filter((hour) => isPresent(hour.day))
+        .map((hour) =>
+          tx.$executeRaw`
+            INSERT INTO "BusinessHour" ("id", "vendorId", "day", "isOpen", "openTime", "closeTime", "createdAt", "updatedAt")
+            VALUES (
+              ${randomUUID()},
+              ${vendor.id},
+              ${String(hour.day)},
+              ${!!hour.isOpen},
+              ${hour.isOpen && isPresent(hour.openTime) ? String(hour.openTime) : null},
+              ${hour.isOpen && isPresent(hour.closeTime) ? String(hour.closeTime) : null},
+              NOW(),
+              NOW()
+            )
+          `,
+        );
+
+      await Promise.all([
+        ...serviceCreates,
+        ...professionalCreates,
+        ...hourCreates,
+      ]);
+
       return { user, vendor, location };
     });
+
+    try {
+      await sendWelcomeEmail(
+        result.user.email,
+        `${result.user.firstname} ${result.user.lastname}`.trim(),
+      );
+    } catch (emailError) {
+      console.error("Welcome email failed:", emailError);
+    }
 
     const sessionUser = {
       id: result.user.id,

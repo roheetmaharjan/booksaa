@@ -1,6 +1,7 @@
 "use client";
 
 import dynamic from "next/dynamic";
+import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
@@ -22,6 +23,8 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -51,7 +54,45 @@ const steps = [
   { title: "Owner", icon: UserRound },
   { title: "Business", icon: Building2 },
   { title: "Location", icon: MapPin },
+  { title: "Setup", icon: Sparkles },
 ];
+
+const daysOfWeek = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+];
+
+const initialSetup = {
+  service: {
+    name: "",
+    description: "",
+    price: "",
+    duration: "",
+  },
+  professional: {
+    name: "",
+    email: "",
+    phone: "",
+    roleId: "",
+    status: "ACTIVE",
+  },
+  businessHours: daysOfWeek.map((day) => ({
+    day,
+    isOpen: false,
+    openTime: "09:00",
+    closeTime: "17:00",
+  })),
+};
+
+const timeSlots = Array.from({ length: 24 }, (_, h) => [
+  `${h.toString().padStart(2, "0")}:00`,
+  `${h.toString().padStart(2, "0")}:30`,
+]).flat();
 
 export default function BusinessSignupPage() {
   const router = useRouter();
@@ -59,6 +100,8 @@ export default function BusinessSignupPage() {
   const [locationData, setLocationData] = useState({});
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
+  const [professionalRoles, setProfessionalRoles] = useState([]);
+  const [setup, setSetup] = useState(initialSetup);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -78,12 +121,14 @@ export default function BusinessSignupPage() {
 
         const nextCategories = options.categories || [];
         const nextPlans = options.plans || [];
+        const nextProfessionalRoles = options.professionalRoles || [];
         const requestedPlan = new URLSearchParams(window.location.search).get(
           "planId",
         );
 
         setCategories(nextCategories);
         setPlans(nextPlans);
+        setProfessionalRoles(nextProfessionalRoles);
         setForm((prev) => ({
           ...prev,
           planId:
@@ -156,6 +201,29 @@ export default function BusinessSignupPage() {
     setErrors((prev) => ({ ...prev, location: "" }));
   }, []);
 
+  const handleSetupChange = (section, field, value) => {
+    setSetup((prev) => ({
+      ...prev,
+      [section]: {
+        ...prev[section],
+        [field]: value,
+      },
+    }));
+    setErrors((prev) => ({ ...prev, setup: "" }));
+  };
+
+  const handleHourChange = (index, field, value) => {
+    setSetup((prev) => {
+      const businessHours = [...prev.businessHours];
+      businessHours[index] = {
+        ...businessHours[index],
+        [field]: value,
+      };
+
+      return { ...prev, businessHours };
+    });
+  };
+
   const validateStep = (targetStep = step) => {
     const nextErrors = {};
 
@@ -195,6 +263,37 @@ export default function BusinessSignupPage() {
       }
     }
 
+    if (targetStep === 4) {
+      const hasService =
+        setup.service.name ||
+        setup.service.price ||
+        setup.service.duration ||
+        setup.service.description;
+      const hasProfessional =
+        setup.professional.name ||
+        setup.professional.email ||
+        setup.professional.phone ||
+        setup.professional.roleId;
+
+      if (
+        hasService &&
+        (!setup.service.name || !setup.service.price || !setup.service.duration)
+      ) {
+        nextErrors.setup = "Complete service name, price, and duration, or leave service blank.";
+      }
+
+      if (
+        hasProfessional &&
+        (!setup.professional.name ||
+          !setup.professional.email ||
+          !setup.professional.phone ||
+          !setup.professional.roleId)
+      ) {
+        nextErrors.setup =
+          "Complete professional name, email, phone, and role, or leave professional blank.";
+      }
+    }
+
     setErrors(nextErrors);
     return Object.keys(nextErrors).length === 0;
   };
@@ -202,7 +301,7 @@ export default function BusinessSignupPage() {
   const nextStep = async () => {
     if (!validateStep(step)) return;
     if (step === 1 && !(await checkEmailAvailability())) return;
-    setStep((current) => Math.min(current + 1, 3));
+    setStep((current) => Math.min(current + 1, 4));
   };
 
   const previousStep = () => {
@@ -212,13 +311,20 @@ export default function BusinessSignupPage() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) return;
     if (!(await checkEmailAvailability())) {
       setStep(1);
       return;
     }
 
     const locationForm = locationData.locationForm;
+    const serviceEntered =
+      setup.service.name || setup.service.price || setup.service.duration;
+    const professionalEntered =
+      setup.professional.name ||
+      setup.professional.email ||
+      setup.professional.phone ||
+      setup.professional.roleId;
     const payload = {
       firstname: form.firstname.trim(),
       lastname: form.lastname.trim(),
@@ -239,6 +345,11 @@ export default function BusinessSignupPage() {
       offerAtClient: !!locationForm.offerAtClient,
       travelFee: locationData.travelFee || 0,
       maxTravelDistance: locationData.maxDistance || 5,
+      setup: {
+        services: serviceEntered ? [setup.service] : [],
+        professionals: professionalEntered ? [setup.professional] : [],
+        businessHours: setup.businessHours.filter((hour) => hour.isOpen),
+      },
     };
 
     try {
@@ -271,6 +382,9 @@ export default function BusinessSignupPage() {
             <Link href="/business-pro" className="inline-flex items-center gap-2 text-sm text-slate-600">
               <ArrowLeft className="h-4 w-4" />
               Business Pro
+            </Link>
+            <Link href="/" className="mt-5 inline-flex">
+              <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority />
             </Link>
             <div className="mt-16 max-w-md">
               <Badge className="mb-5 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
@@ -312,10 +426,15 @@ export default function BusinessSignupPage() {
 
         <section className="px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
           <div className="mb-6 flex items-center justify-between lg:hidden">
-            <Link href="/business-pro" className="inline-flex items-center gap-2 text-sm text-slate-600">
-              <ArrowLeft className="h-4 w-4" />
-              Business Pro
-            </Link>
+            <div>
+              <Link href="/business-pro" className="inline-flex items-center gap-2 text-sm text-slate-600">
+                <ArrowLeft className="h-4 w-4" />
+                Business Pro
+              </Link>
+              <Link href="/" className="mt-3 inline-flex">
+                <Image src="/logo.png" alt="Booksaa" width={112} height={30} priority />
+              </Link>
+            </div>
             <Badge variant="secondary">Free trial</Badge>
           </div>
 
@@ -484,6 +603,203 @@ export default function BusinessSignupPage() {
                       </div>
                     )}
 
+                    {step === 4 && (
+                      <div className="space-y-6">
+                        <div>
+                          <h2 className="text-2xl font-bold">Finish setup</h2>
+                          <p className="mt-1 text-sm text-slate-500">
+                            Add these now or leave them blank and finish them later from your dashboard.
+                          </p>
+                        </div>
+
+                        {errors.setup && (
+                          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                            {errors.setup}
+                          </div>
+                        )}
+
+                        <div className="grid gap-4 rounded-lg border bg-slate-50 p-4">
+                          <div>
+                            <h3 className="text-base font-semibold">Service</h3>
+                            <p className="text-sm text-slate-500">
+                              Your first bookable service.
+                            </p>
+                          </div>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Service name" id="serviceName">
+                              <Input
+                                id="serviceName"
+                                value={setup.service.name}
+                                onChange={(event) =>
+                                  handleSetupChange("service", "name", event.target.value)
+                                }
+                              />
+                            </Field>
+                            <Field label="Duration in minutes" id="serviceDuration">
+                              <Input
+                                id="serviceDuration"
+                                type="number"
+                                min="1"
+                                value={setup.service.duration}
+                                onChange={(event) =>
+                                  handleSetupChange("service", "duration", event.target.value)
+                                }
+                              />
+                            </Field>
+                            <Field label="Price" id="servicePrice">
+                              <Input
+                                id="servicePrice"
+                                type="number"
+                                min="0"
+                                step="0.01"
+                                value={setup.service.price}
+                                onChange={(event) =>
+                                  handleSetupChange("service", "price", event.target.value)
+                                }
+                              />
+                            </Field>
+                            <div className="sm:col-span-2">
+                              <Field label="Description" id="serviceDescription">
+                                <Textarea
+                                  id="serviceDescription"
+                                  value={setup.service.description}
+                                  onChange={(event) =>
+                                    handleSetupChange("service", "description", event.target.value)
+                                  }
+                                />
+                              </Field>
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 rounded-lg border bg-slate-50 p-4">
+                          <div>
+                            <h3 className="text-base font-semibold">Professional</h3>
+                            <p className="text-sm text-slate-500">
+                              Add the first team member who can be booked.
+                            </p>
+                          </div>
+                          <div className="grid gap-4 sm:grid-cols-2">
+                            <Field label="Name" id="professionalName">
+                              <Input
+                                id="professionalName"
+                                value={setup.professional.name}
+                                onChange={(event) =>
+                                  handleSetupChange("professional", "name", event.target.value)
+                                }
+                              />
+                            </Field>
+                            <Field label="Email" id="professionalEmail">
+                              <Input
+                                id="professionalEmail"
+                                type="email"
+                                value={setup.professional.email}
+                                onChange={(event) =>
+                                  handleSetupChange("professional", "email", event.target.value)
+                                }
+                              />
+                            </Field>
+                            <Field label="Phone" id="professionalPhone">
+                              <Input
+                                id="professionalPhone"
+                                value={setup.professional.phone}
+                                onChange={(event) =>
+                                  handleSetupChange("professional", "phone", event.target.value)
+                                }
+                              />
+                            </Field>
+                            <Field label="Role" id="professionalRole">
+                              <Select
+                                value={setup.professional.roleId}
+                                onValueChange={(value) =>
+                                  handleSetupChange("professional", "roleId", value)
+                                }
+                              >
+                                <SelectTrigger id="professionalRole">
+                                  <SelectValue placeholder="Select role" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  {professionalRoles.map((role) => (
+                                    <SelectItem key={role.id} value={role.id}>
+                                      {role.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                            </Field>
+                          </div>
+                        </div>
+
+                        <div className="grid gap-4 rounded-lg border bg-slate-50 p-4">
+                          <div>
+                            <h3 className="text-base font-semibold">Business hours</h3>
+                            <p className="text-sm text-slate-500">
+                              Choose the days customers can book you.
+                            </p>
+                          </div>
+                          <div className="grid gap-3">
+                            {setup.businessHours.map((hour, index) => (
+                              <div
+                                key={hour.day}
+                                className="grid gap-3 rounded-md border bg-white p-3 sm:grid-cols-[1fr_auto]"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <Switch
+                                    checked={hour.isOpen}
+                                    onCheckedChange={(checked) =>
+                                      handleHourChange(index, "isOpen", checked)
+                                    }
+                                  />
+                                  <Label>{hour.day}</Label>
+                                </div>
+                                {hour.isOpen ? (
+                                  <div className="flex items-center gap-2">
+                                    <Select
+                                      value={hour.openTime}
+                                      onValueChange={(value) =>
+                                        handleHourChange(index, "openTime", value)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-28">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {timeSlots.map((time) => (
+                                          <SelectItem key={time} value={time}>
+                                            {time}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                    <span className="text-sm text-slate-500">to</span>
+                                    <Select
+                                      value={hour.closeTime}
+                                      onValueChange={(value) =>
+                                        handleHourChange(index, "closeTime", value)
+                                      }
+                                    >
+                                      <SelectTrigger className="w-28">
+                                        <SelectValue />
+                                      </SelectTrigger>
+                                      <SelectContent>
+                                        {timeSlots.map((time) => (
+                                          <SelectItem key={time} value={time}>
+                                            {time}
+                                          </SelectItem>
+                                        ))}
+                                      </SelectContent>
+                                    </Select>
+                                  </div>
+                                ) : (
+                                  <p className="text-sm text-slate-500">Closed</p>
+                                )}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
                     <div className="mt-8 flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:justify-between">
                       <Button
                         type="button"
@@ -494,7 +810,7 @@ export default function BusinessSignupPage() {
                         <ArrowLeft className="h-4 w-4" />
                         Previous
                       </Button>
-                      {step < 3 ? (
+                      {step < 4 ? (
                         <Button type="button" onClick={nextStep}>
                           Continue
                           <ArrowRight className="h-4 w-4" />

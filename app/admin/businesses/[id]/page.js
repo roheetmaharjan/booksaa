@@ -13,20 +13,21 @@ import { Button } from "@/components/ui/button";
 import { useRouter } from "next/navigation";
 import ServiceList from "@/components/common/ServiceList";
 import ProfessionalList from "@/components/common/ProfessionalList";
+import { toast } from "sonner";
 
 export default function VendorDetail() {
   const { id: vendorId } = useParams();
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editLoading, setEditLoading] = useState(false);
-    const router = useRouter();
+  const router = useRouter();
 
-  const handleResend = async (vendorId) => {
+  const handleResend = async (email) => {
     try {
-      const res = await fetch("/api/resend-activation", {
+      const res = await fetch("/api/businesses/resend-activation", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ vendorId }),
+        body: JSON.stringify({ email }),
       });
 
       const data = await res.json();
@@ -35,17 +36,17 @@ export default function VendorDetail() {
         throw new Error(data.message || "Failed to resend activation link");
       }
 
-      toast.success(data.message); // Or use toast/message
+      toast.success(data.message);
     } catch (error) {
       console.error("Resend failed:", error);
-      toast.error(error.message); // Or show a toast for errors
+      toast.error(error.message);
     }
   };
 
   useEffect(() => {
     if (!vendorId) return;
 
-    fetch(`/api/vendors/${vendorId}`)
+    fetch(`/api/businesses/${vendorId}`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => setVendor(data))
       .catch((err) => {
@@ -57,7 +58,7 @@ export default function VendorDetail() {
 
   const handleEditClick = (vendorId)=>{
     setEditLoading(true);
-    router.push(`/admin/vendors/${vendorId}/edit-vendor`)
+    router.push(`/admin/businesses/${vendorId}/edit-business`)
   }
 
   return (
@@ -89,7 +90,7 @@ export default function VendorDetail() {
               <p className="text-gray-500">{vendor.user.email}</p>
             </div>
             <div className="flex gap-2 ml-auto">
-              <Button onClick={() => handleResend(vendor.id)}>Send Activation Link</Button>
+              <Button onClick={() => handleResend(vendor.user.email)}>Send Activation Link</Button>
               <Button onClick={() => handleEditClick(vendor.id)} variant="outline" >Edit Profile</Button>
             </div>
           </div>
@@ -172,7 +173,7 @@ export default function VendorDetail() {
                     <CardContent>
                       <div className="grid grid-cols-12">
                         <div className="col-span-6">
-                          {vendor.location || "-"}
+                          {vendor.location?.address || "-"}
                         </div>
                         <div className="col-span-6">
                           <table>
@@ -208,7 +209,33 @@ export default function VendorDetail() {
                       <CardTitle>Locations</CardTitle>
                     </CardHeader>
                     <CardContent>
-                      locations
+                      {vendor.location ? (
+                        <div className="space-y-2 text-sm">
+                          <p className="font-medium text-slate-900">
+                            {vendor.location.address}
+                          </p>
+                          <p className="text-slate-500">
+                            {vendor.location.offerAtBusiness
+                              ? "Services at business location"
+                              : null}
+                            {vendor.location.offerAtBusiness &&
+                            vendor.location.offerAtClient
+                              ? " and "
+                              : null}
+                            {vendor.location.offerAtClient
+                              ? "travels to clients"
+                              : null}
+                          </p>
+                          {vendor.location.offerAtClient && (
+                            <p className="text-slate-500">
+                              Travel fee: ${vendor.location.travelFee || 0} - Max distance:{" "}
+                              {vendor.location.maxTravelDistance || 0}
+                            </p>
+                          )}
+                        </div>
+                      ) : (
+                        "-"
+                      )}
                     </CardContent>
                   </Card>
                   <Card>

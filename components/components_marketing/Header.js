@@ -9,6 +9,7 @@ const Header = () => {
   const { data: session } = useSession();
 
   const pathUrl = usePathname();
+
   // Sticky Navbar
   const [sticky, setSticky] = useState(false);
   const handleStickyNavbar = () => {
@@ -25,6 +26,9 @@ const Header = () => {
     };
   }, []);
 
+  if (pathUrl === "/business-signup") {
+    return null;
+  }
 
   return (
     <>

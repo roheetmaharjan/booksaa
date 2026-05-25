@@ -30,7 +30,9 @@ export async function GET(req, { params }) {
     }
 
     const joinedAtDateOnly = vendor.joinedAt.toISOString().slice(0, 10);
-    const trialEndsAtDateOnly = vendor.trialEndsAt.toISOString().slice(0, 10);
+    const trialEndsAtDateOnly = vendor.trialEndsAt
+      ? vendor.trialEndsAt.toISOString().slice(0, 10)
+      : null;
     
     //Check the status
     const now = new Date();
