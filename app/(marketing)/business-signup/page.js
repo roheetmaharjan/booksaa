@@ -382,7 +382,7 @@ export default function BusinessSignupPage() {
             <Link href="/business-pro" className="inline-flex items-center gap-2 text-sm text-slate-600">
               <ArrowLeft className="h-4 w-4" />
               Business Pro
-            </Link>
+            </Link><br />
             <Link href="/" className="mt-5 inline-flex">
               <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority />
             </Link>
