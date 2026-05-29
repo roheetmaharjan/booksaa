@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendInviteEmail } from "@/lib/sendInviteEmail";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { createVendorSubscription } from "@/lib/subscriptions";
 
 export async function POST(req) {
   const body = await req.json();
@@ -98,38 +99,48 @@ export async function POST(req) {
     );
   }
 
-  const vendor = await prisma.vendors.create({
-    data: {
-      name,
-      categoryId,
-      planId,
-      trialEndsAt,
-      joinedAt: now,
-      userId: user.id,
-      status: "INACTIVE",
-    },
-  });
+  const vendor = await prisma.$transaction(async (tx) => {
+    const created = await tx.vendors.create({
+      data: {
+        name,
+        categoryId,
+        planId,
+        trialEndsAt,
+        joinedAt: now,
+        userId: user.id,
+        status: "INACTIVE",
+      },
+    });
 
-  const location = await prisma.location.create({
-    data: {
-      name: locationName || "Main Location",
-      phone: locationPhone || null,
-      vendorId: vendor.id,
-      address,
-      latitude: latitude ? Number(latitude) : null,
-      longitude: longitude ? Number(longitude) : null,
-      offerAtClient: !!offerAtClient,
-      offerAtBusiness: !!offerAtBusiness,
-      travelFee: travelFee ? Number(travelFee) : 0.0,
-      maxTravelDistance: maxTravelDistance ? Number(maxTravelDistance) : 5.0,
-      isActive: isActive !== undefined ? !!isActive : true,
-      isDefault: true,
-    },
-  });
+    await createVendorSubscription(tx, {
+      vendorId: created.id,
+      plan,
+      status: "ACTIVE",
+    });
 
-  await prisma.vendors.update({
-    where: { id: vendor.id },
-    data: { defaultLocationId: location.id },
+    const location = await tx.location.create({
+      data: {
+        name: locationName || "Main Location",
+        phone: locationPhone || null,
+        vendorId: created.id,
+        address,
+        latitude: latitude ? Number(latitude) : null,
+        longitude: longitude ? Number(longitude) : null,
+        offerAtClient: !!offerAtClient,
+        offerAtBusiness: !!offerAtBusiness,
+        travelFee: travelFee ? Number(travelFee) : 0.0,
+        maxTravelDistance: maxTravelDistance ? Number(maxTravelDistance) : 5.0,
+        isActive: isActive !== undefined ? !!isActive : true,
+        isDefault: true,
+      },
+    });
+
+    await tx.vendors.update({
+      where: { id: created.id },
+      data: { defaultLocationId: location.id },
+    });
+
+    return created;
   });
 
   const token = crypto.randomUUID();

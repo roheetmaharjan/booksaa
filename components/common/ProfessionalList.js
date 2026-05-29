@@ -57,7 +57,7 @@ export default function ProfessionalList({ vendorId, locationId }) {
   if (!vendor) return <p>No vendor found.</p>;
 
   const professionalLimit = Number(
-    vendor.subscriptionProfessionalCount || vendor.plan?.professional || 1
+    vendor.subscriptionProfessionalLimit || vendor.billingSummary?.professionalCount || vendor.plan?.professional || 1
   );
   const currentProfessionalCount = Number(
     vendor.billingSummary?.actualProfessionalCount || vendor.professionals?.length || 0

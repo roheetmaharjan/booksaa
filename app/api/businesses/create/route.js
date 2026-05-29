@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { sendInviteEmail } from "@/lib/sendInviteEmail";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
+import { createVendorSubscription } from "@/lib/subscriptions";
 
 export async function POST(req) {
   const body = await req.json();
@@ -58,16 +59,26 @@ export async function POST(req) {
     );
   }
 
-  const vendor = await prisma.vendors.create({
-    data: {
-      name,
-      categoryId,
-      planId,
-      trialEndsAt,
-      joinedAt: now,
-      userId: user.id,
-      status: "INACTIVE",
-    },
+  const vendor = await prisma.$transaction(async (tx) => {
+    const created = await tx.vendors.create({
+      data: {
+        name,
+        categoryId,
+        planId,
+        trialEndsAt,
+        joinedAt: now,
+        userId: user.id,
+        status: "INACTIVE",
+      },
+    });
+
+    await createVendorSubscription(tx, {
+      vendorId: created.id,
+      plan,
+      status: "ACTIVE",
+    });
+
+    return created;
   });
 
   const token = crypto.randomUUID();

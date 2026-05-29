@@ -2,6 +2,11 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { AccountStatus } from "@/constants/enums";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
+import {
+  createVendorSubscription,
+  getActiveVendorSubscription,
+  getSubscriptionLimits,
+} from "@/lib/subscriptions";
 
 export async function GET(req, { params }) {
   const { id } = await params;
@@ -59,13 +64,8 @@ export async function GET(req, { params }) {
       });
     }
 
-    const [subscription] = await prisma.$queryRaw`
-      SELECT
-        "subscriptionProfessionalCount",
-        "subscriptionLocationCount"
-      FROM "Vendors"
-      WHERE "id" = ${id}
-    `;
+    const subscription = await getActiveVendorSubscription(id);
+    const subscriptionLimits = getSubscriptionLimits(subscription, vendor.plan);
 
     const activeLocations = vendor.locations.filter((location) => location.isActive);
     const selectedLocation =
@@ -119,9 +119,13 @@ export async function GET(req, { params }) {
         plan: vendor.plan,
         locations: vendor.locations,
         professionals: vendor.professionals,
-        subscriptionLocationCount: subscription?.subscriptionLocationCount,
-        subscriptionProfessionalCount: subscription?.subscriptionProfessionalCount,
+        locationLimit: subscriptionLimits.locationLimit,
+        professionalLimit: subscriptionLimits.professionalLimit,
       }),
+      subscription,
+      subscriptionEntitlements: subscription?.entitlements || [],
+      subscriptionLocationLimit: subscriptionLimits.locationLimit,
+      subscriptionProfessionalLimit: subscriptionLimits.professionalLimit,
       joinedAt: joinedAtDateOnly,
       trialEndsAt: trialEndsAtDateOnly,
       status : accountStatus
@@ -132,6 +136,7 @@ export async function GET(req, { params }) {
       headers: { "Content-Type": "application/json" },
     });
   } catch (error) {
+    console.error("Error fetching business:", error);
     return new Response(JSON.stringify({ error: "Error fetching business" }), {
       status: 500,
     });
@@ -168,17 +173,60 @@ export async function PUT(req, { params }) {
       );
     }
 
-    const updatedVendor = await prisma.vendors.update({
-      where: { id },
-      data: {
-        name,
-        description,
-        phone,
-        cancellation_policy,
-        planId,
-        categoryId
-      },
-      include:{user:true}
+    const updatedVendor = await prisma.$transaction(async (tx) => {
+      const existingVendor = await tx.vendors.findUnique({
+        where: { id },
+        include: {
+          plan: true,
+          locations: true,
+          professionals: true,
+        },
+      });
+
+      if (!existingVendor) {
+        throw new Error("Vendor not found");
+      }
+
+      const updated = await tx.vendors.update({
+        where: { id },
+        data: {
+          name,
+          description,
+          phone,
+          cancellation_policy,
+          planId,
+          categoryId
+        },
+        include:{user:true}
+      });
+
+      if (planId && planId !== existingVendor.planId) {
+        const nextPlan = await tx.plans.findUnique({ where: { id: planId } });
+        const activeSubscription = await getActiveVendorSubscription(id, tx);
+
+        if (activeSubscription) {
+          await tx.vendorSubscription.update({
+            where: { id: activeSubscription.id },
+            data: { status: "ENDED" },
+          });
+        }
+
+        await createVendorSubscription(tx, {
+          vendorId: id,
+          plan: nextPlan,
+          status: "ACTIVE",
+          locationCount: Math.max(
+            existingVendor.locations.filter((location) => location.isActive !== false).length,
+            Number(nextPlan?.location || 1),
+          ),
+          professionalCount: Math.max(
+            existingVendor.professionals.length,
+            Number(nextPlan?.professional || 1),
+          ),
+        });
+      }
+
+      return updated;
     });
 
     if (updatedVendor.userId && (userFirstname||userLastname)){

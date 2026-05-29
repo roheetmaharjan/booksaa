@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
+import { getActiveVendorSubscription, getSubscriptionLimits } from "@/lib/subscriptions";
 
 export async function POST(req) {
   const { vendorId, locationId, name, email, phone, role, status } = await req.json();
@@ -50,9 +50,8 @@ export async function POST(req) {
       );
     }
 
-    const professionalLimit = Number(
-      vendor.subscriptionProfessionalCount || vendor.plan?.professional || 1
-    );
+    const subscription = await getActiveVendorSubscription(vendorId);
+    const { professionalLimit } = getSubscriptionLimits(subscription, vendor.plan);
     const currentProfessionalCount = vendor.professionals.length;
 
     if (currentProfessionalCount >= professionalLimit) {

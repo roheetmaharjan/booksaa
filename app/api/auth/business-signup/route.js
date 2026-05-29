@@ -8,6 +8,7 @@ import {
   createSessionToken,
   getSessionCookieOptions,
 } from "@/lib/auth";
+import { createVendorSubscription } from "@/lib/subscriptions";
 
 function isPresent(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
@@ -168,12 +169,12 @@ export async function POST(req) {
     const businessHours = Array.isArray(setup.businessHours)
       ? setup.businessHours
       : [];
-    const subscriptionProfessionalCount = Math.max(
-      Number(body.subscriptionProfessionalCount || 1),
+    const subscriptionProfessionalLimit = Math.max(
+      Number(body.subscriptionProfessionalLimit || 1),
       1,
     );
-    const subscriptionLocationCount = Math.max(
-      Number(body.subscriptionLocationCount || 1),
+    const subscriptionLocationLimit = Math.max(
+      Number(body.subscriptionLocationLimit || 1),
       1,
     );
 
@@ -203,13 +204,13 @@ export async function POST(req) {
         },
       });
 
-      await tx.$executeRaw`
-        UPDATE "Vendors"
-        SET
-          "subscriptionProfessionalCount" = ${subscriptionProfessionalCount},
-          "subscriptionLocationCount" = ${subscriptionLocationCount}
-        WHERE "id" = ${vendor.id}
-      `;
+      const subscription = await createVendorSubscription(tx, {
+        vendorId: vendor.id,
+        plan,
+        status: hasTrial ? "TRIAL_ACTIVE" : "ACTIVE",
+        locationCount: subscriptionLocationLimit,
+        professionalCount: subscriptionProfessionalLimit,
+      });
 
       const location = await tx.location.create({
         data: {
@@ -304,7 +305,7 @@ export async function POST(req) {
         ...hourCreates,
       ]);
 
-      return { user, vendor, location };
+      return { user, vendor, location, subscription };
     });
 
     try {
@@ -331,8 +332,9 @@ export async function POST(req) {
         name: result.vendor.name,
         status: result.vendor.status,
         trialEndsAt: result.vendor.trialEndsAt,
-        subscriptionProfessionalCount,
-        subscriptionLocationCount,
+        subscriptionId: result.subscription.id,
+        subscriptionProfessionalLimit,
+        subscriptionLocationLimit,
       },
       trial: {
         active: hasTrial,

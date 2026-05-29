@@ -12,7 +12,7 @@ export default function UsageIndicatorCard({
   onAddMore,
   description,
 }) {
-  const percentage = (currentUsage / limit) * 100;
+  const percentage = limit > 0 ? (currentUsage / limit) * 100 : 0;
   const isNearLimit = percentage >= 80;
   const isExceeded = currentUsage >= limit;
 
@@ -43,12 +43,12 @@ export default function UsageIndicatorCard({
           <Progress value={Math.min(percentage, 100)} className="h-2" />
           {isExceeded && (
             <p className="text-xs text-red-600 mt-2">
-              ⚠️ You've exceeded your plan limit
+              You&apos;ve exceeded your plan limit
             </p>
           )}
           {isNearLimit && !isExceeded && (
             <p className="text-xs text-yellow-600 mt-2">
-              ⚠️ You're nearing your limit
+              You&apos;re nearing your limit
             </p>
           )}
         </div>

@@ -67,19 +67,16 @@ export default function EditVendor() {
   const [openAddProfessionalAddon, setAddProfessionalAddonOpen] = useState(false);
   const [selectedLocationId, setSelectedLocationId] = useState("");
   const [currentPlan, setCurrentPlan] = useState(null);
-  const selectedPlan = currentPlan || plans.find((p) => p.id === form.planId) || null;
+  const selectedPlan = currentPlan || plans.find((p) => p.id === form?.planId) || null;
   useEffect(() => {
-    if (form.planId && plans.length > 0) {
+    if (form?.planId && plans.length > 0) {
       const plan = plans.find((p) => p.id === form.planId);
       setCurrentPlan(plan || null);
     }
-  }, [form.planId, plans]);
-  const locationLimit = selectedPlan?.maxLocations ?? selectedPlan?.location ?? 1;
-  const subscriptionProfessionalLimit = Number(form.subscriptionProfessionalCount || form.billingSummary?.includedProfessionals || 1);
-  const currentProfessionalCount = Number(form.billingSummary?.actualProfessionalCount || form.professionals?.length || 0);
-  const canAddProfessionalsAddon = currentProfessionalCount < subscriptionProfessionalLimit;
+  }, [form?.planId, plans]);
+  const locationLimit = Number(form?.subscriptionLocationLimit || form?.billingSummary?.activeLocationCount || selectedPlan?.maxLocations || selectedPlan?.location || 1);
   const displayLocations = (() => {
-    if (!form.locations) return [];
+    if (!form?.locations) return [];
     if (locationLimit === 1) {
       const defaultLocation = form.locations.find((location) => location.isDefault);
       return defaultLocation ? [defaultLocation] : [form.locations[0]];
@@ -495,8 +492,8 @@ export default function EditVendor() {
               <UsageAndBilling
                 business={{ ...form, locations: displayLocations }}
                 plan={selectedPlan}
-                onAddProfessionalsAddon={canAddProfessionalsAddon ? () => setAddProfessionalAddonOpen(true) : null}
-                // onAddLocations={displayLocations.length < locationLimit ? () => setAddLocationOpen(true) : null}
+                onAddProfessionals={() => setAddProfessionalAddonOpen(true)}
+                onAddLocations={displayLocations.length >= locationLimit ? () => setAddLocationOpen(true) : null}
               />
             </TabsContent>
           </Tabs>

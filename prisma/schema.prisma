@@ -45,13 +45,12 @@ model Vendors {
   status              AccountStatus  @default(ACTIVE)
   joinedAt            DateTime       @default(now())
   trialEndsAt         DateTime?
-  subscriptionProfessionalCount Int @default(1)
-  subscriptionLocationCount     Int @default(1)
   businessHours       BusinessHour[]
   userId              String         @unique
   user                Users          @relation(fields: [userId], references: [id])
   isComplete          Boolean        @default(false)
   professionals       Professional[]
+  subscriptions        VendorSubscription[]
 }
 
 model Category {
@@ -74,6 +73,7 @@ model Plans {
   vendors       Vendors[]
   location      Int       @default(1)
   extraLocationPrice Float @default(0)
+  subscriptions VendorSubscription[]
 }
 
 model Role {
@@ -184,6 +184,43 @@ model BusinessHour {
 
   @@unique([locationId, day])
   @@index([vendorId])
+}
+
+model VendorSubscription {
+  id        String @id @default(cuid())
+
+  vendorId  String
+  vendor    Vendors @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  planId    String
+  plan      Plans @relation(fields: [planId], references: [id])
+
+  status    String @default("ACTIVE")
+
+  createdAt DateTime @default(now())
+
+  entitlements SubscriptionEntitlement[]
+
+  @@index([vendorId, createdAt])
+}
+
+model SubscriptionEntitlement {
+  id             String @id @default(cuid())
+
+  subscriptionId String
+  subscription   VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  type           String  // "LOCATION" | "PROFESSIONAL"
+
+  quantity       Int
+
+  source         String  // "PLAN" | "ADDON"
+
+  price          Decimal? @db.Decimal(10,2)
+
+  createdAt      DateTime @default(now())
+
+  @@index([subscriptionId, type])
 }
 
 enum UserStatus {

@@ -267,8 +267,8 @@ export default function BusinessSignupPage() {
       offerAtClient: !!lf.offerAtClient,
       travelFee: locationData.travelFee || 0,
       maxTravelDistance: locationData.maxDistance || 5,
-      subscriptionProfessionalCount: subscriptionCounts.professionals,
-      subscriptionLocationCount: subscriptionCounts.locations,
+      subscriptionProfessionalLimit: subscriptionCounts.professionals,
+      subscriptionLocationLimit: subscriptionCounts.locations,
       setup: {
         services: serviceEntered ? [setup.service] : [],
         professionals: professionalEntered ? [setup.professional] : [],

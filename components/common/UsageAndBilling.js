@@ -16,7 +16,7 @@ export default function UsageAndBilling({
 
   // Professional
   const subscriptionProfessionalLimit = Number(
-    business?.subscriptionProfessionalCount ?? 1
+    business?.subscriptionProfessionalLimit ?? billing?.professionalCount ?? plan?.professional ?? 1
   );
   const currentProfessionalCount = Number(
     billing?.actualProfessionalCount ?? professionals.length ?? 0
@@ -25,7 +25,7 @@ export default function UsageAndBilling({
 
   // Location
   const subscriptionLocationLimit = Number(
-    business?.subscriptionLocationCount ?? 1
+    business?.subscriptionLocationLimit ?? billing?.activeLocationCount ?? plan?.location ?? 1
   );
   const extraProfessionalPrice = plan?.extraProfessionalPrice;
   const extraLocationPrice = plan?.extraLocationPrice;
@@ -62,7 +62,7 @@ export default function UsageAndBilling({
             limit={subscriptionLocationLimit}
             price={extraLocationPrice}
             description={`Add more business locations`}
-            onAddMore={canAddProfessionalsAddon ? onAddProfessionals : undefined}
+            onAddMore={locations.length >= subscriptionLocationLimit ? onAddLocations : undefined}
           />
         </div>
       </div>
@@ -104,7 +104,7 @@ export default function UsageAndBilling({
       {/* Plan Features */}
       <Card>
         <CardHeader>
-          <CardTitle>What's Included in {plan?.name || "Your Plan"}</CardTitle>
+          <CardTitle>{`What's Included in ${plan?.name || "Your Plan"}`}</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -142,7 +142,7 @@ export default function UsageAndBilling({
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-amber-800">
-              You're using all available slots in your current plan. Add more professionals and
+              You&apos;re using all available slots in your current plan. Add more professionals and
               locations to grow your business.
             </p>
             <Button variant="default" className="bg-amber-600 hover:bg-amber-700">

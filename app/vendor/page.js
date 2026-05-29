@@ -63,6 +63,7 @@ export default function VendorPage() {
           cache: "no-store",
         });
         const data = await res.json();
+        console.log(data);
         if (!res.ok) {
           throw new Error(data.error || "Unable to load vendor details.");
         }
@@ -122,11 +123,6 @@ export default function VendorPage() {
     }
   };
 
-  const serviceCount = vendor?.services?.length || 0;
-  const professionalCount = vendor?.subscriptionProfessionalCount || 0;
-  const locationCount = vendor?.locations?.length || 0;
-  const openHourCount = vendor?.businessHours?.filter((hour) => hour.isOpen).length || 0;
-
   return (
     <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -141,13 +137,13 @@ export default function VendorPage() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => setOpenAddService(true)} disabled={!vendorId || locationCount === 0}>
+            <Button onClick={() => setOpenAddService(true)}>
               <Plus className="mr-2 h-4 w-4" /> Add service
             </Button>
-            <Button variant="secondary" onClick={() => setOpenAddProfessional(true)} disabled={!vendorId || locationCount === 0}>
+            <Button variant="secondary" onClick={() => setOpenAddProfessional(true)} disabled={!vendorId || subscriptionProfessionalLimit === 0}>
               <Users className="mr-2 h-4 w-4" /> Add professional
             </Button>
-            <Button variant="outline" onClick={() => setOpenBusinessHours(true)} disabled={!vendorId || locationCount === 0}>
+            <Button variant="outline" onClick={() => setOpenBusinessHours(true)}>
               <Clock3 className="mr-2 h-4 w-4" /> Business hours
             </Button>
           </div>
@@ -177,9 +173,9 @@ export default function VendorPage() {
                   <SummaryItem label="Plan" value={vendor.plan?.name || "—"} />
                   <SummaryItem label="Status" value={vendor.status || "—"} />
                   <SummaryItem label="Trial ends" value={vendor.trialEndsAt || "—"} />
-                  <SummaryItem label="Locations" value={`${locationCount}`} />
+                  <SummaryItem label="Locations" value={`${subscriptionLocationLimit}`} />
                   <SummaryItem label="Services" value={`${serviceCount}`} />
-                  <SummaryItem label="Professionals" value={`${professionalCount}`} />
+                  <SummaryItem label="Professionals" value={`${subscriptionProfessionalLimit}`} />
                 </div>
 
                 <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">

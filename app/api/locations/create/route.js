@@ -2,6 +2,12 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma"; 
 import { getCurrentSession } from "@/lib/auth";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
+import {
+  ENTITLEMENT_TYPE,
+  ensureEntitlementLimit,
+  getActiveVendorSubscription,
+  getSubscriptionLimits,
+} from "@/lib/subscriptions";
 
 export async function POST(req) {
   try {
@@ -50,6 +56,8 @@ export async function POST(req) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
+    const subscription = await getActiveVendorSubscription(vendorId);
+    const subscriptionLimits = getSubscriptionLimits(subscription, vendor.plan);
     const nextIsActive = isActive !== undefined ? !!isActive : true;
 
     const shouldBeDefault = !!isDefault || !vendor.defaultLocationId;
@@ -86,27 +94,33 @@ export async function POST(req) {
         });
       }
 
+      const activeLocationCount =
+        vendor.locations.filter((item) => item.isActive !== false).length +
+        (created.isActive !== false ? 1 : 0);
+      if (subscription && activeLocationCount > subscriptionLimits.locationLimit) {
+        await ensureEntitlementLimit(tx, {
+          subscriptionId: subscription.id,
+          type: ENTITLEMENT_TYPE.LOCATION,
+          currentLimit: subscriptionLimits.locationLimit,
+          nextLimit: activeLocationCount,
+          price: vendor.plan?.extraLocationPrice,
+        });
+      }
+
       return created;
     });
 
+    const nextLocationLimit = Math.max(
+      subscriptionLimits.locationLimit,
+      vendor.locations.filter((item) => item.isActive !== false).length + (location.isActive !== false ? 1 : 0),
+    );
     const billingSummary = calculateBusinessSubscription({
       plan: vendor.plan,
       locations: [...vendor.locations, location],
       professionals: vendor.professionals,
-      subscriptionLocationCount: Math.max(
-        Number(vendor.subscriptionLocationCount || 1),
-        vendor.locations.filter((item) => item.isActive !== false).length + (location.isActive !== false ? 1 : 0),
-      ),
-      subscriptionProfessionalCount: vendor.subscriptionProfessionalCount,
+      locationLimit: nextLocationLimit,
+      professionalLimit: subscriptionLimits.professionalLimit,
     });
-
-    if (billingSummary.activeLocationCount > Number(vendor.subscriptionLocationCount || 1)) {
-      await prisma.$executeRaw`
-        UPDATE "Vendors"
-        SET "subscriptionLocationCount" = ${billingSummary.activeLocationCount}
-        WHERE "id" = ${vendorId}
-      `;
-    }
 
     return NextResponse.json({ ...location, billingSummary }, { status: 201 });
   } catch (error) {
