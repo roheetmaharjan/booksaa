@@ -111,7 +111,7 @@ export default function LoginPage() {
         {redirectUrl !== "/admin" && (
           <div className="mt-6 text-center">
             <span>Don&apos;t have an account yet? </span>
-            <a className="hover:underline font-bold" href="/sign-up">
+            <a className="hover:underline font-bold" href="/business-signup">
               Sign up
             </a>
           </div>

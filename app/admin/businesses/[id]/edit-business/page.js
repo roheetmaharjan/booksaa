@@ -11,47 +11,81 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { validateForm } from "@/utils/formValidator";
 import { Badge } from "@/components/ui/badge";
-import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectGroup,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+import { Select, SelectTrigger, SelectValue, SelectGroup, SelectContent, SelectItem } from "@/components/ui/select";
 import ServiceList from "@/components/common/ServiceList";
 import ProfessionalList from "@/components/common/ProfessionalList";
 import BusinessHours from "@/components/common/BusinessHour";
+import UsageAndBilling from "@/components/common/UsageAndBilling";
 import { useFormState } from "@/hooks/useFormState";
 import AddLocation from "@/components/modals/AddLocation";
+import AddProfessional from "@/components/modals/AddProfessional";
 import { CameraIcon } from "@phosphor-icons/react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import AddProfessionalAddon from "@/components/modals/AddProfessionalAddon";
+
+const emptyOwner = {
+  firstname: "",
+  lastname: "",
+  email: "",
+};
+
+const initialForm = {
+  user: emptyOwner,
+  name: "",
+  phone: "",
+  location: "",
+  planId: "",
+  categoryId: "",
+  status: "",
+  image: "",
+  joinedAt: "",
+  cancellation_policy: "",
+  trialEndsAt: "",
+};
+
+function normalizeBusinessForm(data) {
+  return {
+    ...initialForm,
+    ...data,
+    user: {
+      ...emptyOwner,
+      ...(data?.user || {}),
+    },
+  };
+}
 
 export default function EditVendor() {
   const { id } = useParams();
   const router = useRouter();
-  const [form, setForm] = useState({
-    user: {
-      firstname: "",
-      lastname: "",
-      email: "",
-    },
-    name: "",
-    phone: "",
-    location: "",
-    planId: "",
-    categoryId: "",
-    status: "",
-    image: "",
-    joinedAt: "",
-    cancellation_policy: "",
-    trialEndsAt: "",
-  });
+  const [form, setForm] = useState(initialForm);
   const [loading, setLoading] = useState(true);
   const [formErrors, setFormErrors] = useState({});
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [openAddLocation, setAddLocationOpen] = useState(false);
+  const [openAddProfessional, setAddProfessionalOpen] = useState(false);
+  const [openAddProfessionalAddon, setAddProfessionalAddonOpen] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState("");
+  const [currentPlan, setCurrentPlan] = useState(null);
+  const selectedPlan = currentPlan || plans.find((p) => p.id === form.planId) || null;
+  useEffect(() => {
+    if (form.planId && plans.length > 0) {
+      const plan = plans.find((p) => p.id === form.planId);
+      setCurrentPlan(plan || null);
+    }
+  }, [form.planId, plans]);
+  const locationLimit = selectedPlan?.maxLocations ?? selectedPlan?.location ?? 1;
+  const subscriptionProfessionalLimit = Number(form.subscriptionProfessionalCount || form.billingSummary?.includedProfessionals || 1);
+  const currentProfessionalCount = Number(form.billingSummary?.actualProfessionalCount || form.professionals?.length || 0);
+  const canAddProfessionalsAddon = currentProfessionalCount < subscriptionProfessionalLimit;
+  const displayLocations = (() => {
+    if (!form.locations) return [];
+    if (locationLimit === 1) {
+      const defaultLocation = form.locations.find((location) => location.isDefault);
+      return defaultLocation ? [defaultLocation] : [form.locations[0]];
+    }
+    return form.locations;
+  })();
   const validationRules = {
     name: { required: true, message: "Business name is required" },
     categoryId: { required: true, message: "Category is required" },
@@ -82,10 +116,24 @@ export default function EditVendor() {
     };
     fetchPlans();
     fetchCategories();
-    fetch(`/api/businesses/${id}`)
-      .then((res) => res.json())
+  }, []);
+
+  useEffect(() => {
+    const url = selectedLocationId ? `/api/businesses/${id}?locationId=${selectedLocationId}` : `/api/businesses/${id}`;
+    setLoading(true);
+    fetch(url)
+      .then(async (res) => {
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.error || "Failed to fetch business");
+        }
+        return data;
+      })
       .then((data) => {
-        setForm(data);
+        setForm(normalizeBusinessForm(data));
+        if (data?.selectedLocationId && !selectedLocationId) {
+          setSelectedLocationId(data.selectedLocationId);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -93,14 +141,14 @@ export default function EditVendor() {
         setLoading(false);
         toast.error(err.message);
       });
-  }, [id]);
+  }, [id, selectedLocationId]);
   const handleChange = (e) => {
     const { name, value } = e.target;
     if (["firstname", "lastname"].includes(name)) {
       setForm((prev) => ({
         ...prev,
         user: {
-          ...prev.user,
+          ...(prev.user || emptyOwner),
           [name]: value,
         },
       }));
@@ -151,6 +199,8 @@ export default function EditVendor() {
       toast.error("failed to update vendor");
     }
   };
+  const ownerEmail = form?.user?.email || "";
+  const billing = form?.billingSummary;
 
   return (
     <UsersLayout>
@@ -167,96 +217,98 @@ export default function EditVendor() {
             <div className="relative">
               {form.image ? (
                 <figure className="w-32 h-32 object-cover rounded-md">
-                  <img
-                    src={form.image}
-                    alt={`${form.name} Image`}
-                    className="h-10 w-10 object-cover rounded"
-                  />
+                  <img src={form.image} alt={`${form.name} Image`} className="h-10 w-10 object-cover rounded" />
                 </figure>
               ) : (
-                <span className="w-32 h-32 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">
-                  {form.name?.charAt(0)}
-                </span>
+                <span className="w-32 h-32 bg-primary/10 uppercase flex items-center justify-center rounded-md text-3xl font-bold border border-primary">{form.name?.charAt(0)}</span>
               )}
               <Button className="absolute -bottom-1 -right-1 w-8 h-8 flex items-center justify-center shadow-none p-0 rounded-full border-2 border-white hover:shadow-lg">
                 <CameraIcon />
               </Button>
             </div>
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-4 flex-1">
               <div className="flex flex-col gap-1">
                 <h4 className="text-2xl font-bold">{form.name}</h4>
-                <p className="text-base text-gray-500">{form.user.email}</p>
+                <p className="text-base text-gray-500">{ownerEmail || "-"}</p>
               </div>
               <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Joined Date</p>
                     <p>{form.joinedAt || ""}</p>
                   </div>
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Trial Ends On </p>
                     <p>{form.trialEndsAt || ""}</p>
                   </div>
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Profile Completed </p>
                     <p>{form.isCompleted ? "Yes" : "No"}</p>
                   </div>
                 </div>
-                <div className="col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
                   <div className="mb-2">
                     <p className="text-muted-foreground">Status</p>
                     {form.status === "ACTIVE" && (
-                      <Badge
-                        variant="default"
-                        className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
-                      >
+                      <Badge variant="default" className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]">
                         Active
                       </Badge>
                     )}
                     {form.status === "TRIAL_ACTIVE" && (
-                      <Badge
-                        variant="default"
-                        className="text-blue-700 bg-blue-100 hover:bg-blue-200 uppercase text-[10px]"
-                      >
+                      <Badge variant="default" className="text-blue-700 bg-blue-100 hover:bg-blue-200 uppercase text-[10px]">
                         Trial Active
                       </Badge>
                     )}
                     {form.status === "TRIAL_EXPIRING" && (
-                      <Badge
-                        variant="default"
-                        className="text-red-700 bg-red-200 hover:bg-red-200 uppercase text-[10px]"
-                      >
+                      <Badge variant="default" className="text-red-700 bg-red-200 hover:bg-red-200 uppercase text-[10px]">
                         Trial Expiring
                       </Badge>
                     )}
                     {form.status === "TRIAL_EXPIRED" && (
-                      <Badge
-                        variant="default"
-                        className="text-red-500 bg-red-200 hover:bg-red-300 uppercase text-[10px]"
-                      >
+                      <Badge variant="default" className="text-red-500 bg-red-200 hover:bg-red-300 uppercase text-[10px]">
                         Trial Expired
                       </Badge>
                     )}
                     {form.status === "INACTIVE" && (
-                      <Badge
-                        variant="default"
-                        className="text-white bg-gray-500 hover:bg-gray-700 uppercase text-[10px]"
-                      >
+                      <Badge variant="default" className="text-white bg-gray-500 hover:bg-gray-700 uppercase text-[10px]">
                         Inactive
                       </Badge>
                     )}
                   </div>
                 </div>
+                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
+                  <div className="mb-2">
+                    <p className="text-muted-foreground">User</p>
+                    <p>
+                      {form.user?.firstname || ""} {form.user?.lastname || ""}
+                    </p>
+                  </div>
+                </div>
               </div>
             </div>
-            <div className="ml-auto">
-              <Button onClick={() => handleResend(vendor.id)}>
-                Send Activation Link
-              </Button>
+            <div className="ml-auto flex justify-end gap-2 flex-wrap">
+              {form.locations?.length > 0 && (
+                <div className="mb-5 max-w-lg">
+                  <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {form.locations.map((location) => (
+                        <SelectItem key={location.id} value={location.id}>
+                          {location.name || location.address}
+                          {location.isDefault ? " (Default)" : ""}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <Button onClick={() => handleResend(form.id)}>Send Activation Link</Button>
             </div>
           </div>
           <Tabs defaultValue="detail" className="gap-2 items-start">
@@ -264,19 +316,10 @@ export default function EditVendor() {
               <TabsTrigger className="block w-full text-left" value="detail">
                 Business Profile
               </TabsTrigger>
-              <TabsTrigger
-                className="block w-full text-left"
-                value="user-detail"
-              >
-                User Profile
-              </TabsTrigger>
               <TabsTrigger className="block w-full text-left" value="services">
                 Services
               </TabsTrigger>
-              <TabsTrigger
-                className="block w-full text-left"
-                value="professionals"
-              >
+              <TabsTrigger className="block w-full text-left" value="professionals">
                 Professionals
               </TabsTrigger>
               <TabsTrigger className="block w-full text-left" value="photos">
@@ -285,14 +328,14 @@ export default function EditVendor() {
               <TabsTrigger className="block w-full text-left" value="reviews">
                 Reviews
               </TabsTrigger>
-              <TabsTrigger
-                className="block w-full text-left"
-                value="businesshours"
-              >
+              <TabsTrigger className="block w-full text-left" value="businesshours">
                 Business Hours
               </TabsTrigger>
               <TabsTrigger className="block w-full text-left" value="location">
                 Business Location
+              </TabsTrigger>
+              <TabsTrigger className="block w-full text-left" value="usage">
+                Usage & Add-ons
               </TabsTrigger>
             </TabsList>
             <TabsContent value="detail">
@@ -305,17 +348,8 @@ export default function EditVendor() {
                           <Label htmlFor="name">
                             Business Name <span className="astrick">*</span>
                           </Label>
-                          <Input
-                            name="name"
-                            value={form.name || ""}
-                            onChange={handleChange}
-                            placeholder="Business Name"
-                          />
-                          {formErrors && formErrors.name && (
-                            <p className="text-sm text-red-500">
-                              {formErrors.name}
-                            </p>
-                          )}
+                          <Input name="name" value={form.name || ""} onChange={handleChange} placeholder="Business Name" />
+                          {formErrors && formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
                         </div>
                         <div className="grid grid-cols-12 mb-2 gap-2">
                           <div className="col-span-6 mb-2">
@@ -338,51 +372,32 @@ export default function EditVendor() {
                               </SelectTrigger>
                               <SelectContent>
                                 {categories.length === 0 ? (
-                                  <SelectItem
-                                    key="No-category"
-                                    value="No-Category"
-                                  >
-                                    No categories found. Please add one to get
-                                    started.
+                                  <SelectItem key="No-category" value="No-Category">
+                                    No categories found. Please add one to get started.
                                   </SelectItem>
                                 ) : (
                                   categories.map((category) => (
-                                    <SelectItem
-                                      key={category.id}
-                                      value={category.id}
-                                    >
+                                    <SelectItem key={category.id} value={category.id}>
                                       {category.name}
                                     </SelectItem>
                                   ))
                                 )}
                               </SelectContent>
                             </Select>
-                            {formErrors && formErrors.categoryId && (
-                              <p className="text-sm text-red-500">
-                                {formErrors.categoryId}
-                              </p>
-                            )}
+                            {formErrors && formErrors.categoryId && <p className="text-sm text-red-500">{formErrors.categoryId}</p>}
                           </div>
                           <div className="col-span-6 mb-2">
                             <Label htmlFor="planId">
                               Plan <span className="astrick">*</span>
                             </Label>
-                            <Select
-                              id="planId"
-                              name="planId"
-                              value={form.planId}
-                              onValueChange={(value) =>
-                                setForm((prev) => ({ ...prev, planId: value }))
-                              }
-                            >
+                            <Select id="planId" name="planId" value={form.planId} onValueChange={(value) => setForm((prev) => ({ ...prev, planId: value }))}>
                               <SelectTrigger>
                                 <SelectValue placeholder="Select Plans"></SelectValue>
                               </SelectTrigger>
                               <SelectContent>
                                 {plans.length === 0 ? (
                                   <SelectItem key="no-plans" value="no-plans">
-                                    No plans found. Please add one to get
-                                    started.
+                                    No plans found. Please add one to get started.
                                   </SelectItem>
                                 ) : (
                                   plans.map((plan) => (
@@ -393,41 +408,20 @@ export default function EditVendor() {
                                 )}
                               </SelectContent>
                             </Select>
-                            {formErrors && formErrors.planId && (
-                              <p className="text-sm text-red-500">
-                                {formErrors.planId}
-                              </p>
-                            )}
+                            {formErrors && formErrors.planId && <p className="text-sm text-red-500">{formErrors.planId}</p>}
                           </div>
                         </div>
                         <div className="mb-2">
                           <Label htmlFor="phone">Phone</Label>
-                          <Input
-                            name="phone"
-                            value={form.phone || ""}
-                            onChange={handleChange}
-                            placeholder="Enter phone number"
-                          />
+                          <Input name="phone" value={form.phone || ""} onChange={handleChange} placeholder="Enter phone number" />
                         </div>
                         <div className="mb-2">
                           <Label htmlFor="description">Description</Label>
-                          <Textarea
-                            name="description"
-                            value={form.description || ""}
-                            onChange={handleChange}
-                            className="h-56"
-                          />
+                          <Textarea name="description" value={form.description || ""} onChange={handleChange} className="h-56" />
                         </div>
                         <div className="mb-2">
-                          <Label htmlFor="cancellation_policy">
-                            Cancellation Policy
-                          </Label>
-                          <Textarea
-                            name="cancellation_policy"
-                            value={form.cancellation_policy || ""}
-                            onChange={handleChange}
-                            className="h-56"
-                          />
+                          <Label htmlFor="cancellation_policy">Cancellation Policy</Label>
+                          <Textarea name="cancellation_policy" value={form.cancellation_policy || ""} onChange={handleChange} className="h-56" />
                         </div>
                       </CardContent>
                     </Card>
@@ -438,95 +432,103 @@ export default function EditVendor() {
                 </div>
               </form>
             </TabsContent>
-            <TabsContent value="user-detail">
-              {/* <form> */}
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-12 lg:col-span-6">
-                    <Card className="my-5">
-                      <CardHeader>
-                        <CardTitle>User Information</CardTitle>
-                      </CardHeader>
-                      <CardContent className="grid grid-cols-12 mb-2 gap-2">
-                        <div className="col-span-6">
-                          <Label htmlFor="firstname">
-                            Firstname <span className="astrick">*</span>
-                          </Label>
-                          <Input
-                            name="firstname"
-                            value={form.user.firstname || ""}
-                            onChange={handleChange}
-                            placeholder="Firstname"
-                            disabled
-                          />
-                          {formErrors && formErrors["user.firstname"] && (
-                            <p className="text-sm text-red-500">
-                              {formErrors["user.firstname"]}
-                            </p>
-                          )}
-                        </div>
-                        <div className="col-span-6">
-                          <Label htmlFor="lastname">
-                            Lastname <span className="astrick">*</span>
-                          </Label>
-                          <Input
-                            name="lastname"
-                            value={form.user.lastname || ""}
-                            onChange={handleChange}
-                            placeholder="Lastname"
-                            disabled
-                          />
-                          {formErrors && formErrors["user.lastname"] && (
-                            <p className="text-sm text-red-500">
-                              {formErrors["user.lastname"]}
-                            </p>
-                          )}
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-                {/* <div className="py-2">
-                  <Button onClick={handleDetailSubmit}>Save</Button>
-                </div> */}
-              {/* </form> */}
-            </TabsContent>
             <TabsContent value="services">
-              <ServiceList vendorId={form.id} />
+              <ServiceList vendorId={form.id} locationId={selectedLocationId} />
             </TabsContent>
             <TabsContent value="location">
-              {form.location ? (
-                <p>{form.address}</p>
-              ) : (
-                <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
-                  <h4 className="font-bold text-lg">
-                    No Business Location added
-                  </h4>
-                  <p className="text-base">
-                    You haven`t added a business location yet.
+              <div className="flex flex-wrap flex-row gap-3 items-center mb-3">
+                <Button onClick={() => setAddLocationOpen(true)} disabled={displayLocations.length >= locationLimit}>
+                  Add business Location
+                </Button>
+                {displayLocations.length >= locationLimit && (
+                  <p className="text-sm text-red-700">
+                    Your current plan only allows {locationLimit} location{locationLimit > 1 ? "s" : ""}.
                   </p>
-                  <Button onClick={() => setAddLocationOpen(true)}>
-                    Add business Location
-                  </Button>
-                  {openAddLocation && (
-                    <AddLocation
-                      setAddLocationOpen={setAddLocationOpen}
-                      open={openAddLocation}
-                      vendorId={form.id}
-                    />
-                  )}
-                </div>
-              )}
+                )}
+              </div>
+              <div className="space-y-4">
+                {displayLocations.length > 0 ? (
+                  <div className="grid grid-cols-12 gap-3">
+                    {displayLocations.map((location) => (
+                      <Card key={location.id} className="col-span-12 md:col-span-6">
+                        <CardHeader>
+                          <CardTitle className="flex items-center gap-2">
+                            {location.name || "Location"}
+                            {location.isDefault && <Badge>Default</Badge>}
+                          </CardTitle>
+                        </CardHeader>
+                        <CardContent className="space-y-1 text-sm text-muted-foreground">
+                          <p className="text-foreground">{location.address}</p>
+                          <p>Phone: {location.phone || "-"}</p>
+                          <p>{location.isActive ? "Active" : "Inactive"}</p>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex gap-2 flex-col border rounded py-6 justify-center items-center">
+                    <h4 className="font-bold text-lg">No Business Location added</h4>
+                    <p className="text-base">You haven`t added a business location yet.</p>
+                  </div>
+                )}
+              </div>
               {/* <Map/> */}
             </TabsContent>
             <TabsContent value="businesshours">
-              <BusinessHours />
+              <BusinessHours
+                vendorId={form.id}
+                locationId={selectedLocationId}
+                initialHours={form.businessHours || []}
+                onSaved={() => {
+                  fetch(`/api/businesses/${form.id}?locationId=${selectedLocationId}`)
+                    .then((res) => res.json())
+                    .then((data) => setForm(normalizeBusinessForm(data)));
+                }}
+              />
             </TabsContent>
             <TabsContent value="professionals">
-              <ProfessionalList vendorId={form.id} />
+              <ProfessionalList vendorId={form.id} locationId={selectedLocationId} />
             </TabsContent>
             <TabsContent value="photos">Coming Soon</TabsContent>
             <TabsContent value="reviews">Review Comming Soon</TabsContent>
+            <TabsContent value="usage">
+              <UsageAndBilling
+                business={{ ...form, locations: displayLocations }}
+                plan={selectedPlan}
+                onAddProfessionalsAddon={canAddProfessionalsAddon ? () => setAddProfessionalAddonOpen(true) : null}
+                // onAddLocations={displayLocations.length < locationLimit ? () => setAddLocationOpen(true) : null}
+              />
+            </TabsContent>
           </Tabs>
+          {openAddProfessionalAddon && <AddProfessionalAddon setAddProfessionalAddonOpen={setAddProfessionalAddonOpen} />}
+          {openAddProfessional && (
+            <AddProfessional
+              setAddProfessionalOpen={setAddProfessionalOpen}
+              open={openAddProfessional}
+              vendorId={form.id}
+              locationId={selectedLocationId}
+              onAdded={() => {
+                // Refresh the business data to show updated professional count
+                fetch(`/api/businesses/${form.id}?locationId=${selectedLocationId}`)
+                  .then((res) => res.json())
+                  .then((data) => setForm(normalizeBusinessForm(data)));
+              }}
+            />
+          )}
+          {openAddLocation && (
+            <AddLocation
+              setAddLocationOpen={setAddLocationOpen}
+              open={openAddLocation}
+              vendorId={form.id}
+              onAdded={(created) => {
+                setSelectedLocationId(created?.id || selectedLocationId);
+                // Refresh the business data
+                fetch(`/api/businesses/${form.id}?locationId=${created?.id || selectedLocationId}`)
+                  .then((res) => res.json())
+                  .then((data) => setForm(normalizeBusinessForm(data)));
+              }}
+            />
+          )}
         </>
       )}
     </UsersLayout>

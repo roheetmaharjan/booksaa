@@ -51,19 +51,21 @@ export async function GET(req) {
         orderBy: { name: "asc" },
         select: { id: true, name: true },
       }),
-      prisma.plans.findMany({
-        orderBy: { price: "asc" },
-        select: {
-          id: true,
-          name: true,
-          price: true,
-          duration: true,
-          trial_period: true,
-          billing_cycle: true,
-          professional: true,
-          location: true,
-        },
-      }),
+      prisma.$queryRaw`
+        SELECT
+          "id",
+          "name",
+          "price",
+          "duration",
+          "trial_period",
+          "billing_cycle",
+          "professional",
+          "location",
+          "extraProfessionalPrice",
+          "extraLocationPrice"
+        FROM "Plans"
+        ORDER BY "price" ASC
+      `,
       prisma.professionalRole.findMany({
         orderBy: { name: "asc" },
         select: { id: true, name: true },
@@ -166,6 +168,14 @@ export async function POST(req) {
     const businessHours = Array.isArray(setup.businessHours)
       ? setup.businessHours
       : [];
+    const subscriptionProfessionalCount = Math.max(
+      Number(body.subscriptionProfessionalCount || 1),
+      1,
+    );
+    const subscriptionLocationCount = Math.max(
+      Number(body.subscriptionLocationCount || 1),
+      1,
+    );
 
     const result = await prisma.$transaction(async (tx) => {
       const user = await tx.users.create({
@@ -193,10 +203,20 @@ export async function POST(req) {
         },
       });
 
+      await tx.$executeRaw`
+        UPDATE "Vendors"
+        SET
+          "subscriptionProfessionalCount" = ${subscriptionProfessionalCount},
+          "subscriptionLocationCount" = ${subscriptionLocationCount}
+        WHERE "id" = ${vendor.id}
+      `;
+
       const location = await tx.location.create({
         data: {
+          name: body.locationName || "Main Location",
           vendorId: vendor.id,
           address: body.address,
+          phone: body.locationPhone || body.phone || null,
           latitude: isPresent(body.latitude) ? Number(body.latitude) : null,
           longitude: isPresent(body.longitude) ? Number(body.longitude) : null,
           offerAtBusiness: !!body.offerAtBusiness,
@@ -206,7 +226,13 @@ export async function POST(req) {
             ? Number(body.maxTravelDistance)
             : 5,
           isActive: true,
+          isDefault: true,
         },
+      });
+
+      await tx.vendors.update({
+        where: { id: vendor.id },
+        data: { defaultLocationId: location.id },
       });
 
       const serviceCreates = services
@@ -248,6 +274,7 @@ export async function POST(req) {
               roleId: professional.roleId,
               status: professional.status || "ACTIVE",
               vendorId: vendor.id,
+              locationId: location.id,
             },
           }),
         );
@@ -256,10 +283,11 @@ export async function POST(req) {
         .filter((hour) => isPresent(hour.day))
         .map((hour) =>
           tx.$executeRaw`
-            INSERT INTO "BusinessHour" ("id", "vendorId", "day", "isOpen", "openTime", "closeTime", "createdAt", "updatedAt")
+            INSERT INTO "BusinessHour" ("id", "vendorId", "locationId", "day", "isOpen", "openTime", "closeTime", "createdAt", "updatedAt")
             VALUES (
               ${randomUUID()},
               ${vendor.id},
+              ${location.id},
               ${String(hour.day)},
               ${!!hour.isOpen},
               ${hour.isOpen && isPresent(hour.openTime) ? String(hour.openTime) : null},
@@ -303,6 +331,8 @@ export async function POST(req) {
         name: result.vendor.name,
         status: result.vendor.status,
         trialEndsAt: result.vendor.trialEndsAt,
+        subscriptionProfessionalCount,
+        subscriptionLocationCount,
       },
       trial: {
         active: hasTrial,

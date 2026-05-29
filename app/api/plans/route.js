@@ -3,13 +3,15 @@ import { prisma } from "@/lib/prisma";
 
 export async function GET() {
     try{
-        const results = await prisma.plans.findMany({
-            include:{
-                _count :{
-                    select:{vendors: true}
-                }
-            }
-        });
+        const results = await prisma.$queryRaw`
+            SELECT
+                p.*,
+                json_build_object('vendors', COUNT(v.id)::int) AS "_count"
+            FROM "Plans" p
+            LEFT JOIN "Vendors" v ON v."planId" = p.id
+            GROUP BY p.id
+            ORDER BY p.price ASC
+        `;
         return new NextResponse(JSON.stringify(results),{
             status: 200,
             headers: {

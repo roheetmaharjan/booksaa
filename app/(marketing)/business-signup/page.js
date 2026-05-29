@@ -4,7 +4,7 @@ import dynamic from "next/dynamic";
 import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   ArrowRight,
@@ -23,8 +23,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Switch } from "@/components/ui/switch";
-import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -54,33 +52,16 @@ const steps = [
   { title: "Owner", icon: UserRound },
   { title: "Business", icon: Building2 },
   { title: "Location", icon: MapPin },
-  { title: "Setup", icon: Sparkles },
 ];
 
 const daysOfWeek = [
-  "Sunday",
-  "Monday",
-  "Tuesday",
-  "Wednesday",
-  "Thursday",
-  "Friday",
-  "Saturday",
+  "Sunday", "Monday", "Tuesday", "Wednesday",
+  "Thursday", "Friday", "Saturday",
 ];
 
 const initialSetup = {
-  service: {
-    name: "",
-    description: "",
-    price: "",
-    duration: "",
-  },
-  professional: {
-    name: "",
-    email: "",
-    phone: "",
-    roleId: "",
-    status: "ACTIVE",
-  },
+  service: { name: "", description: "", price: "", duration: "" },
+  professional: { name: "", email: "", phone: "", roleId: "", status: "ACTIVE" },
   businessHours: daysOfWeek.map((day) => ({
     day,
     isOpen: false,
@@ -89,18 +70,24 @@ const initialSetup = {
   })),
 };
 
-const timeSlots = Array.from({ length: 24 }, (_, h) => [
-  `${h.toString().padStart(2, "0")}:00`,
-  `${h.toString().padStart(2, "0")}:30`,
-]).flat();
+function money(value) {
+  return Number(value || 0).toLocaleString("en-US", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
 
 export default function BusinessSignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [form, setForm] = useState(initialForm);
+  const [subscriptionCounts, setSubscriptionCounts] = useState({
+    professionals: 1,
+    locations: 1,
+  });
   const [locationData, setLocationData] = useState({});
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
-  const [professionalRoles, setProfessionalRoles] = useState([]);
   const [setup, setSetup] = useState(initialSetup);
   const [errors, setErrors] = useState({});
   const [loading, setLoading] = useState(true);
@@ -111,28 +98,25 @@ export default function BusinessSignupPage() {
   useEffect(() => {
     async function loadOptions() {
       try {
-        const optionsRes = await fetch("/api/auth/business-signup");
+        const res = await fetch("/api/auth/business-signup");
+        if (!res.ok) throw new Error("Unable to load signup options.");
 
-        if (!optionsRes.ok) {
-          throw new Error("Unable to load signup options.");
-        }
-
-        const options = await optionsRes.json();
-
-        const nextCategories = options.categories || [];
+        const options = await res.json();
         const nextPlans = options.plans || [];
-        const nextProfessionalRoles = options.professionalRoles || [];
-        const requestedPlan = new URLSearchParams(window.location.search).get(
-          "planId",
-        );
+        const requestedPlan = searchParams.get("planId");
+        const requestedProfessionals = Math.max(1, Number(searchParams.get("professionals")) || 1);
+        const requestedLocations = Math.max(1, Number(searchParams.get("locations")) || 1);
 
-        setCategories(nextCategories);
+        setCategories(options.categories || []);
         setPlans(nextPlans);
-        setProfessionalRoles(nextProfessionalRoles);
+        setSubscriptionCounts({
+          professionals: requestedProfessionals,
+          locations: requestedLocations,
+        });
         setForm((prev) => ({
           ...prev,
           planId:
-            requestedPlan && nextPlans.some((plan) => plan.id === requestedPlan)
+            requestedPlan && nextPlans.some((p) => p.id === requestedPlan)
               ? requestedPlan
               : nextPlans[0]?.id || "",
         }));
@@ -144,12 +128,30 @@ export default function BusinessSignupPage() {
     }
 
     loadOptions();
-  }, []);
+  }, [searchParams]);
 
   const selectedPlan = useMemo(
-    () => plans.find((plan) => plan.id === form.planId),
+    () => plans.find((p) => p.id === form.planId),
     [plans, form.planId],
   );
+
+  const subscriptionEstimate = useMemo(() => {
+    if (!selectedPlan) return null;
+
+    const basePrice = Number(selectedPlan.price || 0);
+    const includedProfessionals = Number(selectedPlan.professional || 1);
+    const includedLocations = Number(selectedPlan.location || 1);
+    const extraProfessionalPrice = Number(selectedPlan.extraProfessionalPrice || 0);
+    const extraLocationPrice = Number(selectedPlan.extraLocationPrice || 0);
+    const extraProfessionals = Math.max(subscriptionCounts.professionals - includedProfessionals, 0);
+    const extraLocations = Math.max(subscriptionCounts.locations - includedLocations, 0);
+    const total =
+      basePrice +
+      extraProfessionals * extraProfessionalPrice +
+      extraLocations * extraLocationPrice;
+
+    return { basePrice, extraProfessionals, extraLocations, extraProfessionalPrice, extraLocationPrice, total };
+  }, [selectedPlan, subscriptionCounts]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -159,27 +161,17 @@ export default function BusinessSignupPage() {
 
   const checkEmailAvailability = useCallback(async () => {
     const email = form.email.trim();
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      return false;
-    }
+    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) return false;
 
     try {
       setEmailChecking(true);
-      const res = await fetch(
-        `/api/auth/business-signup?email=${encodeURIComponent(email)}`,
-      );
+      const res = await fetch(`/api/auth/business-signup?email=${encodeURIComponent(email)}`);
       const data = await res.json();
 
-      if (!res.ok) {
-        throw new Error(data.error || "Unable to validate email.");
-      }
+      if (!res.ok) throw new Error(data.error || "Unable to validate email.");
 
       if (data.exists) {
-        setErrors((prev) => ({
-          ...prev,
-          email: "Email already exists.",
-        }));
+        setErrors((prev) => ({ ...prev, email: "Email already exists." }));
         return false;
       }
 
@@ -201,44 +193,18 @@ export default function BusinessSignupPage() {
     setErrors((prev) => ({ ...prev, location: "" }));
   }, []);
 
-  const handleSetupChange = (section, field, value) => {
-    setSetup((prev) => ({
-      ...prev,
-      [section]: {
-        ...prev[section],
-        [field]: value,
-      },
-    }));
-    setErrors((prev) => ({ ...prev, setup: "" }));
-  };
-
-  const handleHourChange = (index, field, value) => {
-    setSetup((prev) => {
-      const businessHours = [...prev.businessHours];
-      businessHours[index] = {
-        ...businessHours[index],
-        [field]: value,
-      };
-
-      return { ...prev, businessHours };
-    });
-  };
-
   const validateStep = (targetStep = step) => {
     const nextErrors = {};
 
     if (targetStep === 1) {
       if (!form.firstname.trim()) nextErrors.firstname = "First name is required.";
       if (!form.lastname.trim()) nextErrors.lastname = "Last name is required.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
         nextErrors.email = "Enter a valid email address.";
-      }
-      if (form.password.length < 8) {
+      if (form.password.length < 8)
         nextErrors.password = "Use at least 8 characters.";
-      }
-      if (form.password !== form.confirmPassword) {
+      if (form.password !== form.confirmPassword)
         nextErrors.confirmPassword = "Passwords do not match.";
-      }
     }
 
     if (targetStep === 2) {
@@ -248,50 +214,11 @@ export default function BusinessSignupPage() {
     }
 
     if (targetStep === 3) {
-      const locationForm = locationData?.locationForm || {};
-      if (
-        !locationForm.address ||
-        !locationForm.city ||
-        !locationForm.postal_code ||
-        !locationForm.country ||
-        !locationForm.state
-      ) {
+      const lf = locationData?.locationForm || {};
+      if (!lf.address || !lf.city || !lf.postal_code || !lf.country || !lf.state)
         nextErrors.location = "Search and confirm your full business location.";
-      }
-      if (!locationForm.offerAtBusiness && !locationForm.offerAtClient) {
+      if (!lf.offerAtBusiness && !lf.offerAtClient)
         nextErrors.locationOption = "Select where you offer services.";
-      }
-    }
-
-    if (targetStep === 4) {
-      const hasService =
-        setup.service.name ||
-        setup.service.price ||
-        setup.service.duration ||
-        setup.service.description;
-      const hasProfessional =
-        setup.professional.name ||
-        setup.professional.email ||
-        setup.professional.phone ||
-        setup.professional.roleId;
-
-      if (
-        hasService &&
-        (!setup.service.name || !setup.service.price || !setup.service.duration)
-      ) {
-        nextErrors.setup = "Complete service name, price, and duration, or leave service blank.";
-      }
-
-      if (
-        hasProfessional &&
-        (!setup.professional.name ||
-          !setup.professional.email ||
-          !setup.professional.phone ||
-          !setup.professional.roleId)
-      ) {
-        nextErrors.setup =
-          "Complete professional name, email, phone, and role, or leave professional blank.";
-      }
     }
 
     setErrors(nextErrors);
@@ -301,30 +228,25 @@ export default function BusinessSignupPage() {
   const nextStep = async () => {
     if (!validateStep(step)) return;
     if (step === 1 && !(await checkEmailAvailability())) return;
-    setStep((current) => Math.min(current + 1, 4));
+    setStep((s) => Math.min(s + 1, 3));
   };
 
   const previousStep = () => {
     setErrors({});
-    setStep((current) => Math.max(current - 1, 1));
+    setStep((s) => Math.max(s - 1, 1));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!validateStep(1) || !validateStep(2) || !validateStep(3) || !validateStep(4)) return;
-    if (!(await checkEmailAvailability())) {
-      setStep(1);
-      return;
-    }
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
+    if (!(await checkEmailAvailability())) { setStep(1); return; }
 
-    const locationForm = locationData.locationForm;
-    const serviceEntered =
-      setup.service.name || setup.service.price || setup.service.duration;
+    const lf = locationData.locationForm;
+    const serviceEntered = setup.service.name || setup.service.price || setup.service.duration;
     const professionalEntered =
-      setup.professional.name ||
-      setup.professional.email ||
-      setup.professional.phone ||
-      setup.professional.roleId;
+      setup.professional.name || setup.professional.email ||
+      setup.professional.phone || setup.professional.roleId;
+
     const payload = {
       firstname: form.firstname.trim(),
       lastname: form.lastname.trim(),
@@ -334,21 +256,23 @@ export default function BusinessSignupPage() {
       name: form.name.trim(),
       categoryId: form.categoryId,
       planId: form.planId,
-      address: locationForm.address,
-      city: locationForm.city,
-      postal_code: locationForm.postal_code,
-      country: locationForm.country,
-      state: locationForm.state,
-      latitude: locationForm.latitude || null,
-      longitude: locationForm.longitude || null,
-      offerAtBusiness: !!locationForm.offerAtBusiness,
-      offerAtClient: !!locationForm.offerAtClient,
+      address: lf.address,
+      city: lf.city,
+      postal_code: lf.postal_code,
+      country: lf.country,
+      state: lf.state,
+      latitude: lf.latitude || null,
+      longitude: lf.longitude || null,
+      offerAtBusiness: !!lf.offerAtBusiness,
+      offerAtClient: !!lf.offerAtClient,
       travelFee: locationData.travelFee || 0,
       maxTravelDistance: locationData.maxDistance || 5,
+      subscriptionProfessionalCount: subscriptionCounts.professionals,
+      subscriptionLocationCount: subscriptionCounts.locations,
       setup: {
         services: serviceEntered ? [setup.service] : [],
         professionals: professionalEntered ? [setup.professional] : [],
-        businessHours: setup.businessHours.filter((hour) => hour.isOpen),
+        businessHours: setup.businessHours.filter((h) => h.isOpen),
       },
     };
 
@@ -360,13 +284,16 @@ export default function BusinessSignupPage() {
         body: JSON.stringify(payload),
       });
       const data = await res.json();
-
-      if (!res.ok) {
-        throw new Error(data.error || "Unable to create business account.");
-      }
+      if (!res.ok) throw new Error(data.error || "Unable to create business account.");
 
       toast.success("Your trial is active. Welcome to Booksaa.");
-      router.push("/vendor");
+      const vendorId = data.vendor?.id;
+      const redirectUrl = vendorId
+        ? `/vendor?setup=step4&vendorId=${encodeURIComponent(vendorId)}`
+        : "/vendor";
+
+      await router.push(redirectUrl);
+      if (typeof window !== "undefined") window.location.href = redirectUrl;
     } catch (error) {
       toast.error(error.message);
     } finally {
@@ -377,27 +304,75 @@ export default function BusinessSignupPage() {
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-950">
       <div className="mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 lg:grid-cols-[0.8fr_1.2fr]">
+
+        {/* ── Sidebar ── */}
         <aside className="hidden border-r bg-white px-10 py-8 lg:flex lg:flex-col lg:justify-between">
           <div>
             <Link href="/business-pro" className="inline-flex items-center gap-2 text-sm text-slate-600">
               <ArrowLeft className="h-4 w-4" />
               Business Pro
-            </Link><br />
+            </Link>
+            <br />
             <Link href="/" className="mt-5 inline-flex">
               <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority />
             </Link>
-            <div className="mt-16 max-w-md">
-              <Badge className="mb-5 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+          </div>
+
+          {/* Pricing summary — only shown once a plan is loaded */}
+          {selectedPlan && subscriptionEstimate && (
+            <div className="my-6">
+              <Badge className="mb-3 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
                 Free trial signup
               </Badge>
-              <h1 className="text-4xl font-bold leading-tight tracking-normal">
-                Start accepting bookings with your own business account.
-              </h1>
-              <p className="mt-5 text-base leading-7 text-slate-600">
-                Create your owner profile, choose the plan that fits your team, and activate the trial period configured in Booksaa.
-              </p>
+
+              <div className="rounded-t-lg border bg-slate-50 p-4">
+                <div className="grid gap-3 sm:grid-cols-2">
+                  <PlanStat
+                    label="Estimated price"
+                    value={`$${money(subscriptionEstimate.total)} / ${selectedPlan.billing_cycle || "month"}`}
+                  />
+                  <PlanStat label="Trial" value={`${selectedPlan.trial_period || 0} days`} />
+                </div>
+              </div>
+
+              <div className="rounded-b-lg border border-t-0 bg-white p-4 space-y-4">
+                <div>
+                  <h3 className="text-sm font-semibold">Subscription size</h3>
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Saved to your business subscription on signup.
+                  </p>
+                </div>
+
+                <NumberPicker
+                  label="Professionals"
+                  value={subscriptionCounts.professionals}
+                  included={Number(selectedPlan.professional || 1)}
+                  onChange={(value) =>
+                    setSubscriptionCounts((prev) => ({ ...prev, professionals: value }))
+                  }
+                />
+
+                <NumberPicker
+                  label="Locations"
+                  value={subscriptionCounts.locations}
+                  included={Number(selectedPlan.location || 1)}
+                  onChange={(value) =>
+                    setSubscriptionCounts((prev) => ({ ...prev, locations: value }))
+                  }
+                />
+
+                <div className="flex justify-between items-center border-t pt-3">
+                  <span className="text-sm font-semibold text-slate-700">Total</span>
+                  <span className="text-base font-bold text-slate-900">
+                    ${money(subscriptionEstimate.total)}
+                    <span className="text-slate-400 font-normal text-sm">
+                      {" "}/ {selectedPlan.billing_cycle || "month"}
+                    </span>
+                  </span>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
 
           <div className="space-y-4 rounded-lg border bg-slate-50 p-5">
             <div className="flex items-center gap-3">
@@ -424,6 +399,7 @@ export default function BusinessSignupPage() {
           </div>
         </aside>
 
+        {/* ── Main form ── */}
         <section className="px-4 py-5 sm:px-6 lg:px-10 lg:py-8">
           <div className="mb-6 flex items-center justify-between lg:hidden">
             <div>
@@ -440,6 +416,7 @@ export default function BusinessSignupPage() {
 
           <Card className="mx-auto max-w-3xl rounded-lg border-slate-200 shadow-sm">
             <CardContent className="p-0">
+              {/* Step indicators */}
               <div className="border-b px-5 py-5 sm:px-8">
                 <div className="flex flex-wrap items-center gap-3">
                   {steps.map((item, index) => {
@@ -447,21 +424,15 @@ export default function BusinessSignupPage() {
                     const stepNumber = index + 1;
                     const active = step === stepNumber;
                     const complete = step > stepNumber;
-
                     return (
-                      <div
-                        key={item.title}
-                        className="flex min-w-[132px] flex-1 items-center gap-3"
-                      >
-                        <div
-                          className={`flex h-9 w-9 items-center justify-center rounded-md border ${
-                            complete
-                              ? "border-emerald-600 bg-emerald-600 text-white"
-                              : active
-                                ? "border-slate-950 bg-slate-950 text-white"
-                                : "border-slate-200 bg-white text-slate-500"
-                          }`}
-                        >
+                      <div key={item.title} className="flex min-w-[132px] flex-1 items-center gap-3">
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${
+                          complete
+                            ? "border-emerald-600 bg-emerald-600 text-white"
+                            : active
+                              ? "border-slate-950 bg-slate-950 text-white"
+                              : "border-slate-200 bg-white text-slate-500"
+                        }`}>
                           {complete ? <Check className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
                         </div>
                         <div>
@@ -481,15 +452,16 @@ export default function BusinessSignupPage() {
                   </div>
                 ) : (
                   <>
+                    {/* Step 1 */}
                     {step === 1 && (
                       <div className="space-y-5">
                         <div>
-                          <h2 className="text-2xl font-bold">Owner account</h2>
+                          <h2 className="text-2xl font-bold">Create an account</h2>
                           <p className="mt-1 text-sm text-slate-500">
-                            These details become your business owner login.
+                            A quick setup for a smoother booking experience
                           </p>
                         </div>
-                        <div className="grid gap-4 sm:grid-cols-2">
+                        <div className="grid gap-4 sm:grid-cols-2 mt-3">
                           <Field label="First name" id="firstname" error={errors.firstname}>
                             <Input id="firstname" name="firstname" value={form.firstname} onChange={handleChange} />
                           </Field>
@@ -497,18 +469,9 @@ export default function BusinessSignupPage() {
                             <Input id="lastname" name="lastname" value={form.lastname} onChange={handleChange} />
                           </Field>
                           <Field label="Email" id="email" error={errors.email}>
-                            <Input
-                              id="email"
-                              name="email"
-                              type="email"
-                              value={form.email}
-                              onBlur={checkEmailAvailability}
-                              onChange={handleChange}
-                            />
+                            <Input id="email" name="email" type="email" value={form.email} onBlur={checkEmailAvailability} onChange={handleChange} />
                             {emailChecking && (
-                              <p className="text-sm text-slate-500">
-                                Checking email...
-                              </p>
+                              <p className="text-sm text-slate-500">Checking email...</p>
                             )}
                           </Field>
                           <Field label="Phone" id="phone">
@@ -524,6 +487,7 @@ export default function BusinessSignupPage() {
                       </div>
                     )}
 
+                    {/* Step 2 */}
                     {step === 2 && (
                       <div className="space-y-5">
                         <div>
@@ -539,9 +503,7 @@ export default function BusinessSignupPage() {
                           <Field label="Category" id="categoryId" error={errors.categoryId}>
                             <Select
                               value={form.categoryId}
-                              onValueChange={(value) =>
-                                setForm((prev) => ({ ...prev, categoryId: value }))
-                              }
+                              onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}
                             >
                               <SelectTrigger id="categoryId">
                                 <SelectValue placeholder="Select category" />
@@ -558,9 +520,7 @@ export default function BusinessSignupPage() {
                           <Field label="Plan" id="planId" error={errors.planId}>
                             <Select
                               value={form.planId}
-                              onValueChange={(value) =>
-                                setForm((prev) => ({ ...prev, planId: value }))
-                              }
+                              onValueChange={(value) => setForm((prev) => ({ ...prev, planId: value }))}
                             >
                               <SelectTrigger id="planId">
                                 <SelectValue placeholder="Select plan" />
@@ -575,17 +535,10 @@ export default function BusinessSignupPage() {
                             </Select>
                           </Field>
                         </div>
-
-                        {selectedPlan && (
-                          <div className="grid gap-3 rounded-lg border bg-slate-50 p-4 sm:grid-cols-3">
-                            <PlanStat label="Price" value={`$${selectedPlan.price}`} />
-                            <PlanStat label="Trial" value={`${selectedPlan.trial_period || 0} days`} />
-                            <PlanStat label="Team" value={`${selectedPlan.professional || 1} professional`} />
-                          </div>
-                        )}
                       </div>
                     )}
 
+                    {/* Step 3 */}
                     {step === 3 && (
                       <div className="space-y-5">
                         <div>
@@ -603,225 +556,23 @@ export default function BusinessSignupPage() {
                       </div>
                     )}
 
-                    {step === 4 && (
-                      <div className="space-y-6">
-                        <div>
-                          <h2 className="text-2xl font-bold">Finish setup</h2>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Add these now or leave them blank and finish them later from your dashboard.
-                          </p>
-                        </div>
-
-                        {errors.setup && (
-                          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                            {errors.setup}
-                          </div>
-                        )}
-
-                        <div className="grid gap-4 rounded-lg border bg-slate-50 p-4">
-                          <div>
-                            <h3 className="text-base font-semibold">Service</h3>
-                            <p className="text-sm text-slate-500">
-                              Your first bookable service.
-                            </p>
-                          </div>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <Field label="Service name" id="serviceName">
-                              <Input
-                                id="serviceName"
-                                value={setup.service.name}
-                                onChange={(event) =>
-                                  handleSetupChange("service", "name", event.target.value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Duration in minutes" id="serviceDuration">
-                              <Input
-                                id="serviceDuration"
-                                type="number"
-                                min="1"
-                                value={setup.service.duration}
-                                onChange={(event) =>
-                                  handleSetupChange("service", "duration", event.target.value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Price" id="servicePrice">
-                              <Input
-                                id="servicePrice"
-                                type="number"
-                                min="0"
-                                step="0.01"
-                                value={setup.service.price}
-                                onChange={(event) =>
-                                  handleSetupChange("service", "price", event.target.value)
-                                }
-                              />
-                            </Field>
-                            <div className="sm:col-span-2">
-                              <Field label="Description" id="serviceDescription">
-                                <Textarea
-                                  id="serviceDescription"
-                                  value={setup.service.description}
-                                  onChange={(event) =>
-                                    handleSetupChange("service", "description", event.target.value)
-                                  }
-                                />
-                              </Field>
-                            </div>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-4 rounded-lg border bg-slate-50 p-4">
-                          <div>
-                            <h3 className="text-base font-semibold">Professional</h3>
-                            <p className="text-sm text-slate-500">
-                              Add the first team member who can be booked.
-                            </p>
-                          </div>
-                          <div className="grid gap-4 sm:grid-cols-2">
-                            <Field label="Name" id="professionalName">
-                              <Input
-                                id="professionalName"
-                                value={setup.professional.name}
-                                onChange={(event) =>
-                                  handleSetupChange("professional", "name", event.target.value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Email" id="professionalEmail">
-                              <Input
-                                id="professionalEmail"
-                                type="email"
-                                value={setup.professional.email}
-                                onChange={(event) =>
-                                  handleSetupChange("professional", "email", event.target.value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Phone" id="professionalPhone">
-                              <Input
-                                id="professionalPhone"
-                                value={setup.professional.phone}
-                                onChange={(event) =>
-                                  handleSetupChange("professional", "phone", event.target.value)
-                                }
-                              />
-                            </Field>
-                            <Field label="Role" id="professionalRole">
-                              <Select
-                                value={setup.professional.roleId}
-                                onValueChange={(value) =>
-                                  handleSetupChange("professional", "roleId", value)
-                                }
-                              >
-                                <SelectTrigger id="professionalRole">
-                                  <SelectValue placeholder="Select role" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  {professionalRoles.map((role) => (
-                                    <SelectItem key={role.id} value={role.id}>
-                                      {role.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                            </Field>
-                          </div>
-                        </div>
-
-                        <div className="grid gap-4 rounded-lg border bg-slate-50 p-4">
-                          <div>
-                            <h3 className="text-base font-semibold">Business hours</h3>
-                            <p className="text-sm text-slate-500">
-                              Choose the days customers can book you.
-                            </p>
-                          </div>
-                          <div className="grid gap-3">
-                            {setup.businessHours.map((hour, index) => (
-                              <div
-                                key={hour.day}
-                                className="grid gap-3 rounded-md border bg-white p-3 sm:grid-cols-[1fr_auto]"
-                              >
-                                <div className="flex items-center gap-3">
-                                  <Switch
-                                    checked={hour.isOpen}
-                                    onCheckedChange={(checked) =>
-                                      handleHourChange(index, "isOpen", checked)
-                                    }
-                                  />
-                                  <Label>{hour.day}</Label>
-                                </div>
-                                {hour.isOpen ? (
-                                  <div className="flex items-center gap-2">
-                                    <Select
-                                      value={hour.openTime}
-                                      onValueChange={(value) =>
-                                        handleHourChange(index, "openTime", value)
-                                      }
-                                    >
-                                      <SelectTrigger className="w-28">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {timeSlots.map((time) => (
-                                          <SelectItem key={time} value={time}>
-                                            {time}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                    <span className="text-sm text-slate-500">to</span>
-                                    <Select
-                                      value={hour.closeTime}
-                                      onValueChange={(value) =>
-                                        handleHourChange(index, "closeTime", value)
-                                      }
-                                    >
-                                      <SelectTrigger className="w-28">
-                                        <SelectValue />
-                                      </SelectTrigger>
-                                      <SelectContent>
-                                        {timeSlots.map((time) => (
-                                          <SelectItem key={time} value={time}>
-                                            {time}
-                                          </SelectItem>
-                                        ))}
-                                      </SelectContent>
-                                    </Select>
-                                  </div>
-                                ) : (
-                                  <p className="text-sm text-slate-500">Closed</p>
-                                )}
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </div>
-                    )}
-
+                    {/* Navigation */}
                     <div className="mt-8 flex flex-col-reverse gap-3 border-t pt-5 sm:flex-row sm:justify-between">
-                      <Button
-                        type="button"
-                        variant="outline"
-                        onClick={previousStep}
-                        disabled={step === 1 || submitting}
-                      >
+                      <Button type="button" variant="outline" onClick={previousStep} disabled={step === 1 || submitting}>
                         <ArrowLeft className="h-4 w-4" />
                         Previous
                       </Button>
-                      {step < 4 ? (
+                      {step < 3 ? (
                         <Button type="button" onClick={nextStep}>
                           Continue
                           <ArrowRight className="h-4 w-4" />
                         </Button>
                       ) : (
                         <Button type="submit" disabled={submitting}>
-                          {submitting ? (
-                            <Loader2 className="h-4 w-4 animate-spin" />
-                          ) : (
-                            <CheckCircle2 className="h-4 w-4" />
-                          )}
+                          {submitting
+                            ? <Loader2 className="h-4 w-4 animate-spin" />
+                            : <CheckCircle2 className="h-4 w-4" />
+                          }
                           Start free trial
                         </Button>
                       )}
@@ -837,6 +588,43 @@ export default function BusinessSignupPage() {
   );
 }
 
+/* ─── Number Picker ──────────────────────────────────────────────────────────── */
+
+function NumberPicker({ label, value, onChange }) {
+  const decrement = () => onChange(Math.max(1, value - 1));
+  const increment = () => onChange(value + 1);
+
+  return (
+    <div className="flex items-center justify-between gap-4">
+      <p className="text-sm font-semibold text-slate-800 flex-1">{label}</p>
+      <div className="flex items-center gap-2">
+        <button
+          type="button"
+          onClick={decrement}
+          disabled={value <= 1}
+          className="h-9 w-9 rounded-lg border border-slate-200 bg-white shadow-sm text-slate-600 text-lg font-medium
+            hover:bg-slate-50 disabled:opacity-30 disabled:cursor-not-allowed transition"
+        >
+          −
+        </button>
+        <div className="min-w-[3rem] h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white font-semibold text-sm text-slate-900 px-3">
+          {value}
+        </div>
+        <button
+          type="button"
+          onClick={increment}
+          className="h-9 w-9 rounded-lg border border-slate-200 bg-white shadow-sm text-slate-600 text-lg font-medium
+            hover:bg-slate-50 transition"
+        >
+          +
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ─── Field ──────────────────────────────────────────────────────────────────── */
+
 function Field({ label, id, error, children }) {
   return (
     <div className="space-y-2">
@@ -846,6 +634,8 @@ function Field({ label, id, error, children }) {
     </div>
   );
 }
+
+/* ─── Plan Stat ──────────────────────────────────────────────────────────────── */
 
 function PlanStat({ label, value }) {
   return (

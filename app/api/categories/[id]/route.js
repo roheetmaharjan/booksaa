@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { v4 as uuid } from "uuid";
+import { randomUUID } from "crypto";
 import fs from "fs";
 import path from "path";
 
@@ -47,7 +47,7 @@ export async function PATCH(req, context) {
     if (image && typeof image === "object" && image.size > 0) {
       const buffer = Buffer.from(await image.arrayBuffer());
       const ext = image.name.split(".").pop();
-      imageFileName = `${uuid()}.${ext}`;
+      imageFileName = `${randomUUID()}.${ext}`;
       const uploadPath = path.join(process.cwd(), "public/uploads", imageFileName);
 
       await fs.promises.writeFile(uploadPath, buffer);

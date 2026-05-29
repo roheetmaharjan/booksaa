@@ -16,6 +16,8 @@ export async function POST(req) {
     name,
     userId,
     address,
+    locationName,
+    locationPhone,
     city,
     postal_code,
     state,
@@ -110,6 +112,8 @@ export async function POST(req) {
 
   const location = await prisma.location.create({
     data: {
+      name: locationName || "Main Location",
+      phone: locationPhone || null,
       vendorId: vendor.id,
       address,
       latitude: latitude ? Number(latitude) : null,
@@ -119,7 +123,13 @@ export async function POST(req) {
       travelFee: travelFee ? Number(travelFee) : 0.0,
       maxTravelDistance: maxTravelDistance ? Number(maxTravelDistance) : 5.0,
       isActive: isActive !== undefined ? !!isActive : true,
+      isDefault: true,
     },
+  });
+
+  await prisma.vendors.update({
+    where: { id: vendor.id },
+    data: { defaultLocationId: location.id },
   });
 
   const token = crypto.randomUUID();

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent,CardHeader,CardTitle,CardDescription, CardFooter } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
@@ -12,6 +12,7 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { toast } from "sonner";
 
 const daysOfWeek = [
   "Sunday",
@@ -23,15 +24,27 @@ const daysOfWeek = [
   "Saturday",
 ];
 
-export default function BusinessHours() {
-  const [hours, setHours] = useState(
-    daysOfWeek.map((day) => ({
+function buildHours(initialHours = []) {
+  return daysOfWeek.map((day) => {
+    const saved = initialHours.find((hour) => hour.day === day);
+    return {
       day,
-      open: false,
-      openTime: "09:00",
-      closeTime: "17:00",
-    }))
+      open: !!saved?.isOpen,
+      openTime: saved?.openTime || "09:00",
+      closeTime: saved?.closeTime || "17:00",
+    };
+  });
+}
+
+export default function BusinessHours({ vendorId, locationId, initialHours = [], onSaved }) {
+  const [hours, setHours] = useState(
+    buildHours(initialHours)
   );
+  const [saving, setSaving] = useState(false);
+
+  useEffect(() => {
+    setHours(buildHours(initialHours));
+  }, [initialHours, locationId]);
 
   const updateDay = (index, key, value) => {
     setHours((prev) => {
@@ -46,6 +59,39 @@ export default function BusinessHours() {
     `${h.toString().padStart(2, "0")}:00`,
     `${h.toString().padStart(2, "0")}:30`,
   ]).flat();
+
+  const handleSave = async () => {
+    if (!vendorId || !locationId) {
+      toast.error("Select a location before saving hours.");
+      return;
+    }
+
+    try {
+      setSaving(true);
+      const res = await fetch("/api/business-hours", {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          vendorId,
+          locationId,
+          hours: hours.map((hour) => ({
+            day: hour.day,
+            isOpen: hour.open,
+            openTime: hour.openTime,
+            closeTime: hour.closeTime,
+          })),
+        }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save hours.");
+      toast.success("Business hours saved.");
+      if (onSaved) onSaved(data);
+    } catch (error) {
+      toast.error(error.message);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   return (
     <div className="space-y-4 max-w-2xl">
@@ -113,9 +159,10 @@ export default function BusinessHours() {
         <CardFooter>
           <Button
             className="w-fit"
-            onClick={() => console.log("Business Hours:", hours)}
+            onClick={handleSave}
+            disabled={saving}
           >
-            Save Hours
+            {saving ? "Saving..." : "Save Hours"}
           </Button>
         </CardFooter>
       </Card>

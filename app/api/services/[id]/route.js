@@ -29,7 +29,7 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { name, description, price, duration } = await req.json();
+    const { name, description, price, duration, locationId } = await req.json();
     
     if (!name || !price || !duration) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -42,6 +42,7 @@ export async function PATCH(req, { params }) {
         description,
         price: Number(price),
         duration: Number(duration),
+        locationId: locationId || undefined,
       },
     });
 

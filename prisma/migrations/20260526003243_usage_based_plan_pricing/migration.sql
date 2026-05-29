@@ -1,0 +1,3 @@
+-- AlterTable
+ALTER TABLE "Plans" ADD COLUMN     "extraLocationPrice" DOUBLE PRECISION NOT NULL DEFAULT 0,
+ADD COLUMN     "extraProfessionalPrice" DOUBLE PRECISION NOT NULL DEFAULT 0;

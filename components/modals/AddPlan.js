@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { validateForm } from "@/utils/formValidator";
+import { toast } from "sonner";
 
 export default function AddPlans({ open, setAdd }) {
   const [form, setForm] = useState({
@@ -15,7 +16,10 @@ export default function AddPlans({ open, setAdd }) {
     trial_period: "",
     duration:"",
     billing_cycle: "",
-    professional : 1,
+    professional: 1,
+    location: 1,
+    extraProfessionalPrice: "",
+    extraLocationPrice: "",
   });
 
   const [formErrors, setFormErrors] = useState({});
@@ -26,7 +30,8 @@ export default function AddPlans({ open, setAdd }) {
     duration: { required: true, message: "Duration is required" },
     trial_period: { required: true, message: "Trial period is required" },
     billing_cycle: { required: true, message: "Billing Cycle is required" },
-    professional: {required: true, message: "Professional is required"}
+    professional: { required: true, message: "Included professionals is required" },
+    location: { required: true, message: "Included locations is required" },
   };
 
 
@@ -50,7 +55,8 @@ export default function AddPlans({ open, setAdd }) {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),
       });
-      if (!res.ok) throw new Error("Failed to submit plan");
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to submit plan");
 
       setAdd(false);
       setForm({
@@ -60,10 +66,14 @@ export default function AddPlans({ open, setAdd }) {
         billing_cycle: "",
         trial_period: "",
         professional: 1,
+        location: 1,
+        extraProfessionalPrice: "",
+        extraLocationPrice: "",
       });
       // setExpiryDate(new Date());
     } catch (err) {
       console.error("Submission error:", err);
+      toast.error(err.message);
     }
   };
 
@@ -165,7 +175,7 @@ export default function AddPlans({ open, setAdd }) {
             </div>
             <div>
               <Label htmlFor="professional">
-                Professionals<span className="astrick">*</span>
+                Included Professionals<span className="astrick">*</span>
               </Label>
               <Input
                 id="professional"
@@ -174,7 +184,57 @@ export default function AddPlans({ open, setAdd }) {
                 min={1}
                 value={form.professional}
                 onChange={handleChange}
-                placeholder="14"
+                placeholder="1"
+              />
+              {formErrors && formErrors.professional && (
+                <p className="text-sm text-red-500">{formErrors.professional}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="location">
+                Included Locations<span className="astrick">*</span>
+              </Label>
+              <Input
+                id="location"
+                name="location"
+                type="number"
+                min={1}
+                value={form.location}
+                onChange={handleChange}
+                placeholder="1"
+              />
+              {formErrors && formErrors.location && (
+                <p className="text-sm text-red-500">{formErrors.location}</p>
+              )}
+            </div>
+            <div>
+              <Label htmlFor="extraProfessionalPrice">
+                Extra Professional Price
+              </Label>
+              <Input
+                id="extraProfessionalPrice"
+                name="extraProfessionalPrice"
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.extraProfessionalPrice}
+                onChange={handleChange}
+                placeholder="8"
+              />
+            </div>
+            <div>
+              <Label htmlFor="extraLocationPrice">
+                Extra Location Price
+              </Label>
+              <Input
+                id="extraLocationPrice"
+                name="extraLocationPrice"
+                type="number"
+                min={0}
+                step="0.01"
+                value={form.extraLocationPrice}
+                onChange={handleChange}
+                placeholder="15"
               />
             </div>
           </div>

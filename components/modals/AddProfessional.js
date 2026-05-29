@@ -31,18 +31,19 @@ export default function AddProfessional({
   open,
   setAddProfessionalOpen,
   vendorId,
+  locationId,
   vendor,
   roles,
   onAdded,
   loading: rolesLoading,
   error: rolesError,
 }) {
+  const formId = "add-professional-form";
   const [formErrors, setFormErrors] = useState({});
   const [addloading, setAddLoading] = useState(false);
   const [adderror, setAddError] = useState(null);
   const [newRole, setNewRole] = useState("");
   const [openAddProfessionalRole, setAddProfessionalRoleOpen] = useState(false);
-  const [limitError , setLimitError] = useState("");
 
   const {
     formState: professionalForm,
@@ -55,24 +56,16 @@ export default function AddProfessional({
     phone: "",
     role: "",
     status: "",
+    locationId: locationId || "",
   });
 
   useEffect(() => {
-    if (open) {
-      const maxProfessionals = vendor?.plan?.professional ?? 1;
-      const currentCount = vendor?.professionals?.length ?? 0;
-
-      if (currentCount >= maxProfessionals) {
-        setLimitError(
-          `You can only add ${maxProfessionals} professional${
-            maxProfessionals > 1 ? "s" : ""
-          }. Upgrade your plan to add more.`
-        );
-      } else {
-        setLimitError("");
-      }
+    if (locationId) {
+      handleProfessionalChange({
+        target: { name: "locationId", value: locationId },
+      });
     }
-  }, [open, vendor]);
+  }, [locationId]);
 
   const validationRules = {
     name: { required: true, message: "Name is required" },
@@ -119,10 +112,10 @@ export default function AddProfessional({
     if (Object.keys(errors).length > 0) return;
 
     try {
-      await addProfessional({ ...professionalForm, vendorId });
+      await addProfessional({ ...professionalForm, locationId: professionalForm.locationId || locationId, vendorId });
       resetForm();
       setAddProfessionalOpen(false);
-      toast.success("Professional has been added.");
+      toast.success("Professional has been added. Subscription estimate updated.");
       if (onAdded) onAdded();
     } catch (err) {
       toast.error(err.message || "Cannot add professional.");
@@ -133,20 +126,25 @@ export default function AddProfessional({
     <>
       {/* Add Professional Dialog */}
       <Dialog open={open} onOpenChange={setAddProfessionalOpen}>
-        <form onSubmit={handleAddProfessional}>
+        <form id={formId} onSubmit={handleAddProfessional}>
           <DialogContent className="sm:max-w-[650px]">
             <DialogHeader>
               <DialogTitle>Add Professional</DialogTitle>
             </DialogHeader>
-            {limitError && (
-              <>
-                <Alert variant="destructive" className="flex items-center">
-                  <WarningDiamondIcon size={20} className="!top-[10px]" />
-                  <AlertTitle>{limitError}</AlertTitle>
-                </Alert>
-              </>
+            {addError && (
+              <Alert variant="destructive" className="flex items-center">
+                <WarningDiamondIcon size={20} className="!top-[10px]" />
+                <AlertTitle>{addError}</AlertTitle>
+              </Alert>
             )}
-            <fieldset disabled={!!limitError}>
+            {vendor?.plan && (
+              <Alert className="flex items-center">
+                <AlertTitle>
+                  Includes {vendor.plan.professional || 1} professional(s). Extra professionals add {vendor.plan.extraProfessionalPrice || 0} per {vendor.plan.billing_cycle || "month"}.
+                </AlertTitle>
+              </Alert>
+            )}
+            <fieldset>
               <div className="mb-3">
                 <Label htmlFor="name">
                   Professional Name <span className="astrick">*</span>
@@ -270,10 +268,10 @@ export default function AddProfessional({
               </Button>
               <Button
                 type="submit"
-                onClick={handleAddProfessional}
-                disabled={addloading}
+                form={formId}
+                disabled={addLoading}
               >
-                {addloading ? "Saving..." : "Save"}
+                {addLoading ? "Saving..." : "Save"}
               </Button>
             </DialogFooter>
           </DialogContent>

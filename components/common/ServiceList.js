@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import AddService from "@/components/modals/AddService";
 import EditService from "@/components/modals/EditService";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
@@ -8,7 +8,7 @@ import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 
-export default function ServiceList({ vendorId }) {
+export default function ServiceList({ vendorId, locationId }) {
   const [openAddService, setAddServiceOpen] = useState(false);
   const [openEditService, setEditServiceOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null); 
@@ -16,27 +16,25 @@ export default function ServiceList({ vendorId }) {
   const [openAlert, setAlertOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const pathname = usePathname();
-  const fetched = useRef(false)
 
-  const {
-    data: fetchedLocations
-  } = useFetch(`/api/businesses/${vendorId}/locations`, {
-    lazy: true,
-  });
+  const { data: fetchedLocations } = useFetch(
+    vendorId ? `/api/businesses/${vendorId}/locations` : null
+  );
   const [locations, setLocations] = useState([]);
 
   useEffect(() => {
-    if (open && fetchedLocations) {
+    if (fetchedLocations) {
       setLocations(fetchedLocations);
     }
-  }, [open, fetchedLocations]);
+  }, [fetchedLocations]);
 
   useEffect(() => {
-    if (fetched.current) return;
-    fetched.current = true;
     if (!vendorId) return;
     setLoading(true);
-    fetch(`/api/businesses/${vendorId}`)
+    const url = locationId
+      ? `/api/businesses/${vendorId}?locationId=${locationId}`
+      : `/api/businesses/${vendorId}`;
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         setVendorDetail(data);
@@ -47,7 +45,7 @@ export default function ServiceList({ vendorId }) {
         setLoading(false);
         toast.error(err.message);
       });
-  }, [vendorId]);
+  }, [vendorId, locationId]);
 
   if (loading) return <p>Loading...</p>;
   if (!vendor) return <p>No vendor found.</p>;
@@ -97,10 +95,11 @@ export default function ServiceList({ vendorId }) {
             setAddServiceOpen={setAddServiceOpen}
             vendorId={vendorId}
             locations={locations}
+            locationId={locationId || vendor.selectedLocationId}
             onAdded={async () => {
-              const updatedVendor = await fetch(
-                `/api/businesses/${vendorId}`
-              ).then((r) => r.json());
+              const updatedVendor = await fetch(locationId
+                ? `/api/businesses/${vendorId}?locationId=${locationId}`
+                : `/api/businesses/${vendorId}`).then((r) => r.json());
               setVendorDetail(updatedVendor);
             }}
           />
@@ -176,11 +175,12 @@ export default function ServiceList({ vendorId }) {
           setEditServiceOpen={setEditServiceOpen}
           vendorId={vendorId}
           locations={locations}
+          locationId={locationId || vendor.selectedLocationId}
           service={selectedService}
           onEdited={async () => {
-            const updatedVendor = await fetch(
-              `/api/businesses/${vendorId}`
-            ).then((r) => r.json());
+            const updatedVendor = await fetch(locationId
+              ? `/api/businesses/${vendorId}?locationId=${locationId}`
+              : `/api/businesses/${vendorId}`).then((r) => r.json());
             setVendorDetail(updatedVendor);
           }}
         />

@@ -25,6 +25,7 @@ export default function EditProfessional({
   roles, 
   loading: rolesLoading,
   error: rolesError,
+  locationId,
   onEdited
 }) {
   const [formErrors, setFormErrors] = useState({});
@@ -40,6 +41,7 @@ export default function EditProfessional({
     role: "",
     phone: "",
     status: "",
+    locationId: "",
   });
 
   useEffect(() => {
@@ -51,6 +53,7 @@ export default function EditProfessional({
         role: professional.role ? String(professional.role.id) : "",
         status: professional.status || "",
         phone: professional.phone || "",
+        locationId: professional.locationId || locationId || "",
       });
     }
   }, [professional]);
@@ -93,6 +96,7 @@ export default function EditProfessional({
         role: "",
         phone: "",
         status: "",
+        locationId: "",
       });
       if (onEdited) onEdited();
     } catch (err) {

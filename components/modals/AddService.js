@@ -14,16 +14,17 @@ import { Textarea } from "@/components/ui/textarea";
 import { validateForm } from "@/utils/formValidator";
 import { PriceField } from "@/components/common/PriceField";
 import { useFormState } from "@/hooks/useFormState";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 
-export default function AddService({ open, setAddServiceOpen,vendorId, locations = [],onAdded }) {
+export default function AddService({ open, setAddServiceOpen,vendorId, locations = [], locationId, onAdded }) {
   const [formErrors, setFormErrors] = useState({});
   const [services,setServices] = useState();
   const [loading, setLoading] = useState();
   const [error, setError] = useState();
   const {
     formState: serviceForm,
+    setFormState: setServiceForm,
     handleChange: handleServiceChange,
     resetForm,
   } = useFormState({
@@ -32,8 +33,14 @@ export default function AddService({ open, setAddServiceOpen,vendorId, locations
     description: "",
     price: "",
     duration: "",
-    locationId: ""
+    locationId: locationId || ""
   });
+
+  useEffect(() => {
+    if (locationId) {
+      setServiceForm((prev) => ({ ...prev, locationId }));
+    }
+  }, [locationId, setServiceForm]);
   console.log("locations is:", locations)
   const validationRules = {
     name: { required: true, message: "Service name is required" },
@@ -53,7 +60,7 @@ export default function AddService({ open, setAddServiceOpen,vendorId, locations
       const res = await fetch("/api/services/create", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...serviceForm, vendorId }),
+        body: JSON.stringify({ ...serviceForm, locationId: serviceForm.locationId || locationId, vendorId }),
       });
 
       const data = await res.json();

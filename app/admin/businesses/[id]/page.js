@@ -14,13 +14,27 @@ import { useRouter } from "next/navigation";
 import ServiceList from "@/components/common/ServiceList";
 import ProfessionalList from "@/components/common/ProfessionalList";
 import { toast } from "sonner";
+import BusinessHours from "@/components/common/BusinessHour";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 export default function VendorDetail() {
   const { id: vendorId } = useParams();
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
   const [editLoading, setEditLoading] = useState(false);
+  const [selectedLocationId, setSelectedLocationId] = useState("");
   const router = useRouter();
+  const ownerEmail = vendor?.user?.email || "";
+  const ownerName = [vendor?.user?.firstname, vendor?.user?.lastname]
+    .filter(Boolean)
+    .join(" ");
+  const billing = vendor?.billingSummary;
 
   const handleResend = async (email) => {
     try {
@@ -46,15 +60,23 @@ export default function VendorDetail() {
   useEffect(() => {
     if (!vendorId) return;
 
-    fetch(`/api/businesses/${vendorId}`)
+    const url = selectedLocationId
+      ? `/api/businesses/${vendorId}?locationId=${selectedLocationId}`
+      : `/api/businesses/${vendorId}`;
+    fetch(url)
       .then((res) => (res.ok ? res.json() : null))
-      .then((data) => setVendor(data))
+      .then((data) => {
+        setVendor(data);
+        if (data?.selectedLocationId && !selectedLocationId) {
+          setSelectedLocationId(data.selectedLocationId);
+        }
+      })
       .catch((err) => {
         console.error("Error:", err);
         setVendor(null);
       })
       .finally(() => setLoading(false));
-  }, [vendorId]);
+  }, [vendorId, selectedLocationId]);
 
   const handleEditClick = (vendorId)=>{
     setEditLoading(true);
@@ -87,10 +109,10 @@ export default function VendorDetail() {
             </figure>
             <div className="flex flex-col gap-1">
               <h4 className="text-2xl font-bold">{vendor.name}</h4>
-              <p className="text-gray-500">{vendor.user.email}</p>
+              <p className="text-gray-500">{ownerEmail || "-"}</p>
             </div>
             <div className="flex gap-2 ml-auto">
-              <Button onClick={() => handleResend(vendor.user.email)}>Send Activation Link</Button>
+              <Button onClick={() => handleResend(ownerEmail)} disabled={!ownerEmail}>Send Activation Link</Button>
               <Button onClick={() => handleEditClick(vendor.id)} variant="outline" >Edit Profile</Button>
             </div>
           </div>
@@ -99,10 +121,55 @@ export default function VendorDetail() {
               <TabsTrigger value="detail">Detail</TabsTrigger>
               <TabsTrigger value="services">Services</TabsTrigger>
               <TabsTrigger value="professionals">Professionals</TabsTrigger>
+              <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
               <TabsTrigger value="photos">Photos</TabsTrigger>
               <TabsTrigger value="reviews">Reviews</TabsTrigger>
             </TabsList>
+            {vendor.locations?.length > 0 && (
+              <div className="my-4 max-w-sm">
+                <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select location" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {vendor.locations.map((location) => (
+                      <SelectItem key={location.id} value={location.id}>
+                        {location.name || location.address}
+                        {location.isDefault ? " (Default)" : ""}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <TabsContent value="detail">
+              {billing && (
+                <Card className="mb-4">
+                  <CardHeader>
+                    <CardTitle>Subscription Estimate</CardTitle>
+                  </CardHeader>
+                  <CardContent className="grid grid-cols-12 gap-3 text-sm">
+                    <div className="col-span-12 md:col-span-3">
+                      <p className="text-gray-500">Total</p>
+                      <p className="font-semibold">
+                        {billing.totalPrice} / {billing.billingCycle}
+                      </p>
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <p className="text-gray-500">Base</p>
+                      <p>{billing.basePrice}</p>
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <p className="text-gray-500">Extra Professionals</p>
+                      <p>{billing.extraProfessionals} x {billing.extraProfessionalPrice}</p>
+                    </div>
+                    <div className="col-span-12 md:col-span-3">
+                      <p className="text-gray-500">Extra Locations</p>
+                      <p>{billing.extraLocations} x {billing.extraLocationPrice}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
               <div className="grid grid-cols-12 gap-4">
                 <div className="col-span-12 lg:col-span-4">
                   <Card>
@@ -115,13 +182,13 @@ export default function VendorDetail() {
                           <tr>
                             <td className="py-1 text-gray-500">Name</td>
                             <td className="py-1 pl-6">
-                              {vendor.user.firstname + vendor.user.lastname}
+                              {ownerName || "-"}
                             </td>
                           </tr>
                           <tr>
                             <td className="py-1 text-gray-500">Email</td>
                             <td className="py-1 pl-6">
-                              {vendor.user.email || "-"}
+                              {ownerEmail || "-"}
                             </td>
                           </tr>
                           <tr>
@@ -151,13 +218,13 @@ export default function VendorDetail() {
                           <tr>
                             <td className="py-1 text-gray-500">Plan</td>
                             <td className="py-1 pl-6">
-                              {vendor.plan.name || "-"}
+                              {vendor.plan?.name || "-"}
                             </td>
                           </tr>
                           <tr>
                             <td className="py-1 text-gray-500">Category</td>
                             <td className="py-1 pl-6">
-                              {vendor.category.name || "-"}
+                              {vendor.category?.name || "-"}
                             </td>
                           </tr>
                         </tbody>
@@ -212,7 +279,11 @@ export default function VendorDetail() {
                       {vendor.location ? (
                         <div className="space-y-2 text-sm">
                           <p className="font-medium text-slate-900">
-                            {vendor.location.address}
+                            {vendor.location.name || "Location"}
+                          </p>
+                          <p className="text-slate-500">{vendor.location.address}</p>
+                          <p className="text-slate-500">
+                            Phone: {vendor.location.phone || vendor.phone || "-"}
                           </p>
                           <p className="text-slate-500">
                             {vendor.location.offerAtBusiness
@@ -250,10 +321,22 @@ export default function VendorDetail() {
               </div>
             </TabsContent>
             <TabsContent value="services">
-              <ServiceList vendorId={vendor.id}/>
+              <ServiceList vendorId={vendor.id} locationId={selectedLocationId}/>
             </TabsContent>
             <TabsContent value="professionals">
-              <ProfessionalList vendorId={vendor.id}/>
+              <ProfessionalList vendorId={vendor.id} locationId={selectedLocationId}/>
+            </TabsContent>
+            <TabsContent value="businesshours">
+              <BusinessHours
+                vendorId={vendor.id}
+                locationId={selectedLocationId}
+                initialHours={vendor.businessHours || []}
+                onSaved={() => {
+                  fetch(`/api/businesses/${vendor.id}?locationId=${selectedLocationId}`)
+                    .then((res) => res.json())
+                    .then((data) => setVendor(data));
+                }}
+              />
             </TabsContent>
             <TabsContent value="photos">Coming Soon</TabsContent>
             <TabsContent value="reviews">Review Comming Soon</TabsContent>

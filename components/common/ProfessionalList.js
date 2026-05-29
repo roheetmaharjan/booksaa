@@ -10,7 +10,7 @@ import ConfirmAlert from "@/components/common/ConfirmAlert";
 import EditProfessional from "@/components/modals/EditProfessional";
 import { useFetch } from "@/hooks/useFetch";
 
-export default function ProfessionalList({ vendorId }) {
+export default function ProfessionalList({ vendorId, locationId }) {
   const [openAddProfessional, setAddProfessionalOpen] = useState(false);
   const [openEditProfessional, setEditProfessionalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
@@ -27,17 +27,20 @@ export default function ProfessionalList({ vendorId }) {
 
   const [roles, setRoles] = useState([]);
   useEffect(() => {
-    if (open && fetchedRoles) {
+    if (fetchedRoles) {
       setRoles(fetchedRoles);
     }
-  }, [open, fetchedRoles]);
+  }, [fetchedRoles]);
 
   const pathname = usePathname();
 
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    fetch(`/api/businesses/${vendorId}`)
+    const url = locationId
+      ? `/api/businesses/${vendorId}?locationId=${locationId}`
+      : `/api/businesses/${vendorId}`;
+    fetch(url)
       .then((res) => res.json())
       .then((data) => {
         setVendorDetail(data);
@@ -48,12 +51,20 @@ export default function ProfessionalList({ vendorId }) {
         setLoading(false);
         toast.error(err.message);
       });
-  }, [vendorId]);
+  }, [vendorId, locationId]);
 
   if (loading) return <Loading />;
   if (!vendor) return <p>No vendor found.</p>;
 
-  // show button only if pathname contains "edit-vendor"
+  const professionalLimit = Number(
+    vendor.subscriptionProfessionalCount || vendor.plan?.professional || 1
+  );
+  const currentProfessionalCount = Number(
+    vendor.billingSummary?.actualProfessionalCount || vendor.professionals?.length || 0
+  );
+  const canAddProfessional = currentProfessionalCount < professionalLimit;
+
+  // show button only if pathname contains "edit-business"
   const showAddButton = pathname.includes("edit-business");
   const showActionButton = pathname.includes("edit-business");
 
@@ -92,9 +103,17 @@ export default function ProfessionalList({ vendorId }) {
     <>
       {showAddButton && (
         <>
-          <Button onClick={() => setAddProfessionalOpen(true)}>
+          <Button
+            onClick={() => canAddProfessional && setAddProfessionalOpen(true)}
+            disabled={!canAddProfessional}
+          >
             Add Professional
           </Button>
+          {!canAddProfessional && (
+            <p className="text-sm text-red-600 mt-2">
+              Professional limit reached. Your subscription allows {professionalLimit} professional{professionalLimit !== 1 ? "s" : ""}.
+            </p>
+          )}
           {openAddProfessional && (
             <AddProfessional
               open={openAddProfessional}
@@ -102,10 +121,11 @@ export default function ProfessionalList({ vendorId }) {
               vendorId={vendorId}
               roles={roles}
               vendor={vendor}
+              locationId={locationId || vendor.selectedLocationId}
               onAdded={async () => {
-                const updatedVendor = await fetch(
-                  `/api/businesses/${vendorId}`
-                ).then((r) => r.json());
+                const updatedVendor = await fetch(locationId
+                  ? `/api/businesses/${vendorId}?locationId=${locationId}`
+                  : `/api/businesses/${vendorId}`).then((r) => r.json());
                 setVendorDetail(updatedVendor);
               }}
             />
@@ -208,10 +228,11 @@ export default function ProfessionalList({ vendorId }) {
           vendorId={vendorId}
           professional={selectedProfessional}
           roles={roles}
+          locationId={locationId || vendor.selectedLocationId}
           onEdited={async () => {
-            const updatedVendor = await fetch(
-              `/api/businesses/${vendorId}`
-            ).then((r) => r.json());
+            const updatedVendor = await fetch(locationId
+              ? `/api/businesses/${vendorId}?locationId=${locationId}`
+              : `/api/businesses/${vendorId}`).then((r) => r.json());
             setVendorDetail(updatedVendor);
           }}
         />

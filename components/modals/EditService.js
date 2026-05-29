@@ -34,6 +34,7 @@ export default function EditService({
     description: "",
     price: "",
     duration: "",
+    locationId: "",
   });
 
   useEffect(() => {
@@ -44,6 +45,7 @@ export default function EditService({
         description: service.description || "",
         price: service.price || "",
         duration: service.duration || "",
+        locationId: service.locationId || "",
       });
     }
   }, [service]);

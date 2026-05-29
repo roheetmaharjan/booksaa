@@ -29,6 +29,17 @@ export async function POST(req) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
     }
 
+    const locationExists = await prisma.location.findFirst({
+      where: { id: locationId, vendorId },
+    });
+
+    if (!locationExists) {
+      return NextResponse.json(
+        { error: "Location not found for this business" },
+        { status: 404 }
+      );
+    }
+
     // Check if service name already exists for this vendor
     const exists = await prisma.service.findUnique({
       where: {

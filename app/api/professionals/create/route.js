@@ -1,10 +1,11 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
+import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
 
 export async function POST(req) {
-  const { vendorId, name, email, phone, role, status } = await req.json();
+  const { vendorId, locationId, name, email, phone, role, status } = await req.json();
 
-  if (!vendorId || !name || !email || !phone || !role || !status) {
+  if (!vendorId || !locationId || !name || !email || !phone || !role || !status) {
     return NextResponse.json(
       { message: "All fields are required" },
       { status: 400 }
@@ -28,6 +29,7 @@ export async function POST(req) {
       include: {
         plan: true,
         professionals: true,
+        locations: true,
       },
     });
     if (!vendor) {
@@ -37,21 +39,33 @@ export async function POST(req) {
       );
     }
 
-    const maxProfessionals = vendor.plan.professional;
-    const currentCount = vendor.professionals.length;
+    const location = await prisma.location.findFirst({
+      where: { id: locationId, vendorId },
+    });
 
-    if (currentCount >= maxProfessionals) {
+    if (!location) {
+      return NextResponse.json(
+        { message: "Location not found for this business" },
+        { status: 404 }
+      );
+    }
+
+    const professionalLimit = Number(
+      vendor.subscriptionProfessionalCount || vendor.plan?.professional || 1
+    );
+    const currentProfessionalCount = vendor.professionals.length;
+
+    if (currentProfessionalCount >= professionalLimit) {
       return NextResponse.json(
         {
-          message:
-            "You can add only one professional. Purchase more to add more professionals",
+          message: `Professional limit reached. Your subscription allows ${professionalLimit} professional${professionalLimit !== 1 ? "s" : ""}.`,
         },
         { status: 403 }
       );
     }
 
     const professional = await prisma.professional.create({
-      data: { name, email, phone, roleId: role, status, vendorId },
+      data: { name, email, phone, roleId: role, status, vendorId, locationId },
     });
 
     return NextResponse.json(professional, { status: 201 });

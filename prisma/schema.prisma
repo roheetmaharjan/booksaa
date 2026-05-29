@@ -29,7 +29,9 @@ model Users {
 model Vendors {
   id                  String         @id @default(uuid())
   name                String
-  location            Location?
+  locations           Location[]     @relation("VendorLocations")
+  defaultLocationId   String?        @unique
+  defaultLocation     Location?      @relation("VendorDefaultLocation", fields: [defaultLocationId], references: [id])
   services            Service[]
   description         String?
   image               String?
@@ -43,6 +45,8 @@ model Vendors {
   status              AccountStatus  @default(ACTIVE)
   joinedAt            DateTime       @default(now())
   trialEndsAt         DateTime?
+  subscriptionProfessionalCount Int @default(1)
+  subscriptionLocationCount     Int @default(1)
   businessHours       BusinessHour[]
   userId              String         @unique
   user                Users          @relation(fields: [userId], references: [id])
@@ -66,8 +70,10 @@ model Plans {
   billing_cycle String
   createdAt     DateTime  @default(now())
   professional  Int       @default(1)
+  extraProfessionalPrice Float @default(0)
   vendors       Vendors[]
   location      Int       @default(1)
+  extraLocationPrice Float @default(0)
 }
 
 model Role {
@@ -98,8 +104,12 @@ model Invitation {
 
 model Location {
   id       String  @id @default(cuid())
-  vendorId String @unique
-  vendor   Vendors @relation(fields: [vendorId], references: [id])
+  name     String?
+  phone    String?
+  photos   String?
+  vendorId String
+  vendor   Vendors @relation("VendorLocations", fields: [vendorId], references: [id])
+  defaultFor Vendors? @relation("VendorDefaultLocation")
 
   address   String
   latitude  Float?
@@ -112,9 +122,14 @@ model Location {
   maxTravelDistance Float @default(5.0)
 
   isActive  Boolean   @default(true)
+  isDefault Boolean   @default(false)
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   services  Service[]
+  professionals Professional[]
+  businessHours BusinessHour[]
+
+  @@index([vendorId])
 }
 
 model Service {
@@ -139,6 +154,8 @@ model Professional {
   phone     String?
   vendorId  String
   vendor    Vendors            @relation(fields: [vendorId], references: [id])
+  locationId String?
+  location  Location?          @relation(fields: [locationId], references: [id])
   createdAt DateTime           @default(now())
   updatedAt DateTime           @updatedAt
   roleId    String
@@ -156,6 +173,8 @@ model BusinessHour {
   id        String   @id @default(cuid())
   vendorId  String
   vendor    Vendors  @relation(fields: [vendorId], references: [id])
+  locationId String?
+  location  Location? @relation(fields: [locationId], references: [id])
   day       String
   isOpen    Boolean  @default(false)
   openTime  String?
@@ -163,7 +182,8 @@ model BusinessHour {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  @@unique([vendorId, day])
+  @@unique([locationId, day])
+  @@index([vendorId])
 }
 
 enum UserStatus {

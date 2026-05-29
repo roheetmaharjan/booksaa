@@ -1,5 +1,4 @@
 import { prisma } from "@/lib/prisma";
-import { includes } from "lodash";
 import { NextResponse } from "next/server";
 export async function GET(req, { params }) {
   try {
@@ -19,7 +18,7 @@ export async function GET(req, { params }) {
 
     const locations = await prisma.location.findMany({
       where: { vendorId },
-      orderBy: { createdAt: "desc" },
+      orderBy: [{ isDefault: "desc" }, { createdAt: "asc" }],
     });
 
     return NextResponse.json(locations, { status: 200 });

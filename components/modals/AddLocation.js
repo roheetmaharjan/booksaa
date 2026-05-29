@@ -30,7 +30,8 @@ const LocationMap = dynamic(() => import("@/components/common/LocationMap"), {
   ssr: false,
 });
 
-export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
+export default function AddLocation({ open, setAddLocationOpen, vendorId, onAdded }) {
+  const formId = "add-location-form";
   const [formErrors, setFormErrors] = useState({});
   const [offerAtClient, setOfferAtClient] = useState(false);
   const [offerAtBusiness, setOfferAtBusiness] = useState(true);
@@ -49,6 +50,8 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
     resetForm,
   } = useFormState({
     address: "",
+    name: "",
+    phone: "",
     city: "",
     postal_code: "",
     country: "",
@@ -57,9 +60,12 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
     longitude: "",
     offerAtBusiness: offerAtBusiness,
     offerAtClient: offerAtClient,
+    travelFee: "",
+    maxTravelDistance: "10",
   });
 
   const validationRules = {
+    name: { required: true, message: "Location name is required" },
     address: { required: true, message: "Address is required" },
     postal_code: { required: true, message: "Postal Code is required" },
     city: { required: true, message: "City is required" },
@@ -107,9 +113,11 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
     if (Object.keys(errors).length > 0) return;
 
     try {
-      await addLocation({ ...locationForm, vendorId });
+      const created = await addLocation({ ...locationForm, vendorId });
       resetForm();
       setAddLocationOpen(false);
+      toast.success("Location has been added. Subscription estimate updated.");
+      if (onAdded) onAdded(created);
     } catch (err) {
       console.error("Add location error: ", err);
       toast.error(err.message);
@@ -118,7 +126,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
 
   return (
     <Dialog open={open} onOpenChange={setAddLocationOpen}>
-      <form onSubmit={handleAddLocation}>
+      <form id={formId} onSubmit={handleAddLocation}>
         <DialogContent className="sm:max-w-[650px]">
           <DialogHeader>
             <DialogTitle>Add Business Location</DialogTitle>
@@ -126,7 +134,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
           {addError && (
             <Alert variant="destructive" className="flex items-center">
               <WarningDiamondIcon size={20} className="!top-[10px]" />
-              <AlertTitle>{addError.message}</AlertTitle>
+              <AlertTitle>{addError}</AlertTitle>
             </Alert>
           )}
           {/* --- Service Options --- */}
@@ -179,6 +187,35 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
           </div>
 
           {/* --- Location Search & Map --- */}
+          <div className="grid grid-cols-12 gap-3">
+            <div className="col-span-12 md:col-span-6">
+              <Label htmlFor="name">
+                Branch Name <span className="astrick">*</span>
+              </Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="Kathmandu Location"
+                onChange={handleLocationChange}
+                value={locationForm.name}
+              />
+              {formErrors?.name && (
+                <p className="text-sm text-red-500">{formErrors.name}</p>
+              )}
+            </div>
+            <div className="col-span-12 md:col-span-6">
+              <Label htmlFor="phone">Branch Phone</Label>
+              <Input
+                id="phone"
+                name="phone"
+                placeholder="Branch phone number"
+                onChange={handleLocationChange}
+                value={locationForm.phone}
+              />
+            </div>
+          </div>
+
+          {/* --- Location Search & Map --- */}
           <div className="flex flex-col mb-2">
             <label className="text-md">Where is this business located?</label>
             <div className="relative">
@@ -195,6 +232,9 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
                   autoComplete="off"
                 />
               </div>
+              {!showMap && formErrors?.address && (
+                <p className="text-sm text-red-500">{formErrors.address}</p>
+              )}
               {showSuggestions && (
                 <div className="bg-white border rounded shadow mt-1 absolute top-9 z-[111111] w-full max-h-80 overflow-y-auto">
                   {suggestionsLoading && (
@@ -374,18 +414,25 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
           {offerAtClient && (
             <div className="grid grid-cols-12 gap-3">
               <div className="col-span-12 md:col-span-6 mb-2">
-                <PriceField label={"Travel Fee"} />
+                <PriceField label={"Travel Fee"} value={locationForm.travelFee} onChange={(event) => handleLocationChange({ target: { name: "travelFee", value: event.target.value } })} />
               </div>
               <div className="col-span-12 md:col-span-6 mb-2">
                 <Label htmlFor="serviceAreas">Maximum Travel Distance</Label>
-                <Select id="" name="" value="">
+                <Select
+                  value={locationForm.maxTravelDistance}
+                  onValueChange={(value) =>
+                    handleLocationChange({
+                      target: { name: "maxTravelDistance", value },
+                    })
+                  }
+                >
                   <SelectTrigger>
                     <SelectValue placeholder="Select distance" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem>10 Miles</SelectItem>
-                    <SelectItem>20 Miles</SelectItem>
-                    <SelectItem>30 Miles</SelectItem>
+                    <SelectItem value="10">10 Miles</SelectItem>
+                    <SelectItem value="20">20 Miles</SelectItem>
+                    <SelectItem value="30">30 Miles</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -400,7 +447,11 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId }) {
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={!offerAtBusiness && !offerAtClient} onClick={handleAddLocation}>
+            <Button
+              type="submit"
+              form={formId}
+              disabled={addLoading || (!offerAtBusiness && !offerAtClient)}
+            >
               {addLoading ? "Saving..." : "Save Location"}
             </Button>
           </DialogFooter>
