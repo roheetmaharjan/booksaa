@@ -3,8 +3,6 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
 import {
-  ENTITLEMENT_TYPE,
-  ensureEntitlementLimit,
   getActiveVendorSubscription,
   getSubscriptionLimits,
 } from "@/lib/subscriptions";
@@ -12,13 +10,6 @@ import {
 export async function POST(req) {
   try {
     const session = await getCurrentSession();
-    if (session?.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Only platform admins can add business locations." },
-        { status: 403 }
-      );
-    }
-
     const {
       vendorId,
       name,
@@ -56,9 +47,26 @@ export async function POST(req) {
       return NextResponse.json({ error: "Business not found" }, { status: 404 });
     }
 
+    if (session?.role !== "ADMIN" && vendor.userId !== session?.id) {
+      return NextResponse.json(
+        { error: "You can only add locations for your own business." },
+        { status: 403 }
+      );
+    }
+
     const subscription = await getActiveVendorSubscription(vendorId);
     const subscriptionLimits = getSubscriptionLimits(subscription, vendor.plan);
     const nextIsActive = isActive !== undefined ? !!isActive : true;
+    const currentActiveLocationCount = vendor.locations.filter((item) => item.isActive !== false).length;
+
+    if (nextIsActive && currentActiveLocationCount >= subscriptionLimits.locationLimit) {
+      return NextResponse.json(
+        {
+          error: `Location limit reached. Your subscription allows ${subscriptionLimits.locationLimit} location${subscriptionLimits.locationLimit !== 1 ? "s" : ""}. Add a location add-on from Usage & Billing to create more.`,
+        },
+        { status: 403 }
+      );
+    }
 
     const shouldBeDefault = !!isDefault || !vendor.defaultLocationId;
     const location = await prisma.$transaction(async (tx) => {
@@ -94,31 +102,14 @@ export async function POST(req) {
         });
       }
 
-      const activeLocationCount =
-        vendor.locations.filter((item) => item.isActive !== false).length +
-        (created.isActive !== false ? 1 : 0);
-      if (subscription && activeLocationCount > subscriptionLimits.locationLimit) {
-        await ensureEntitlementLimit(tx, {
-          subscriptionId: subscription.id,
-          type: ENTITLEMENT_TYPE.LOCATION,
-          currentLimit: subscriptionLimits.locationLimit,
-          nextLimit: activeLocationCount,
-          price: vendor.plan?.extraLocationPrice,
-        });
-      }
-
       return created;
     });
 
-    const nextLocationLimit = Math.max(
-      subscriptionLimits.locationLimit,
-      vendor.locations.filter((item) => item.isActive !== false).length + (location.isActive !== false ? 1 : 0),
-    );
     const billingSummary = calculateBusinessSubscription({
       plan: vendor.plan,
       locations: [...vendor.locations, location],
       professionals: vendor.professionals,
-      locationLimit: nextLocationLimit,
+      locationLimit: subscriptionLimits.locationLimit,
       professionalLimit: subscriptionLimits.professionalLimit,
     });
 

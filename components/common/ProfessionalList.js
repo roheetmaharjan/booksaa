@@ -1,14 +1,16 @@
 import { useState, useEffect, lazy } from "react";
-import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
+import { TrashIcon, PencilLineIcon, InfoIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import Loading from "@/components/common/Loading";
 import AddProfessional from "@/components/modals/AddProfessional";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
 import EditProfessional from "@/components/modals/EditProfessional";
 import { useFetch } from "@/hooks/useFetch";
+import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ProfessionalList({ vendorId, locationId }) {
   const [openAddProfessional, setAddProfessionalOpen] = useState(false);
@@ -33,13 +35,12 @@ export default function ProfessionalList({ vendorId, locationId }) {
   }, [fetchedRoles]);
 
   const pathname = usePathname();
+  const router = useRouter();
 
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    const url = locationId
-      ? `/api/businesses/${vendorId}?locationId=${locationId}`
-      : `/api/businesses/${vendorId}`;
+    const url = locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`;
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
@@ -56,12 +57,8 @@ export default function ProfessionalList({ vendorId, locationId }) {
   if (loading) return <Loading />;
   if (!vendor) return <p>No vendor found.</p>;
 
-  const professionalLimit = Number(
-    vendor.subscriptionProfessionalLimit || vendor.billingSummary?.professionalCount || vendor.plan?.professional || 1
-  );
-  const currentProfessionalCount = Number(
-    vendor.billingSummary?.actualProfessionalCount || vendor.professionals?.length || 0
-  );
+  const professionalLimit = Number(vendor.subscriptionProfessionalLimit || vendor.billingSummary?.professionalCount || vendor.plan?.professional || 1);
+  const currentProfessionalCount = Number(vendor.billingSummary?.actualProfessionalCount || vendor.professionals?.length || 0);
   const canAddProfessional = currentProfessionalCount < professionalLimit;
 
   // show button only if pathname contains "edit-business"
@@ -86,9 +83,7 @@ export default function ProfessionalList({ vendorId, locationId }) {
       const data = await res.json();
       if (res.ok) {
         toast.success("Professional deleted successfully");
-        const updated = await fetch(`/api/businesses/${vendorId}`).then((res) =>
-          res.json()
-        );
+        const updated = await fetch(`/api/businesses/${vendorId}`).then((res) => res.json());
         setVendorDetail(updated);
       } else {
         toast.error(data.error || "Failed to delete professional");
@@ -103,16 +98,15 @@ export default function ProfessionalList({ vendorId, locationId }) {
     <>
       {showAddButton && (
         <>
-          <Button
-            onClick={() => canAddProfessional && setAddProfessionalOpen(true)}
-            disabled={!canAddProfessional}
-          >
-            Add Professional
-          </Button>
-          {!canAddProfessional && (
-            <p className="text-sm text-red-600 mt-2">
-              Professional limit reached. Your subscription allows {professionalLimit} professional{professionalLimit !== 1 ? "s" : ""}.
-            </p>
+          {canAddProfessional ? (
+            <Button onClick={() => setAddProfessionalOpen(true)}>Add Professional</Button>
+          ) : (
+            <Alert className="max-w-lg border-amber-200 bg-amber-50 text-amber-900">
+              <InfoIcon className="text-amber-900 !top-[12px]" />
+              <AlertTitle className="mb-0">
+                Professional limit reached. Your subscription allows only {professionalLimit} professional{professionalLimit !== 1 ? "s" : ""}.
+              </AlertTitle>
+            </Alert>
           )}
           {openAddProfessional && (
             <AddProfessional
@@ -123,9 +117,7 @@ export default function ProfessionalList({ vendorId, locationId }) {
               vendor={vendor}
               locationId={locationId || vendor.selectedLocationId}
               onAdded={async () => {
-                const updatedVendor = await fetch(locationId
-                  ? `/api/businesses/${vendorId}?locationId=${locationId}`
-                  : `/api/businesses/${vendorId}`).then((r) => r.json());
+                const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
                 setVendorDetail(updatedVendor);
               }}
             />
@@ -133,93 +125,52 @@ export default function ProfessionalList({ vendorId, locationId }) {
         </>
       )}
 
-      <table className="w-full boo-table mt-3 border-collapse border border-gray-300">
-        <thead>
-          <tr className="bg-gray-100">
-            <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">
-              S.N
-            </th>
-            <th className="text-left w-1/2 text-sm px-2 py-1 border-gray-300">
-              Professional Name
-            </th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
-              Role
-            </th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
-              Phone
-            </th>
-            <th className="text-left w-1/5 text-sm px-2 py-1 border-gray-300">
-              Status
-            </th>
-            {showActionButton && (
-              <th className="text-left text-sm px-2 py-1 w-1/5">Action</th>
-            )}
-          </tr>
-        </thead>
-        <tbody>
-          {vendor.professionals && vendor.professionals.length > 0 ? (
+      <Table className="mt-3">
+        <TableHeader>
+          <TableRow>
+            <TableHead className="w-16">S.N</TableHead>
+            <TableHead className="w-1/2">Professional Name</TableHead>
+            <TableHead>Role</TableHead>
+            <TableHead>Phone</TableHead>
+            <TableHead>Status</TableHead>
+            {showActionButton && <TableHead>Action</TableHead>}
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {vendor.professionals?.length > 0 ? (
             vendor.professionals.map((professional, index) => (
-              <tr key={professional.id}>
-                <td className="p-2 text-center">{index + 1}</td>
-                <td className="p-2">
-                  {" "}
-                  <h4 className="text-base mb-1 text-bold">
-                    {professional.name}
-                  </h4>{" "}
-                  <p className="text-gray-400">{professional.email}</p>
-                </td>
-                <td className="p-2">{professional.role.name}</td>
-                <td className="p-2">{professional.phone}</td>
-                <td className="p-2">
-                  {professional.status === "ACTIVE" ? (
-                    <Badge
-                      variant="default"
-                      className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]"
-                    >
-                      Active
-                    </Badge>
-                  ) : (
-                    <Badge
-                      variant="default"
-                      className="bg-gray-500 hover:bg-gray-500"
-                    >
-                      Inactive
-                    </Badge>
-                  )}
-                </td>
+              <TableRow key={professional.id}>
+                <TableCell className="text-center">{index + 1}</TableCell>
+                <TableCell>
+                  <p className="font-semibold">{professional.name}</p>
+                  <p className="text-sm text-muted-foreground">{professional.email}</p>
+                </TableCell>
+                <TableCell>{professional.role?.name}</TableCell>
+                <TableCell>{professional.phone}</TableCell>
+                <TableCell>{professional.status === "ACTIVE" ? <Badge className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]">Active</Badge> : <Badge className="bg-gray-500 hover:bg-gray-500 uppercase text-[10px]">Inactive</Badge>}</TableCell>
                 {showActionButton && (
-                  <td className="p-2">
+                  <TableCell>
                     <div className="flex gap-2">
-                      <button
-                        className="text-gray-500"
-                        onClick={() =>
-                          handleEditProfessionalClick(professional)
-                        }
-                      >
+                      <button className="text-gray-500 hover:text-gray-700" onClick={() => handleEditProfessionalClick(professional)}>
                         <PencilLineIcon size={20} weight="duotone" />
                       </button>
-                      <button
-                        className="text-red-500"
-                        onClick={() =>
-                          handleDeleteProfessionalClick(professional)
-                        }
-                      >
+                      <button className="text-red-500 hover:text-red-700" onClick={() => handleDeleteProfessionalClick(professional)}>
                         <TrashIcon size={20} weight="duotone" />
                       </button>
                     </div>
-                  </td>
+                  </TableCell>
                 )}
-              </tr>
+              </TableRow>
             ))
           ) : (
-            <tr>
-              <td colSpan={6} className="text-center py-2">
-                No professional found.
-              </td>
-            </tr>
+            <TableRow>
+              <TableCell colSpan={showActionButton ? 6 : 5} className="text-center py-6 text-muted-foreground">
+                No professionals found.
+              </TableCell>
+            </TableRow>
           )}
-        </tbody>
-      </table>
+        </TableBody>
+      </Table>
 
       {selectedProfessional && (
         <EditProfessional
@@ -230,28 +181,12 @@ export default function ProfessionalList({ vendorId, locationId }) {
           roles={roles}
           locationId={locationId || vendor.selectedLocationId}
           onEdited={async () => {
-            const updatedVendor = await fetch(locationId
-              ? `/api/businesses/${vendorId}?locationId=${locationId}`
-              : `/api/businesses/${vendorId}`).then((r) => r.json());
+            const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
             setVendorDetail(updatedVendor);
           }}
         />
       )}
-      {openAlert && (
-        <ConfirmAlert
-          open={openAlert}
-          onOpenChange={setAlertOpen}
-          title="Delete Professional?"
-          description={
-            selectedProfessional
-              ? `Are you sure you want to delete professional "${selectedProfessional.name}"?`
-              : "Are you sure you want to delete this professional?"
-          }
-          confirmLabel="Delete"
-          cancelLabel="Cancel"
-          onConfirm={handleDeleteProfessional}
-        />
-      )}
+      {openAlert && <ConfirmAlert open={openAlert} onOpenChange={setAlertOpen} title="Delete Professional?" description={selectedProfessional ? `Are you sure you want to delete professional "${selectedProfessional.name}"?` : "Are you sure you want to delete this professional?"} confirmLabel="Delete" cancelLabel="Cancel" onConfirm={handleDeleteProfessional} />}
     </>
   );
 }

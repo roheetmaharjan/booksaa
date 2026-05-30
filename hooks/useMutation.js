@@ -10,7 +10,9 @@ export function useMutation(url, options = {}) {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}${url}`, {
+      const baseUrl = process.env.NEXT_PUBLIC_API_URL || "";
+      const requestUrl = url.startsWith("http") ? url : `${baseUrl}${url}`;
+      const res = await fetch(requestUrl, {
         method: options.method || "POST",
         headers: {
           "Content-Type": "application/json",

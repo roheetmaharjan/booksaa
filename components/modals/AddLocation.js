@@ -12,7 +12,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertTitle } from "@/components/ui/alert";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { validateForm } from "@/utils/formValidator";
 import { useMutation } from "@/hooks/useMutation";
 import { useFormState } from "@/hooks/useFormState";
@@ -30,7 +30,7 @@ const LocationMap = dynamic(() => import("@/components/common/LocationMap"), {
   ssr: false,
 });
 
-export default function AddLocation({ open, setAddLocationOpen, vendorId, onAdded }) {
+export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor, onAdded }) {
   const formId = "add-location-form";
   const [formErrors, setFormErrors] = useState({});
   const [offerAtClient, setOfferAtClient] = useState(false);
@@ -43,6 +43,15 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, onAdde
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mapPosition, setMapPosition] = useState(null);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const locationLimit = Number(
+    vendor?.subscriptionLocationLimit ?? vendor?.billingSummary?.activeLocationCount ?? vendor?.plan?.location ?? 0
+  );
+  const currentLocationCount = Number(
+    vendor?.billingSummary?.actualLocationCount ??
+      vendor?.locations?.filter((location) => location.isActive !== false).length ??
+      0
+  );
+  const locationLimitReached = locationLimit > 0 && currentLocationCount >= locationLimit;
 
   const {
     formState: locationForm,
@@ -107,6 +116,13 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, onAdde
   // Add location submit handler
   const handleAddLocation = async (e) => {
     e.preventDefault();
+    if (locationLimitReached) {
+      toast.error(
+        `Location limit reached. Your subscription allows ${locationLimit} location${locationLimit !== 1 ? "s" : ""}.`
+      );
+      return;
+    }
+
     const errors = validateForm(locationForm, validationRules);
     setFormErrors(errors);
 
@@ -135,6 +151,17 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, onAdde
             <Alert variant="destructive" className="flex items-center">
               <WarningDiamondIcon size={20} className="!top-[10px]" />
               <AlertTitle>{addError}</AlertTitle>
+            </Alert>
+          )}
+          {locationLimitReached && (
+            <Alert variant="destructive" className="flex items-center">
+              <WarningDiamondIcon size={20} className="!top-[10px]" />
+              <div>
+                <AlertTitle>Location limit reached</AlertTitle>
+                <AlertDescription>
+                  Your subscription allows {locationLimit} location{locationLimit !== 1 ? "s" : ""}. Add an add-on or update your subscription before adding another location.
+                </AlertDescription>
+              </div>
             </Alert>
           )}
           {/* --- Service Options --- */}
@@ -450,7 +477,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, onAdde
             <Button
               type="submit"
               form={formId}
-              disabled={addLoading || (!offerAtBusiness && !offerAtClient)}
+              disabled={addLoading || locationLimitReached || (!offerAtBusiness && !offerAtClient)}
             >
               {addLoading ? "Saving..." : "Save Location"}
             </Button>

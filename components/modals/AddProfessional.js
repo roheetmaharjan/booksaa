@@ -21,9 +21,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Alert,AlertTitle } from "@/components/ui/alert"
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { WarningDiamondIcon } from "@phosphor-icons/react";
-
 import { PROFESSIONAL_STATUS } from "@/constants/enums";
 import { useMutation } from "@/hooks/useMutation";
 
@@ -34,16 +33,30 @@ export default function AddProfessional({
   locationId,
   vendor,
   roles,
+  onRoleAdded,   // ← new: called with the created role so parent can update its list
   onAdded,
   loading: rolesLoading,
   error: rolesError,
 }) {
   const formId = "add-professional-form";
   const [formErrors, setFormErrors] = useState({});
-  const [addloading, setAddLoading] = useState(false);
-  const [adderror, setAddError] = useState(null);
+  const [roleLoading, setRoleLoading] = useState(false);
   const [newRole, setNewRole] = useState("");
   const [openAddProfessionalRole, setAddProfessionalRoleOpen] = useState(false);
+
+  const professionalLimit = Number(
+    vendor?.subscriptionProfessionalLimit ??
+    vendor?.billingSummary?.professionalCount ??
+    vendor?.plan?.professional ??
+    0
+  );
+  const currentProfessionalCount = Number(
+    vendor?.billingSummary?.actualProfessionalCount ??
+    vendor?.professionals?.length ??
+    0
+  );
+  const professionalLimitReached =
+    professionalLimit > 0 && currentProfessionalCount >= professionalLimit;
 
   const {
     formState: professionalForm,
@@ -75,47 +88,62 @@ export default function AddProfessional({
     status: { required: true, message: "Status is required" },
   };
 
-  const handleAddProfessionalRole = async () => {
-    try {
-      setAddLoading(true);
-      const res = await fetch(
-        `${process.env.NEXT_PUBLIC_API_URL}/api/professional-roles`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ name: newRole }),
-        }
-      );
-      if (!res.ok) throw new Error("Failed to add role");
-      const created = await res.json();
-      setRoles((prev) => [...prev, created]);
-      setAddProfessionalRoleOpen(false);
-      setNewRole("");
-      toast.success("Role added successfully");
-    } catch (err) {
-      console.error(err);
-    } finally {
-      setAddLoading(false);
-    }
-  };
-
   const {
     mutate: addProfessional,
     loading: addLoading,
     error: addError,
   } = useMutation(`/api/professionals/create`, { method: "POST" });
 
+  // ── Add new role ──────────────────────────────────────────────────────────
+  const handleAddProfessionalRole = async () => {
+    if (!newRole.trim()) return;
+    try {
+      setRoleLoading(true);
+      const res = await fetch(`/api/professional-roles`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newRole.trim() }),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.error || "Failed to add role");
+      }
+      const created = await res.json();
+      if (onRoleAdded) onRoleAdded(created);  // let parent update roles list
+      setAddProfessionalRoleOpen(false);
+      setNewRole("");
+      toast.success("Role added successfully");
+    } catch (err) {
+      toast.error(err.message || "Failed to add role");
+    } finally {
+      setRoleLoading(false);
+    }
+  };
+
+  // ── Add professional ──────────────────────────────────────────────────────
   const handleAddProfessional = async (e) => {
     e.preventDefault();
+
+    if (professionalLimitReached) {
+      toast.error(
+        `Professional limit reached. Your subscription allows ${professionalLimit} professional${professionalLimit !== 1 ? "s" : ""}.`
+      );
+      return;
+    }
+
     const errors = validateForm(professionalForm, validationRules);
     setFormErrors(errors);
     if (Object.keys(errors).length > 0) return;
 
     try {
-      await addProfessional({ ...professionalForm, locationId: professionalForm.locationId || locationId, vendorId });
+      await addProfessional({
+        ...professionalForm,
+        locationId: professionalForm.locationId || locationId,
+        vendorId,
+      });
       resetForm();
       setAddProfessionalOpen(false);
-      toast.success("Professional has been added. Subscription estimate updated.");
+      toast.success("Professional added. Subscription estimate updated.");
       if (onAdded) onAdded();
     } catch (err) {
       toast.error(err.message || "Cannot add professional.");
@@ -124,27 +152,35 @@ export default function AddProfessional({
 
   return (
     <>
-      {/* Add Professional Dialog */}
+      {/* ── Add Professional Dialog ── */}
       <Dialog open={open} onOpenChange={setAddProfessionalOpen}>
         <form id={formId} onSubmit={handleAddProfessional}>
           <DialogContent className="sm:max-w-[650px]">
             <DialogHeader>
               <DialogTitle>Add Professional</DialogTitle>
             </DialogHeader>
+
             {addError && (
-              <Alert variant="destructive" className="flex items-center">
-                <WarningDiamondIcon size={20} className="!top-[10px]" />
+              <Alert variant="destructive" className="flex items-center gap-2">
+                <WarningDiamondIcon size={20} />
                 <AlertTitle>{addError}</AlertTitle>
               </Alert>
             )}
-            {vendor?.plan && (
-              <Alert className="flex items-center">
-                <AlertTitle>
-                  Includes {vendor.plan.professional || 1} professional(s). Extra professionals add {vendor.plan.extraProfessionalPrice || 0} per {vendor.plan.billing_cycle || "month"}.
-                </AlertTitle>
+
+            {professionalLimitReached && (
+              <Alert variant="destructive" className="flex items-center gap-2">
+                <WarningDiamondIcon size={20} />
+                <div>
+                  <AlertTitle>Professional limit reached</AlertTitle>
+                  <AlertDescription>
+                    Your subscription allows {professionalLimit} professional{professionalLimit !== 1 ? "s" : ""}.
+                    Add an add-on or update your subscription before adding another professional.
+                  </AlertDescription>
+                </div>
               </Alert>
             )}
-            <fieldset>
+
+            <fieldset disabled={professionalLimitReached}>
               <div className="mb-3">
                 <Label htmlFor="name">
                   Professional Name <span className="astrick">*</span>
@@ -152,13 +188,14 @@ export default function AddProfessional({
                 <Input
                   id="name"
                   name="name"
-                  onChange={handleProfessionalChange}
                   value={professionalForm.name}
+                  onChange={handleProfessionalChange}
                 />
-                {formErrors?.name && (
+                {formErrors.name && (
                   <p className="text-sm text-red-500">{formErrors.name}</p>
                 )}
               </div>
+
               <div className="mb-3">
                 <Label htmlFor="email">
                   Email <span className="astrick">*</span>
@@ -166,13 +203,14 @@ export default function AddProfessional({
                 <Input
                   id="email"
                   name="email"
-                  onChange={handleProfessionalChange}
                   value={professionalForm.email}
+                  onChange={handleProfessionalChange}
                 />
-                {formErrors?.email && (
+                {formErrors.email && (
                   <p className="text-sm text-red-500">{formErrors.email}</p>
                 )}
               </div>
+
               <div className="mb-3">
                 <Label htmlFor="phone">
                   Phone <span className="astrick">*</span>
@@ -180,13 +218,14 @@ export default function AddProfessional({
                 <Input
                   id="phone"
                   name="phone"
-                  onChange={handleProfessionalChange}
                   value={professionalForm.phone}
+                  onChange={handleProfessionalChange}
                 />
                 {formErrors.phone && (
                   <p className="text-sm text-red-500">{formErrors.phone}</p>
                 )}
               </div>
+
               <div className="grid grid-cols-12 gap-3">
                 {/* Role */}
                 <div className="mb-3 col-span-6">
@@ -199,9 +238,7 @@ export default function AddProfessional({
                       if (value === "__add_new__") {
                         setAddProfessionalRoleOpen(true);
                       } else {
-                        handleProfessionalChange({
-                          target: { name: "role", value },
-                        });
+                        handleProfessionalChange({ target: { name: "role", value } });
                       }
                     }}
                   >
@@ -211,22 +248,23 @@ export default function AddProfessional({
                     <SelectContent>
                       <SelectGroup>
                         {rolesLoading && (
-                          <SelectItem disabled>Loading...</SelectItem>
+                          <SelectItem value="__loading__" disabled>Loading...</SelectItem>
                         )}
                         {rolesError && (
-                          <SelectItem disabled>Error loading roles</SelectItem>
+                          <SelectItem value="__error__" disabled>Error loading roles</SelectItem>
                         )}
                         {roles?.map((role) => (
                           <SelectItem key={role.id} value={role.id}>
                             {role.name}
                           </SelectItem>
                         ))}
-                        <SelectItem value="__add_new__">
-                          + Add New Role
-                        </SelectItem>
+                        <SelectItem value="__add_new__">+ Add New Role</SelectItem>
                       </SelectGroup>
                     </SelectContent>
                   </Select>
+                  {formErrors.role && (
+                    <p className="text-sm text-red-500">{formErrors.role}</p>
+                  )}
                 </div>
 
                 {/* Status */}
@@ -237,9 +275,7 @@ export default function AddProfessional({
                   <Select
                     value={professionalForm.status}
                     onValueChange={(value) =>
-                      handleProfessionalChange({
-                        target: { name: "status", value },
-                      })
+                      handleProfessionalChange({ target: { name: "status", value } })
                     }
                   >
                     <SelectTrigger>
@@ -255,9 +291,13 @@ export default function AddProfessional({
                       </SelectGroup>
                     </SelectContent>
                   </Select>
+                  {formErrors.status && (
+                    <p className="text-sm text-red-500">{formErrors.status}</p>
+                  )}
                 </div>
               </div>
             </fieldset>
+
             <DialogFooter className="mt-4">
               <Button
                 type="button"
@@ -269,7 +309,7 @@ export default function AddProfessional({
               <Button
                 type="submit"
                 form={formId}
-                disabled={addLoading}
+                disabled={addLoading || professionalLimitReached}
               >
                 {addLoading ? "Saving..." : "Save"}
               </Button>
@@ -278,41 +318,39 @@ export default function AddProfessional({
         </form>
       </Dialog>
 
-      {/* Add New Role Dialog */}
-      {openAddProfessionalRole && (
-        <Dialog
-          open={openAddProfessionalRole}
-          onOpenChange={setAddProfessionalRoleOpen}
-        >
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Role</DialogTitle>
-            </DialogHeader>
-            <Input
-              placeholder="Enter role name"
-              value={newRole}
-              onChange={(e) => setNewRole(e.target.value)}
-            />
-            <DialogFooter>
-              <Button
-                onClick={() => {
-                  resetForm();
-                  setAddProfessionalRoleOpen(false);
-                }}
-                variant="outline"
-              >
-                Cancel
-              </Button>
-              <Button
-                onClick={handleAddProfessionalRole}
-                disabled={!newRole || addloading}
-              >
-                {addloading ? "Saving..." : "Save"}
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
-      )}
+      {/* ── Add New Role Dialog ── */}
+      <Dialog open={openAddProfessionalRole} onOpenChange={setAddProfessionalRoleOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Add New Role</DialogTitle>
+          </DialogHeader>
+          <Input
+            placeholder="Enter role name"
+            value={newRole}
+            onChange={(e) => setNewRole(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && handleAddProfessionalRole()}
+          />
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => {
+                setAddProfessionalRoleOpen(false);
+                setNewRole("");
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="button"
+              onClick={handleAddProfessionalRole}
+              disabled={!newRole.trim() || roleLoading}
+            >
+              {roleLoading ? "Saving..." : "Save"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </>
   );
 }

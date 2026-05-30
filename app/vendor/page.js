@@ -2,14 +2,33 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { CheckCircle2, Clock3, MapPin, Plus, ShieldCheck, Sparkles, Users } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  CalendarClock,
+  CheckCircle2,
+  Clock3,
+  MapPin,
+  Plus,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import AddService from "@/components/modals/AddService";
 import AddProfessional from "@/components/modals/AddProfessional";
+import AddLocation from "@/components/modals/AddLocation";
+import AddProfessionalAddon from "@/components/modals/AddProfessionalAddon";
 import BusinessHours from "@/components/common/BusinessHour";
+import {
+  ActionTile,
+  DashboardMetric,
+  DetailCard,
+  SetupCard,
+  SummaryItem,
+} from "@/components/components_vendor/VendorDashboardCards";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import {
   Dialog,
   DialogContent,
@@ -17,6 +36,7 @@ import {
   DialogTitle,
   DialogFooter,
 } from "@/components/ui/dialog";
+import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function VendorPage() {
   const router = useRouter();
@@ -31,7 +51,29 @@ export default function VendorPage() {
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [openAddService, setOpenAddService] = useState(false);
   const [openAddProfessional, setOpenAddProfessional] = useState(false);
+  const [openAddLocation, setOpenAddLocation] = useState(false);
+  const [openAddAddon, setOpenAddAddon] = useState(false);
+  const [addonType, setAddonType] = useState("professional");
   const [openBusinessHours, setOpenBusinessHours] = useState(false);
+
+  const locations = vendor?.locations || [];
+  const activeLocationCount = locations.filter((location) => location.isActive !== false).length;
+  const serviceCount = vendor?.services?.length || 0;
+  const subscriptionLocationLimit = Number(
+    vendor?.subscriptionLocationLimit ?? vendor?.billingSummary?.activeLocationCount ?? vendor?.plan?.location ?? 0
+  );
+  const subscriptionProfessionalLimit = Number(
+    vendor?.subscriptionProfessionalLimit ?? vendor?.billingSummary?.professionalCount ?? vendor?.plan?.professional ?? 0
+  );
+  const professionalCount = Number(
+    vendor?.billingSummary?.actualProfessionalCount ?? vendor?.professionals?.length ?? 0
+  );
+  const canAddProfessional = Boolean(vendorId) && professionalCount < subscriptionProfessionalLimit;
+  const canAddLocation = Boolean(vendorId) && activeLocationCount < subscriptionLocationLimit;
+  const hasReachedProfessionalLimit = Boolean(vendorId) && subscriptionProfessionalLimit > 0 && !canAddProfessional;
+  const hasReachedLocationLimit = Boolean(vendorId) && subscriptionLocationLimit > 0 && !canAddLocation;
+  const ownerName = [vendor?.user?.firstname, vendor?.user?.lastname].filter(Boolean).join(" ") || "Not assigned";
+  const selectedLocation = vendor?.selectedLocation || vendor?.location || locations[0];
 
   useEffect(() => {
     const queryVendorId = searchParams.get("vendorId");
@@ -63,7 +105,6 @@ export default function VendorPage() {
           cache: "no-store",
         });
         const data = await res.json();
-        console.log(data);
         if (!res.ok) {
           throw new Error(data.error || "Unable to load vendor details.");
         }
@@ -119,114 +160,281 @@ export default function VendorPage() {
         setVendor(data);
       }
     } catch {
-      // ignore
+      // Keep the current dashboard state if a background refresh fails.
     }
   };
 
+  const openUsageBilling = () => {
+    document.getElementById("usage-billing")?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const openAddon = (type = "professional") => {
+    setAddonType(type);
+    setOpenAddAddon(true);
+    openUsageBilling();
+  };
+
   return (
-    <main className="min-h-screen bg-slate-50 px-4 py-8 sm:px-6 lg:px-10">
+    <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-          <div>
-            <Badge className="bg-emerald-100 text-emerald-800">Vendor Dashboard</Badge>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-slate-950">
-              Welcome back to your business dashboard
-            </h1>
-            <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-              Manage your business details, services, professionals, and availability from one place.
-            </p>
+        <header className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-start gap-3">
+            <SidebarTrigger className="mt-1 md:hidden" />
+            <div>
+              <Badge className="bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
+                Vendor Dashboard
+              </Badge>
+              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                Welcome back{vendor?.name ? `, ${vendor.name}` : ""}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Manage business details, services, professionals, and availability from one place.
+              </p>
+            </div>
           </div>
           <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => setOpenAddService(true)}>
-              <Plus className="mr-2 h-4 w-4" /> Add service
+            <Button onClick={() => setOpenAddService(true)} disabled={!vendorId}>
+              <Plus className="mr-2 size-4" /> Add service
             </Button>
-            <Button variant="secondary" onClick={() => setOpenAddProfessional(true)} disabled={!vendorId || subscriptionProfessionalLimit === 0}>
-              <Users className="mr-2 h-4 w-4" /> Add professional
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!canAddProfessional) {
+                  toast.error("Professional limit reached. Add an add-on from Usage & Billing to add more.");
+                  openUsageBilling();
+                  return;
+                }
+                setOpenAddProfessional(true);
+              }}
+              disabled={!vendorId || subscriptionProfessionalLimit === 0}
+            >
+              <Users className="mr-2 size-4" /> Add professional
             </Button>
-            <Button variant="outline" onClick={() => setOpenBusinessHours(true)}>
-              <Clock3 className="mr-2 h-4 w-4" /> Business hours
+            <Button
+              variant="secondary"
+              onClick={() => {
+                if (!canAddLocation) {
+                  toast.error("Location limit reached. Add an add-on from Usage & Billing to add more.");
+                  openUsageBilling();
+                  return;
+                }
+                setOpenAddLocation(true);
+              }}
+              disabled={!vendorId || subscriptionLocationLimit === 0}
+            >
+              <MapPin className="mr-2 size-4" /> Add location
+            </Button>
+            <Button variant="outline" onClick={() => setOpenBusinessHours(true)} disabled={!vendorId}>
+              <Clock3 className="mr-2 size-4" /> Business hours
             </Button>
           </div>
-        </div>
+        </header>
 
         {loading ? (
-          <div className="rounded-3xl border border-slate-200 bg-white p-10 text-center text-slate-600">
+          <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">
             Loading your business details...
           </div>
         ) : error ? (
-          <div className="rounded-3xl border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">
             {error}
           </div>
         ) : vendor ? (
-          <div className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-              <CardContent className="space-y-6 p-8">
-                <div className="space-y-3">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Business overview</p>
-                  <h2 className="text-2xl font-semibold text-slate-950">{vendor.name}</h2>
-                </div>
+          <>
+            {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
+              <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                <AlertTitle>Subscription limit reached</AlertTitle>
+                <AlertDescription className="mt-2 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                  <span>
+                    {hasReachedProfessionalLimit && `You have used all ${subscriptionProfessionalLimit} professional slot${subscriptionProfessionalLimit !== 1 ? "s" : ""}. `}
+                    {hasReachedLocationLimit && `You have used all ${subscriptionLocationLimit} location slot${subscriptionLocationLimit !== 1 ? "s" : ""}. `}
+                    Add an add-on or review Usage & Billing to increase your limits.
+                  </span>
+                  <span className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}
+                    >
+                      Add add-on
+                    </Button>
+                    <Button size="sm" variant="outline" onClick={openUsageBilling}>Usage & Billing</Button>
+                  </span>
+                </AlertDescription>
+              </Alert>
+            )}
 
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <SummaryItem label="Owner" value={`${vendor.user.firstname} ${vendor.user.lastname}`} />
-                  <SummaryItem label="Email" value={vendor.user.email} />
-                  <SummaryItem label="Category" value={vendor.category?.name || "—"} />
-                  <SummaryItem label="Plan" value={vendor.plan?.name || "—"} />
-                  <SummaryItem label="Status" value={vendor.status || "—"} />
-                  <SummaryItem label="Trial ends" value={vendor.trialEndsAt || "—"} />
-                  <SummaryItem label="Locations" value={`${subscriptionLocationLimit}`} />
-                  <SummaryItem label="Services" value={`${serviceCount}`} />
-                  <SummaryItem label="Professionals" value={`${subscriptionProfessionalLimit}`} />
-                </div>
+            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+              <DashboardMetric
+                icon={BriefcaseBusiness}
+                label="Services"
+                value={serviceCount}
+                detail="Bookable offerings in the selected location"
+                tone="blue"
+              />
+              <DashboardMetric
+                icon={Users}
+                label="Professionals"
+                value={`${professionalCount}/${subscriptionProfessionalLimit || 0}`}
+                detail="Team usage against your plan"
+                tone="emerald"
+              />
+              <DashboardMetric
+                icon={MapPin}
+                label="Locations"
+                value={`${activeLocationCount}/${subscriptionLocationLimit || 0}`}
+                detail={selectedLocation?.name || selectedLocation?.address || "No location selected"}
+                tone="amber"
+              />
+              <DashboardMetric
+                icon={CalendarClock}
+                label="Trial ends"
+                value={vendor.trialEndsAt || "-"}
+                detail={vendor.status || "Status unavailable"}
+              />
+            </section>
 
-                <div className="rounded-3xl border border-slate-200 bg-slate-50 p-5">
-                  <p className="text-sm font-semibold text-slate-900">Business details</p>
-                  <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                    <DetailCard label="Joined" value={vendor.joinedAt || "—"} />
-                    <DetailCard label="Default location" value={vendor.selectedLocation?.address || "Not assigned"} />
+            <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+              <Card className="rounded-lg border border-slate-200 bg-white shadow-sm">
+                <CardContent className="space-y-6 p-6 sm:p-8">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm uppercase tracking-[0.18em] text-slate-500">Business overview</p>
+                      <h2 className="mt-3 text-2xl font-semibold text-slate-950">{vendor.name}</h2>
+                    </div>
+                    <Badge variant="outline" className="w-fit border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <CheckCircle2 className="mr-1 size-3.5" />
+                      {vendor.status || "Unknown"}
+                    </Badge>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
 
-            <Card className="rounded-3xl border border-slate-200 bg-white shadow-sm">
-              <CardContent className="space-y-6 p-8">
-                <div className="space-y-3">
-                  <p className="text-sm uppercase tracking-[0.2em] text-slate-500">Quick setup</p>
-                  <h2 className="text-2xl font-semibold text-slate-950">Finish your first setup</h2>
-                  <p className="text-sm leading-6 text-slate-600">
-                    You can complete these steps now or skip and return later from the dashboard.
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <SummaryItem label="Owner" value={ownerName} />
+                    <SummaryItem label="Email" value={vendor.user?.email || "-"} />
+                    <SummaryItem label="Category" value={vendor.category?.name || "-"} />
+                    <SummaryItem label="Plan" value={vendor.plan?.name || "-"} />
+                    <SummaryItem label="Locations" value={`${activeLocationCount} active`} />
+                    <SummaryItem label="Services" value={`${serviceCount} total`} />
+                    <SummaryItem label="Professionals" value={`${professionalCount} total`} />
+                    <SummaryItem label="Joined" value={vendor.joinedAt || "-"} />
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold text-slate-900">Business details</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <DetailCard label="Default location" value={selectedLocation?.address || "Not assigned"} />
+                      <DetailCard label="Billing cycle" value={vendor.billingSummary?.billingCycle || "Not available"} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="rounded-lg border border-slate-200 bg-white shadow-sm">
+                <CardContent className="space-y-6 p-6 sm:p-8">
+                  <div className="space-y-3">
+                    <p className="text-sm uppercase tracking-[0.18em] text-slate-500">Quick setup</p>
+                    <h2 className="text-2xl font-semibold text-slate-950">Finish your first setup</h2>
+                    <p className="text-sm leading-6 text-slate-600">
+                      Complete the essentials customers need before they book with your business.
+                    </p>
+                  </div>
+
+                  <div className="grid gap-4">
+                    <ActionTile
+                      icon={<BriefcaseBusiness className="size-5 text-blue-700" />}
+                      title="Add service"
+                      description="Create your first bookable offering."
+                      onClick={() => setOpenAddService(true)}
+                    />
+                    <ActionTile
+                      icon={<Users className="size-5 text-emerald-700" />}
+                      title="Add professional"
+                      description={
+                        canAddProfessional
+                          ? "Add a team member to your business."
+                          : `All ${subscriptionProfessionalLimit} professional slots are used.`
+                      }
+                      onClick={() => {
+                        if (!canAddProfessional) {
+                          openUsageBilling();
+                          return;
+                        }
+                        setOpenAddProfessional(true);
+                      }}
+                    />
+                    <ActionTile
+                      icon={<MapPin className="size-5 text-blue-700" />}
+                      title="Add location"
+                      description={
+                        canAddLocation
+                          ? "Create another business location."
+                          : `All ${subscriptionLocationLimit} location slots are used.`
+                      }
+                      onClick={() => {
+                        if (!canAddLocation) {
+                          openUsageBilling();
+                          return;
+                        }
+                        setOpenAddLocation(true);
+                      }}
+                    />
+                    <ActionTile
+                      icon={<Clock3 className="size-5 text-amber-700" />}
+                      title="Set business hours"
+                      description="Define when customers can schedule with you."
+                      onClick={() => setOpenBusinessHours(true)}
+                    />
+                  </div>
+
+                  <Button variant="outline" onClick={() => setShowSetupModal(true)}>
+                    Show setup prompt again
+                  </Button>
+                </CardContent>
+              </Card>
+            </section>
+
+            <section id="usage-billing" className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
+              <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
+                <div>
+                  <p className="text-sm uppercase tracking-[0.18em] text-slate-500">Usage & Billing</p>
+                  <h2 className="mt-2 text-2xl font-semibold text-slate-950">Subscription usage</h2>
+                  <p className="mt-2 text-sm leading-6 text-slate-600">
+                    Professionals and active locations can be added until your subscription slots are used.
                   </p>
                 </div>
-
-                <div className="grid gap-4">
-                  <ActionTile
-                    icon={<MapPin className="h-5 w-5 text-emerald-700" />}
-                    title="Add service"
-                    description="Create your first bookable offering."
-                    onClick={() => setOpenAddService(true)}
-                  />
-                  <ActionTile
-                    icon={<Users className="h-5 w-5 text-slate-700" />}
-                    title="Add professional"
-                    description="Add a team member to your business."
-                    onClick={() => setOpenAddProfessional(true)}
-                  />
-                  <ActionTile
-                    icon={<Clock3 className="h-5 w-5 text-slate-700" />}
-                    title="Set business hours"
-                    description="Define when customers can schedule with you."
-                    onClick={() => setOpenBusinessHours(true)}
-                  />
-                </div>
-
-                <Button variant="outline" onClick={() => setShowSetupModal(true)}>
-                  Show setup prompt again
+                <Button variant="outline" onClick={openUsageBilling}>
+                  Usage & Billing
                 </Button>
-              </CardContent>
-            </Card>
-          </div>
+              </div>
+              <div className="mt-5 grid gap-3 md:grid-cols-2">
+                <DetailCard
+                  label="Professional slots"
+                  value={`${professionalCount}/${subscriptionProfessionalLimit || 0} used`}
+                />
+                <DetailCard
+                  label="Location slots"
+                  value={`${activeLocationCount}/${subscriptionLocationLimit || 0} used`}
+                />
+              </div>
+              {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
+                <div className="mt-4 flex flex-wrap items-center gap-3">
+                  <p className="text-sm text-amber-700">
+                    Once your subscription limit increases, the add buttons will be available again.
+                  </p>
+                  {hasReachedProfessionalLimit && (
+                    <Button size="sm" onClick={() => openAddon("professional")}>
+                      Add professional add-on
+                    </Button>
+                  )}
+                  {hasReachedLocationLimit && (
+                    <Button size="sm" variant="outline" onClick={() => openAddon("location")}>
+                      Add location add-on
+                    </Button>
+                  )}
+                </div>
+              )}
+            </section>
+          </>
         ) : (
-          <div className="rounded-3xl border border-slate-200 bg-white p-8 text-slate-600">
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
             No vendor data is available. Please sign in again or contact support.
           </div>
         )}
@@ -242,7 +450,7 @@ export default function VendorPage() {
           </DialogHeader>
           <div className="grid gap-4 py-6 md:grid-cols-3">
             <SetupCard
-              icon={<Sparkles className="h-5 w-5 text-emerald-700" />}
+              icon={<Sparkles className="size-5 text-emerald-700" />}
               title="Add service"
               description="Create your first bookable offering."
               onClick={() => {
@@ -251,16 +459,20 @@ export default function VendorPage() {
               }}
             />
             <SetupCard
-              icon={<Users className="h-5 w-5 text-slate-700" />}
+              icon={<Users className="size-5 text-slate-700" />}
               title="Add professional"
-              description="Invite a team member to your business."
+              description={canAddProfessional ? "Invite a team member to your business." : "All professional slots are used."}
               onClick={() => {
                 setShowSetupModal(false);
-                setOpenAddProfessional(true);
+                if (canAddProfessional) {
+                  setOpenAddProfessional(true);
+                } else {
+                  openUsageBilling();
+                }
               }}
             />
             <SetupCard
-              icon={<Clock3 className="h-5 w-5 text-slate-700" />}
+              icon={<Clock3 className="size-5 text-slate-700" />}
               title="Business hours"
               description="Define the hours your business is available."
               onClick={() => {
@@ -269,13 +481,11 @@ export default function VendorPage() {
               }}
             />
           </div>
-          <DialogFooter className="flex flex-wrap items-center gap-3 justify-between">
+          <DialogFooter className="flex flex-wrap items-center justify-between gap-3">
             <Button variant="secondary" onClick={handleSkipSetup}>
               Skip for now
             </Button>
-            <Button onClick={handleSkipSetup}>
-              Continue to dashboard
-            </Button>
+            <Button onClick={handleSkipSetup}>Continue to dashboard</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
@@ -284,8 +494,8 @@ export default function VendorPage() {
         open={openAddService}
         setAddServiceOpen={setOpenAddService}
         vendorId={vendorId}
-        locations={vendor?.locations || []}
-        locationId={vendor?.selectedLocationId || vendor?.locations?.[0]?.id}
+        locations={locations}
+        locationId={vendor?.selectedLocationId || locations[0]?.id}
         onAdded={() => {
           refreshVendor();
           toast.success("Service added successfully.");
@@ -296,7 +506,7 @@ export default function VendorPage() {
         open={openAddProfessional}
         setAddProfessionalOpen={setOpenAddProfessional}
         vendorId={vendorId}
-        locationId={vendor?.selectedLocationId || vendor?.locations?.[0]?.id}
+        locationId={vendor?.selectedLocationId || locations[0]?.id}
         vendor={vendor}
         roles={roles}
         loading={rolesLoading}
@@ -307,6 +517,23 @@ export default function VendorPage() {
         }}
       />
 
+      <AddLocation
+        open={openAddLocation}
+        setAddLocationOpen={setOpenAddLocation}
+        vendorId={vendorId}
+        vendor={vendor}
+        onAdded={() => {
+          refreshVendor();
+          toast.success("Location added successfully.");
+        }}
+      />
+
+      <AddProfessionalAddon
+        open={openAddAddon}
+        setAddProfessionalAddonOpen={setOpenAddAddon}
+        type={addonType}
+      />
+
       <Dialog open={openBusinessHours} onOpenChange={setOpenBusinessHours}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
@@ -314,7 +541,7 @@ export default function VendorPage() {
           </DialogHeader>
           <BusinessHours
             vendorId={vendorId}
-            locationId={vendor?.selectedLocationId || vendor?.locations?.[0]?.id}
+            locationId={vendor?.selectedLocationId || locations[0]?.id}
             initialHours={vendor?.businessHours || []}
             onSaved={() => {
               refreshVendor();
@@ -328,60 +555,6 @@ export default function VendorPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </main>
-  );
-}
-
-function SummaryItem({ label, value }) {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-slate-50 p-4">
-      <p className="text-sm text-slate-500">{label}</p>
-      <p className="mt-2 text-sm font-semibold text-slate-950">{value}</p>
     </div>
-  );
-}
-
-function DetailCard({ label, value }) {
-  return (
-    <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm">
-      <p className="text-sm font-semibold text-slate-900">{label}</p>
-      <p className="mt-2 text-sm text-slate-600">{value}</p>
-    </div>
-  );
-}
-
-function ActionTile({ icon, title, description, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="rounded-3xl border border-slate-200 bg-slate-50 p-5 text-left transition hover:border-slate-300 hover:bg-slate-100"
-    >
-      <div className="flex h-11 w-11 items-center justify-center rounded-2xl bg-white shadow-sm">
-        {icon}
-      </div>
-      <div className="mt-4">
-        <p className="text-sm font-semibold text-slate-950">{title}</p>
-        <p className="mt-2 text-sm text-slate-600">{description}</p>
-      </div>
-    </button>
-  );
-}
-
-function SetupCard({ icon, title, description, onClick }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="flex flex-col gap-4 rounded-3xl border border-slate-200 bg-white p-6 text-left shadow-sm transition hover:border-slate-300"
-    >
-      <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100">
-        {icon}
-      </div>
-      <div>
-        <p className="text-base font-semibold text-slate-950">{title}</p>
-        <p className="mt-2 text-sm text-slate-600">{description}</p>
-      </div>
-    </button>
   );
 }

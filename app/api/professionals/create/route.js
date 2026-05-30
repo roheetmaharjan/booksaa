@@ -57,7 +57,7 @@ export async function POST(req) {
     if (currentProfessionalCount >= professionalLimit) {
       return NextResponse.json(
         {
-          message: `Professional limit reached. Your subscription allows ${professionalLimit} professional${professionalLimit !== 1 ? "s" : ""}.`,
+          message: `Professional limit reached. Your subscription allows ${professionalLimit} professional${professionalLimit !== 1 ? "s" : ""}. Add a professional add-on from Usage & Billing to create more.`,
         },
         { status: 403 }
       );

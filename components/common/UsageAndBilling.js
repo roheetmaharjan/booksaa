@@ -27,6 +27,12 @@ export default function UsageAndBilling({
   const subscriptionLocationLimit = Number(
     business?.subscriptionLocationLimit ?? billing?.activeLocationCount ?? plan?.location ?? 1
   );
+  const currentLocationCount = Number(
+    billing?.actualLocationCount ??
+      locations.filter((location) => location.isActive !== false).length ??
+      0
+  );
+  const canAddLocationsAddon = currentLocationCount >= subscriptionLocationLimit;
   const extraProfessionalPrice = plan?.extraProfessionalPrice;
   const extraLocationPrice = plan?.extraLocationPrice;
 
@@ -58,11 +64,11 @@ export default function UsageAndBilling({
           <UsageIndicatorCard
             title="Locations"
             icon={MapPin}
-            currentUsage={locations.length}
+            currentUsage={currentLocationCount}
             limit={subscriptionLocationLimit}
             price={extraLocationPrice}
             description={`Add more business locations`}
-            onAddMore={locations.length >= subscriptionLocationLimit ? onAddLocations : undefined}
+            onAddMore={canAddLocationsAddon ? onAddLocations : undefined}
           />
         </div>
       </div>
@@ -135,19 +141,28 @@ export default function UsageAndBilling({
       </Card>
 
       {/* Upgrade Suggestion */}
-      {(professionals.length >= subscriptionProfessionalLimit || locations.length >= subscriptionLocationLimit) && (
+      {(currentProfessionalCount >= subscriptionProfessionalLimit || currentLocationCount >= subscriptionLocationLimit) && (
         <Card className="border-amber-200 bg-amber-50">
           <CardHeader>
-            <CardTitle className="text-amber-900">Upgrade Your Plan</CardTitle>
+            <CardTitle className="text-amber-900">Subscription Limit Reached</CardTitle>
           </CardHeader>
           <CardContent className="space-y-3">
             <p className="text-sm text-amber-800">
-              You&apos;re using all available slots in your current plan. Add more professionals and
-              locations to grow your business.
+              You&apos;re using all available slots in your current subscription. Add professional or
+              location add-ons from Usage & Billing before adding more records.
             </p>
-            <Button variant="default" className="bg-amber-600 hover:bg-amber-700">
-              Update Now
-            </Button>
+            <div className="flex flex-wrap gap-2">
+              {currentProfessionalCount >= subscriptionProfessionalLimit && onAddProfessionals && (
+                <Button variant="default" className="bg-amber-600 hover:bg-amber-700" onClick={onAddProfessionals}>
+                  Add professional add-on
+                </Button>
+              )}
+              {currentLocationCount >= subscriptionLocationLimit && onAddLocations && (
+                <Button variant="outline" onClick={onAddLocations}>
+                  Add location add-on
+                </Button>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}
