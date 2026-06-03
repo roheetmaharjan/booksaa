@@ -40,7 +40,7 @@ export default function LoginPage() {
       if (redirectUrl && redirectUrl.startsWith("/")) {
         router.replace(redirectUrl);
       } else if (role === "ADMIN") router.replace("/admin");
-      else if (role === "VENDOR") router.replace("/vendor");
+      else if (role === "VENDOR") router.replace("/business");
       else router.replace("/customer");
     }
   };

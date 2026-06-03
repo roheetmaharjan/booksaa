@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import AddService from "@/components/modals/AddService";
 import EditService from "@/components/modals/EditService";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
+import Loading from "@/components/common/Loading";
 import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -47,7 +48,7 @@ export default function ServiceList({ vendorId, locationId }) {
       });
   }, [vendorId, locationId]);
 
-  if (loading) return <p>Loading...</p>;
+  if (loading) return <Loading />;
   if (!vendor) return <p>No vendor found.</p>;
 
   // show button only if pathname contains "edit-business"

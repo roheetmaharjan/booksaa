@@ -2,11 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { AccountStatus } from "@/constants/enums";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
-import {
-  createVendorSubscription,
-  getActiveVendorSubscription,
-  getSubscriptionLimits,
-} from "@/lib/subscriptions";
+import { createVendorSubscription, getActiveVendorSubscription, getSubscriptionLimits } from "@/lib/subscriptions";
 
 export async function GET(req, { params }) {
   const { id } = await params;
@@ -68,53 +64,35 @@ export async function GET(req, { params }) {
     const subscriptionLimits = getSubscriptionLimits(subscription, vendor.plan);
 
     const activeLocations = vendor.locations.filter((location) => location.isActive);
-    const selectedLocation =
-      activeLocations.find((location) => location.id === requestedLocationId) ||
-      activeLocations.find((location) => location.id === vendor.defaultLocationId) ||
-      activeLocations[0] ||
-      vendor.locations[0] ||
-      null;
+    const selectedLocation = activeLocations.find((location) => location.id === requestedLocationId) || activeLocations.find((location) => location.id === vendor.defaultLocationId) || activeLocations[0] || vendor.locations[0] || null;
 
     const joinedAtDateOnly = vendor.joinedAt.toISOString().slice(0, 10);
-    const trialEndsAtDateOnly = vendor.trialEndsAt
-      ? vendor.trialEndsAt.toISOString().slice(0, 10)
-      : null;
-    
+    const trialEndsAtDateOnly = vendor.trialEndsAt ? vendor.trialEndsAt.toISOString().slice(0, 10) : null;
+
     //Check the status
     const now = new Date();
     const trialEnd = new Date(vendor.trialEndsAt);
 
     let accountStatus = vendor.status;
 
-    if(vendor.trialEndsAt){
-      if(now > trialEnd){
+    if (vendor.trialEndsAt) {
+      if (now > trialEnd) {
         accountStatus = AccountStatus.TRIAL_EXPIRED;
-      }else{
+      } else {
         const diffMs = trialEnd - now;
-        const diffDays = Math.ceil (diffMs / (1000 * 60 * 60 * 24));
-        accountStatus =
-          diffDays <=3 
-            ? AccountStatus.TRIAL_EXPIRING
-            : AccountStatus.TRIAL_ACTIVE;
+        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+        accountStatus = diffDays <= 3 ? AccountStatus.TRIAL_EXPIRING : AccountStatus.TRIAL_ACTIVE;
       }
     }
-
-
 
     const result = {
       ...vendor,
       location: selectedLocation,
       selectedLocation,
       selectedLocationId: selectedLocation?.id || null,
-      services: selectedLocation
-        ? vendor.services.filter((service) => service.locationId === selectedLocation.id)
-        : vendor.services,
-      professionals: selectedLocation
-        ? vendor.professionals.filter((professional) => professional.locationId === selectedLocation.id)
-        : vendor.professionals,
-      businessHours: selectedLocation
-        ? vendor.businessHours.filter((hour) => hour.locationId === selectedLocation.id)
-        : vendor.businessHours,
+      services: selectedLocation ? vendor.services.filter((service) => service.locationId === selectedLocation.id) : vendor.services,
+      professionals: selectedLocation ? vendor.professionals.filter((professional) => professional.locationId === selectedLocation.id) : vendor.professionals,
+      businessHours: selectedLocation ? vendor.businessHours.filter((hour) => hour.locationId === selectedLocation.id) : vendor.businessHours,
       billingSummary: calculateBusinessSubscription({
         plan: vendor.plan,
         locations: vendor.locations,
@@ -128,7 +106,7 @@ export async function GET(req, { params }) {
       subscriptionProfessionalLimit: subscriptionLimits.professionalLimit,
       joinedAt: joinedAtDateOnly,
       trialEndsAt: trialEndsAtDateOnly,
-      status : accountStatus
+      status: accountStatus,
     };
 
     return new Response(JSON.stringify(result), {
@@ -146,10 +124,7 @@ export async function PUT(req, { params }) {
   const { id } = await params;
 
   if (!id) {
-    return NextResponse.json(
-      { error: "Vendor Id is missing" },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: "Vendor Id is missing" }, { status: 400 });
   }
 
   try {
@@ -160,17 +135,13 @@ export async function PUT(req, { params }) {
     const phone = data.phone;
     const cancellation_policy = data.cancellation_policy;
     const planId = data.planId;
-    const categoryId = data.categoryId
+    const categoryId = data.categoryId;
 
     const userFirstname = data.user?.firstname;
     const userLastname = data.user?.lastname;
 
-
     if (!name) {
-      return NextResponse.json(
-        { error: "Name is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
     }
 
     const updatedVendor = await prisma.$transaction(async (tx) => {
@@ -195,9 +166,9 @@ export async function PUT(req, { params }) {
           phone,
           cancellation_policy,
           planId,
-          categoryId
+          categoryId,
         },
-        include:{user:true}
+        include: { user: true },
       });
 
       if (planId && planId !== existingVendor.planId) {
@@ -215,41 +186,28 @@ export async function PUT(req, { params }) {
           vendorId: id,
           plan: nextPlan,
           status: "ACTIVE",
-          locationCount: Math.max(
-            existingVendor.locations.filter((location) => location.isActive !== false).length,
-            Number(nextPlan?.location || 1),
-          ),
-          professionalCount: Math.max(
-            existingVendor.professionals.length,
-            Number(nextPlan?.professional || 1),
-          ),
+          locationCount: Math.max(existingVendor.locations.filter((location) => location.isActive !== false).length, Number(nextPlan?.location || 1)),
+          professionalCount: Math.max(existingVendor.professionals.length, Number(nextPlan?.professional || 1)),
         });
       }
 
       return updated;
     });
 
-    if (updatedVendor.userId && (userFirstname||userLastname)){
+    if (updatedVendor.userId && (userFirstname || userLastname)) {
       await prisma.users.update({
-        where:{id : updatedVendor.userId},
-        data:{
+        where: { id: updatedVendor.userId },
+        data: {
           firstname: userFirstname,
-          lastname:userLastname
-        }
-      })
+          lastname: userLastname,
+        },
+      });
     }
 
-    return NextResponse.json(
-      { message: "Vendor updated successfully" },
-      { status: 200 }
-    );
-
+    return NextResponse.json({ message: "Vendor updated successfully" }, { status: 200 });
   } catch (error) {
     console.error("Error updating vendor:", error);
-    return NextResponse.json(
-      { error: "Failed to update vendor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to update vendor" }, { status: 500 });
   }
 }
 
@@ -270,10 +228,7 @@ export async function DELETE(req, { params }) {
       return NextResponse.json({ error: "Vendor not found" }, { status: 404 });
     }
     if (vendor.status === "ACTIVE") {
-      return NextResponse.json(
-        { error: "You cannot delete active vendors." },
-        { status: 403 }
-      );
+      return NextResponse.json({ error: "You cannot delete active vendors." }, { status: 403 });
     }
 
     await prisma.vendors.delete({
@@ -283,15 +238,9 @@ export async function DELETE(req, { params }) {
     await prisma.users.delete({
       where: { id: vendor.userId },
     });
-    return NextResponse.json(
-      { success: true, message: "Vendor and user deleted" },
-      { status: 200 }
-    );
+    return NextResponse.json({ success: true, message: "Vendor and user deleted" }, { status: 200 });
   } catch (error) {
     console.error("Delete error:", error);
-    return NextResponse.json(
-      { error: "Failed to delete vendor" },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: "Failed to delete vendor" }, { status: 500 });
   }
 }

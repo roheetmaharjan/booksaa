@@ -90,30 +90,6 @@ export default function AddService({ open, setAddServiceOpen,vendorId, locations
               <DialogTitle>Add Service</DialogTitle>
             </DialogHeader>
             <div className="mb-3">
-              <Label htmlFor="locationId">
-                Select Location <span className="astrick">*</span>
-              </Label>
-              <select
-                id="locationId"
-                name="locationId"
-                value={serviceForm.locationId}
-                onChange={handleServiceChange}
-                className="w-full"
-              >
-                <option value="">-- Choose a location --</option>
-                {locations
-                  ?.filter((loc) => loc) // remove undefined
-                  .map((loc) => (
-                    <option key={loc.id} value={loc.id} className="w-full">
-                      {loc?.address || loc?.name || "-"}
-                    </option>
-                  ))}
-              </select>
-              {formErrors.locationId && (
-                <p className="text-sm text-red-500">{formErrors.locationId}</p>
-              )}
-            </div>
-            <div className="mb-3">
               <Label htmlFor="name">
                 Service Name <span className="astrick">*</span>
               </Label>

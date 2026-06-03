@@ -20,8 +20,8 @@ import UsageAndBilling from "@/components/common/UsageAndBilling";
 import AddLocation from "@/components/modals/AddLocation";
 import AddProfessional from "@/components/modals/AddProfessional";
 import AddProfessionalAddon from "@/components/modals/AddProfessionalAddon";
-import { CameraIcon, InfoIcon } from "@phosphor-icons/react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { CameraIcon, InfoIcon, PenIcon } from "@phosphor-icons/react";
+import { Card, CardContent, CardHeader, CardTitle, CardFooter } from "@/components/ui/card";
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -70,6 +70,7 @@ export default function EditVendor() {
   const [openAddProfessionalAddon, setAddProfessionalAddonOpen] = useState(false);
   const [addonType, setAddonType] = useState("professional");
   const [selectedLocationId, setSelectedLocationId] = useState("");
+  const [isEditing, setIsEditing] = useState(false);
 
   const selectedPlan = plans.find((p) => p.id === form?.planId) || null;
 
@@ -201,11 +202,12 @@ export default function EditVendor() {
       toast.error(error.message);
     }
   };
-
   const handleDetailSubmit = async (e) => {
     e.preventDefault();
+
     const errors = validateForm(form, validationRules);
     setFormErrors(errors);
+
     if (Object.keys(errors).length > 0) return;
 
     const res = await fetch(`/api/businesses/${id}`, {
@@ -213,11 +215,14 @@ export default function EditVendor() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
+
     if (res.ok) {
       toast.success("Business updated successfully!");
-      router.push("/admin/businesses");
+
+      // Switch back to view mode
+      setIsEditing(false);
     } else {
-      toast.error("Failed to update vendor");
+      toast.error("Failed to update business");
     }
   };
 
@@ -249,26 +254,49 @@ export default function EditVendor() {
                 <CameraIcon />
               </Button>
             </div>
-
             <div className="flex flex-col gap-4 flex-1">
-              <div className="flex flex-col gap-1">
-                <h4 className="text-2xl font-bold">{form.name}</h4>
-                <p className="text-base text-gray-500">{ownerEmail || "-"}</p>
+              <div className="flex flex-row flex-wrap">
+                <div className="flex flex-col gap-1 flex-1">
+                  <h4 className="text-2xl font-bold">{form.name}</h4>
+                  <p className="text-base text-gray-500">{ownerEmail || "-"}</p>
+                </div>
+                <div>
+                  <div className="ml-auto flex justify-end gap-2 flex-wrap">
+                    {form.locations?.length > 0 && (
+                      <div className="mb-5 max-w-lg">
+                        <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select location" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {form.locations.map((location) => (
+                              <SelectItem key={location.id} value={location.id}>
+                                {location.name || location.address}
+                                {location.isDefault ? " (Default)" : ""}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    )}
+                    <Button onClick={() => handleResend(form.id)}>Send Activation Link</Button>
+                  </div>
+                </div>
               </div>
               <div className="grid grid-cols-12 gap-3">
-                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-2">
                   <p className="text-muted-foreground">Joined Date</p>
                   <p>{form.joinedAt || ""}</p>
                 </div>
-                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-2">
                   <p className="text-muted-foreground">Trial Ends On</p>
                   <p>{form.trialEndsAt || ""}</p>
                 </div>
-                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-2">
                   <p className="text-muted-foreground">Profile Completed</p>
                   <p>{form.isCompleted ? "Yes" : "No"}</p>
                 </div>
-                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-2">
                   <p className="text-muted-foreground">Status</p>
                   {form.status === "ACTIVE" && <Badge className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]">Active</Badge>}
                   {form.status === "TRIAL_ACTIVE" && <Badge className="text-blue-700 bg-blue-100 hover:bg-blue-200 uppercase text-[10px]">Trial Active</Badge>}
@@ -276,34 +304,17 @@ export default function EditVendor() {
                   {form.status === "TRIAL_EXPIRED" && <Badge className="text-red-500 bg-red-200 hover:bg-red-300 uppercase text-[10px]">Trial Expired</Badge>}
                   {form.status === "INACTIVE" && <Badge className="text-white bg-gray-500 hover:bg-gray-700 uppercase text-[10px]">Inactive</Badge>}
                 </div>
-                <div className="col-span-6 lg:col-span-4 xl:col-span-3">
+                <div className="col-span-6 lg:col-span-4 xl:col-span-2">
                   <p className="text-muted-foreground">User</p>
                   <p>
                     {form.user?.firstname || ""} {form.user?.lastname || ""}
                   </p>
                 </div>
-              </div>
-            </div>
-
-            <div className="ml-auto flex justify-end gap-2 flex-wrap">
-              {form.locations?.length > 0 && (
-                <div className="mb-5 max-w-lg">
-                  <Select value={selectedLocationId} onValueChange={setSelectedLocationId}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {form.locations.map((location) => (
-                        <SelectItem key={location.id} value={location.id}>
-                          {location.name || location.address}
-                          {location.isDefault ? " (Default)" : ""}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                <div className="col-span-6 lg:col-span-4 xl:col-span-2">
+                  <p className="text-muted-foreground">Phone</p>
+                  <p>{form.locations?.find((l) => l.id === selectedLocationId)?.phone || form.phone || "-"}</p>
                 </div>
-              )}
-              <Button onClick={() => handleResend(form.id)}>Send Activation Link</Button>
+              </div>
             </div>
           </div>
 
@@ -322,84 +333,125 @@ export default function EditVendor() {
 
             {/* Detail */}
             <TabsContent value="detail">
-              <form onSubmit={handleDetailSubmit}>
-                <div className="grid grid-cols-12 gap-4">
-                  <div className="col-span-12 lg:col-span-6">
-                    <Card>
-                      <CardContent className="pt-5">
-                        <div className="mb-2">
-                          <Label>
-                            Business Name <span className="astrick">*</span>
-                          </Label>
-                          <Input name="name" value={form.name || ""} onChange={handleChange} placeholder="Business Name" />
-                          {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
-                        </div>
-                        <div className="grid grid-cols-12 mb-2 gap-2">
-                          <div className="col-span-6">
-                            <Label>
-                              Category <span className="astrick">*</span>
-                            </Label>
-                            <Select value={form.categoryId} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Category" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {categories.length === 0 ? (
-                                  <SelectItem value="no-category">No categories found.</SelectItem>
-                                ) : (
-                                  categories.map((c) => (
-                                    <SelectItem key={c.id} value={c.id}>
-                                      {c.name}
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                            {formErrors.categoryId && <p className="text-sm text-red-500">{formErrors.categoryId}</p>}
-                          </div>
-                          <div className="col-span-6">
-                            <Label>
-                              Plan <span className="astrick">*</span>
-                            </Label>
-                            <Select value={form.planId} onValueChange={(value) => setForm((prev) => ({ ...prev, planId: value }))}>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select Plan" />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {plans.length === 0 ? (
-                                  <SelectItem value="no-plans">No plans found.</SelectItem>
-                                ) : (
-                                  plans.map((p) => (
-                                    <SelectItem key={p.id} value={p.id}>
-                                      {p.name}
-                                    </SelectItem>
-                                  ))
-                                )}
-                              </SelectContent>
-                            </Select>
-                            {formErrors.planId && <p className="text-sm text-red-500">{formErrors.planId}</p>}
-                          </div>
-                        </div>
-                        <div className="mb-2">
-                          <Label>Phone</Label>
-                          <Input name="phone" value={form.phone || ""} onChange={handleChange} placeholder="Enter phone number" />
-                        </div>
-                        <div className="mb-2">
-                          <Label>Description</Label>
-                          <Textarea name="description" value={form.description || ""} onChange={handleChange} className="h-56" />
-                        </div>
-                        <div className="mb-2">
-                          <Label>Cancellation Policy</Label>
-                          <Textarea name="cancellation_policy" value={form.cancellation_policy || ""} onChange={handleChange} className="h-56" />
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                </div>
-                <div className="py-2">
-                  <Button type="submit">Save</Button>
-                </div>
-              </form>
+              {!isEditing ? (
+                <Card>
+                  <CardHeader className="card-header">
+                    <CardTitle className="card-title">Business Details</CardTitle>
+
+                    {!isEditing && (
+                      <Button variant="outline" onClick={() => setIsEditing(true)}>
+                        <PenIcon />
+                        Edit
+                      </Button>
+                    )}
+                  </CardHeader>
+                  <CardContent className="space-y-4 mt-6">
+                    <div className="card-value">
+                      <Label>Business Name</Label>
+                      <p>{form.name || "-"}</p>
+                    </div>
+                    <div className="card-value">
+                      <Label>Category</Label>
+                      <p>{categories.find((c) => c.id === form.categoryId)?.name || "-"}</p>
+                    </div>
+                    <div className="card-value">
+                      <Label>Plan</Label>
+                      <p>{plans.find((p) => p.id === form.planId)?.name || "-"}</p>
+                    </div>
+                    <div className="card-value">
+                      <Label>Description</Label>
+                      <p className="whitespace-pre-wrap">{form.description || "-"}</p>
+                    </div>
+                    <div className="card-value">
+                      <Label>Cancellation Policy</Label>
+                      <p className="whitespace-pre-wrap">{form.cancellation_policy || "-"}</p>
+                    </div>
+                  </CardContent>
+                </Card>
+              ) : (
+                <form onSubmit={handleDetailSubmit}>
+                  <Card>
+                    <CardHeader className="card-header">
+                      <CardTitle className="card-title">Business Details</CardTitle>
+
+                      {!isEditing && (
+                        <Button variant="outline" onClick={() => setIsEditing(true)}>
+                          <PenIcon />
+                          Edit
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="pt-5">
+                      <div className="card-value">
+                        <Label>
+                          Business Name <span className="astrick">*</span>
+                        </Label>
+                        <Input name="name" value={form.name || ""} onChange={handleChange} placeholder="Business Name" />
+                        {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+                      </div>
+                      <div className="card-value">
+                        <Label>
+                          Category <span className="astrick">*</span>
+                        </Label>
+                        <Select value={form.categoryId} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Category" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {categories.length === 0 ? (
+                              <SelectItem value="no-category">No categories found.</SelectItem>
+                            ) : (
+                              categories.map((c) => (
+                                <SelectItem key={c.id} value={c.id}>
+                                  {c.name}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {formErrors.categoryId && <p className="text-sm text-red-500">{formErrors.categoryId}</p>}
+                      </div>
+                      <div className="card-value">
+                        <Label>
+                          Plan <span className="astrick">*</span>
+                        </Label>
+                        <Select value={form.planId} onValueChange={(value) => setForm((prev) => ({ ...prev, planId: value }))}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Plan" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {plans.length === 0 ? (
+                              <SelectItem value="no-plans">No plans found.</SelectItem>
+                            ) : (
+                              plans.map((p) => (
+                                <SelectItem key={p.id} value={p.id}>
+                                  {p.name}
+                                </SelectItem>
+                              ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {formErrors.planId && <p className="text-sm text-red-500">{formErrors.planId}</p>}
+                      </div>
+                      <div className="card-value">
+                        <Label>Description</Label>
+                        <Textarea name="description" value={form.description || ""} onChange={handleChange} className="h-56" />
+                      </div>
+                      <div className="card-value">
+                        <Label>Cancellation Policy</Label>
+                        <Textarea name="cancellation_policy" value={form.cancellation_policy || ""} onChange={handleChange} className="h-56" />
+                      </div>
+                    </CardContent>
+                    <CardFooter className="gap-2">
+                      <Button type="submit">Save</Button>
+
+                      <Button type="button" variant="outline" onClick={() => setIsEditing(false)}>
+                        Cancel
+                      </Button>
+                    </CardFooter>
+                  </Card>
+                </form>
+              )}
             </TabsContent>
 
             {/* Services */}
@@ -418,9 +470,7 @@ export default function EditVendor() {
                     </AlertTitle>
                   </Alert>
                 ) : (
-                  <Button onClick={() => setAddLocationOpen(true)}>
-                    Add Business Location
-                  </Button>
+                  <Button onClick={() => setAddLocationOpen(true)}>Add Business Location</Button>
                 )}
               </div>
               <div className="space-y-4">

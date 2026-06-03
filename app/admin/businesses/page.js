@@ -85,7 +85,7 @@ export default function VendorsList() {
             <input
               type="search"
               className="bg-gray-50 border rounded px-3 py-2"
-              placeholder="Search vendors..."
+              placeholder="Search business..."
             />
           </div>
 

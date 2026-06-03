@@ -2,31 +2,9 @@
 
 import Image from "next/image";
 import { usePathname, useRouter } from "next/navigation";
-import {
-  BarChart3,
-  CalendarClock,
-  HelpCircle,
-  Home,
-  LogOut,
-  MapPin,
-  Scissors,
-  Settings,
-  Users,
-} from "lucide-react";
+import { BarChart3, CalendarClock, HelpCircle, Home, LogOut, MapPin, Scissors, Settings, Users } from "lucide-react";
 import { signOut } from "@/lib/auth-client";
-import {
-  Sidebar,
-  SidebarContent,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupContent,
-  SidebarGroupLabel,
-  SidebarHeader,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
-  SidebarRail,
-} from "@/components/ui/sidebar";
+import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar";
 
 const primaryItems = [
   { title: "Dashboard", url: "/vendor", icon: Home },
@@ -63,12 +41,7 @@ export function VendorSidebar({ startTransition }) {
       <SidebarHeader className="border-b border-slate-200 p-4">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              asChild
-              size="lg"
-              tooltip="Booksaa"
-              className="h-12 hover:bg-transparent"
-            >
+            <SidebarMenuButton asChild size="lg" tooltip="Booksaa" className="h-12 hover:bg-transparent">
               <button onClick={handleNav("/vendor")} type="button">
                 <span className="flex size-9 items-center justify-center rounded-md border border-slate-200 bg-white">
                   <Image src="/logo.png" width={26} height={26} alt="Booksaa" />
@@ -89,12 +62,7 @@ export function VendorSidebar({ startTransition }) {
           <SidebarGroupContent>
             <SidebarMenu>
               {primaryItems.map((item) => (
-                <VendorSidebarItem
-                  key={item.title}
-                  item={item}
-                  isActive={pathname === item.url}
-                  onNavigate={handleNav(item.url)}
-                />
+                <VendorSidebarItem key={item.title} item={item} isActive={pathname === item.url} onNavigate={handleNav(item.url)} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -105,12 +73,7 @@ export function VendorSidebar({ startTransition }) {
           <SidebarGroupContent>
             <SidebarMenu>
               {secondaryItems.map((item) => (
-                <VendorSidebarItem
-                  key={item.title}
-                  item={item}
-                  isActive={pathname === item.url}
-                  onNavigate={handleNav(item.url)}
-                />
+                <VendorSidebarItem key={item.title} item={item} isActive={pathname === item.url} onNavigate={handleNav(item.url)} />
               ))}
             </SidebarMenu>
           </SidebarGroupContent>
@@ -120,11 +83,7 @@ export function VendorSidebar({ startTransition }) {
       <SidebarFooter className="border-t border-slate-200 p-3">
         <SidebarMenu>
           <SidebarMenuItem>
-            <SidebarMenuButton
-              tooltip="Sign out"
-              onClick={() => signOut({ callbackUrl: "/auth/login" })}
-              className="text-slate-600 hover:text-slate-950"
-            >
+            <SidebarMenuButton tooltip="Sign out" onClick={() => signOut({ callbackUrl: "/auth/login" })} className="text-slate-600 hover:text-slate-950">
               <LogOut />
               <span>Sign out</span>
             </SidebarMenuButton>
@@ -139,12 +98,7 @@ export function VendorSidebar({ startTransition }) {
 function VendorSidebarItem({ item, isActive, onNavigate }) {
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton
-        tooltip={item.title}
-        isActive={isActive}
-        onClick={onNavigate}
-        className="h-10 text-slate-600 data-[active=true]:bg-slate-900 data-[active=true]:text-white"
-      >
+      <SidebarMenuButton tooltip={item.title} isActive={isActive} onClick={onNavigate} className="h-10 text-slate-600 data-[active=true]:bg-primary data-[active=true]:text-white">
         <item.icon />
         <span>{item.title}</span>
       </SidebarMenuButton>
