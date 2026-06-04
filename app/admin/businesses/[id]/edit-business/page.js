@@ -334,7 +334,7 @@ export default function EditVendor() {
             {/* Detail */}
             <TabsContent value="detail">
               {!isEditing ? (
-                <Card>
+                <Card className="card">
                   <CardHeader className="card-header">
                     <CardTitle className="card-title">Business Details</CardTitle>
 
@@ -345,7 +345,7 @@ export default function EditVendor() {
                       </Button>
                     )}
                   </CardHeader>
-                  <CardContent className="space-y-4 mt-6">
+                  <CardContent className="!card-body">
                     <div className="card-value">
                       <Label>Business Name</Label>
                       <p>{form.name || "-"}</p>
