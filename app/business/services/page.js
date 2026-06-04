@@ -5,12 +5,11 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { MapPin, Check, ChevronDown } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import ProfessionalList from "@/components/common/ProfessionalList";
+import ServiceList from "@/components/common/ServiceList";
 import Loading from "@/components/common/Loading";
 import { toast } from "sonner";
 
-export default function ProfessionalsPage() {
+export default function ServicesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -43,7 +42,7 @@ export default function ProfessionalsPage() {
 
         const vendorId = currentData.vendor.id;
 
-        // Fetch vendor with professionals filtered by location
+        // Fetch vendor with services filtered by location
         const url = effectiveLocationId
           ? `/api/businesses/${vendorId}?locationId=${effectiveLocationId}`
           : `/api/businesses/${vendorId}`;
@@ -54,7 +53,7 @@ export default function ProfessionalsPage() {
         const vendorData = await vendorRes.json();
 
         if (!vendorRes.ok) {
-          toast.error("Failed to load professionals");
+          toast.error("Failed to load services");
           setVendor(null);
           return;
         }
@@ -62,7 +61,7 @@ export default function ProfessionalsPage() {
         setVendor(vendorData);
       } catch (error) {
         console.error("Error fetching vendor:", error);
-        toast.error("An error occurred while loading professionals");
+        toast.error("An error occurred while loading services");
         setVendor(null);
       } finally {
         setLoading(false);
@@ -87,7 +86,7 @@ export default function ProfessionalsPage() {
     return (
       <div className="page-content">
         <div className="flex items-center justify-center h-96">
-          <p className="text-muted-foreground">Failed to load professionals. Please try again.</p>
+          <p className="text-muted-foreground">Failed to load services. Please try again.</p>
         </div>
       </div>
     );
@@ -97,11 +96,14 @@ export default function ProfessionalsPage() {
     <div className="page-content">
       {/* Header with Location Selector */}
       <div className="page-header">
-        <h1 className="page-title">Professionals</h1>
+        <div className="flex items-center justify-between">
+          <h1 className="page-title">Services</h1>
+        </div>
       </div>
-      {/* Professionals List */}
+
+      {/* Services List */}
       <div className="page-body">
-          <ProfessionalList vendorId={vendor.id} locationId={effectiveLocationId} canManage={true} />
+        <ServiceList vendorId={vendor.id} locationId={effectiveLocationId} canManage={true} />
       </div>
     </div>
   );

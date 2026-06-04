@@ -9,7 +9,7 @@ import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 
-export default function ServiceList({ vendorId, locationId }) {
+export default function ServiceList({ vendorId, locationId, canManage = false }) {
   const [openAddService, setAddServiceOpen] = useState(false);
   const [openEditService, setEditServiceOpen] = useState(false);
   const [selectedService, setSelectedService] = useState(null); 
@@ -51,9 +51,9 @@ export default function ServiceList({ vendorId, locationId }) {
   if (loading) return <Loading />;
   if (!vendor) return <p>No vendor found.</p>;
 
-  // show button only if pathname contains "edit-business"
-  const showAddButton = pathname.includes("edit-business");
-  const showActionButton = pathname.includes("edit-business");
+  // show button only if pathname contains "edit-business" or canManage is true
+  const showAddButton = canManage || pathname.includes("edit-business");
+  const showActionButton = canManage || pathname.includes("edit-business");
 
   const handleDeleteServiceClick = (service) => {
     setSelectedService(service);

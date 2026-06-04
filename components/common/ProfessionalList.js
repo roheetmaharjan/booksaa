@@ -12,7 +12,7 @@ import { useFetch } from "@/hooks/useFetch";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
-export default function ProfessionalList({ vendorId, locationId }) {
+export default function ProfessionalList({ vendorId, locationId, canManage = false }) {
   const [openAddProfessional, setAddProfessionalOpen] = useState(false);
   const [openEditProfessional, setEditProfessionalOpen] = useState(false);
   const [selectedProfessional, setSelectedProfessional] = useState(null);
@@ -61,9 +61,9 @@ export default function ProfessionalList({ vendorId, locationId }) {
   const currentProfessionalCount = Number(vendor.billingSummary?.actualProfessionalCount || vendor.professionals?.length || 0);
   const canAddProfessional = currentProfessionalCount < professionalLimit;
 
-  // show button only if pathname contains "edit-business"
-  const showAddButton = pathname.includes("edit-business");
-  const showActionButton = pathname.includes("edit-business");
+  // show button only if pathname contains "edit-business" or canManage is true
+  const showAddButton = canManage || pathname.includes("edit-business");
+  const showActionButton = canManage || pathname.includes("edit-business");
 
   const handleDeleteProfessionalClick = (professional) => {
     setSelectedProfessional(professional);

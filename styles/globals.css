@@ -97,6 +97,15 @@ body {
   .card-value{
     @apply py-2 px-1 mb-2 gap-2 grid grid-cols-[1fr_2fr] justify-between
   }
+  .page-content{
+    @apply space-y-6
+  }
+  .page-header{
+    @apply p-4
+  }
+  .page-title{
+    @apply text-2xl font-bold tracking-tight
+  }
 }
 .page-title{
   @apply text-xl font-bold
