@@ -121,7 +121,7 @@ const Header = () => {
                     {pathUrl !== "/" ? (
                       <>
                         <Link
-                          href="/signin"
+                          href="/auth/login"
                           className="px-7 py-3 text-base font-medium text-dark hover:opacity-70 dark:text-white"
                         >
                           Log In

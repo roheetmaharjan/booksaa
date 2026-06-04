@@ -1,6 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
 import { AccountStatus } from "@/constants/enums";
+import { getCurrentSession } from "@/lib/auth";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
 import { createVendorSubscription, getActiveVendorSubscription, getSubscriptionLimits } from "@/lib/subscriptions";
 
@@ -58,6 +59,11 @@ export async function GET(req, { params }) {
       return new Response(JSON.stringify({ error: "Business not found" }), {
         status: 404,
       });
+    }
+
+    const session = await getCurrentSession();
+    if (session?.role === "VENDOR" && vendor.userId !== session.id) {
+      return NextResponse.json({ error: "You do not have access to this business." }, { status: 403 });
     }
 
     const subscription = await getActiveVendorSubscription(id);

@@ -17,7 +17,7 @@ import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
-export default function VendorPage() {
+export default function BusinessProfilePage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const [vendorId, setVendorId] = useState(null);
@@ -180,51 +180,6 @@ export default function VendorPage() {
   return (
     <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
-        <header className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-3">
-            <SidebarTrigger className="mt-1 md:hidden" />
-            <div>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Welcome back{vendor?.name ? `, ${vendor.name}` : ""}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Manage business details, services, professionals, and availability from one place.</p>
-            </div>
-          </div>
-          {/* <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => setOpenAddService(true)} disabled={!vendorId}>
-              <Plus className="mr-2 size-4" /> Add service
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (!canAddProfessional) {
-                  toast.error("Professional limit reached. Add an add-on from Usage & Billing to add more.");
-                  openUsageBilling();
-                  return;
-                }
-                setOpenAddProfessional(true);
-              }}
-              disabled={!vendorId || subscriptionProfessionalLimit === 0}
-            >
-              <Users className="mr-2 size-4" /> Add professional
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (!canAddLocation) {
-                  toast.error("Location limit reached. Add an add-on from Usage & Billing to add more.");
-                  openUsageBilling();
-                  return;
-                }
-                setOpenAddLocation(true);
-              }}
-              disabled={!vendorId || subscriptionLocationLimit === 0}
-            >
-              <MapPin className="mr-2 size-4" /> Add location
-            </Button>
-            <Button variant="outline" onClick={() => setOpenBusinessHours(true)} disabled={!vendorId}>
-              <Clock3 className="mr-2 size-4" /> Business hours
-            </Button>
-          </div> */}
-        </header>
 
         {loading ? (
           <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">Loading your business details...</div>
@@ -232,32 +187,40 @@ export default function VendorPage() {
           <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>
         ) : vendor ? (
           <>
-            {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
-              <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                <AlertTitle className="text-lg font-bold">Subscription limit reached</AlertTitle>
-                <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span>
-                    {hasReachedProfessionalLimit && `You have used all ${subscriptionProfessionalLimit} professional slot${subscriptionProfessionalLimit !== 1 ? "s" : ""}. `}
-                    {hasReachedLocationLimit && `You have used all ${subscriptionLocationLimit} location slot${subscriptionLocationLimit !== 1 ? "s" : ""}. `}
-                    Add an add-on or review Usage & Billing to increase your limits.
-                  </span>
-                  <span className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}>
-                      Add add-on
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={openUsageBilling}>
-                      Usage & Billing
-                    </Button>
-                  </span>
-                </AlertDescription>
-              </Alert>
-            )}
+            <section className="grid gap-6 xl:grid-cols-[1.2fr_0.8fr]">
+              <Card className="rounded-lg border border-slate-200 bg-white shadow-sm">
+                <CardContent className="space-y-6 p-6 sm:p-8">
+                  <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                    <div>
+                      <p className="text-sm uppercase text-slate-500">Business overview</p>
+                      <h2 className="mt-3 text-2xl font-semibold text-slate-950">{vendor.name}</h2>
+                    </div>
+                    <Badge variant="outline" className="w-fit border-emerald-200 bg-emerald-50 text-emerald-700">
+                      <CheckCircle2 className="mr-1 size-3.5" />
+                      {vendor.status || "Unknown"}
+                    </Badge>
+                  </div>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <DashboardMetric icon={BriefcaseBusiness} label="Services" value={serviceCount} detail="Bookable offerings in the selected location" tone="blue" />
-              <DashboardMetric icon={Users} label="Professionals" value={`${professionalCount}/${subscriptionProfessionalLimit || 0}`} detail="Team usage against your plan" tone="emerald" />
-              <DashboardMetric icon={MapPin} label="Locations" value={`${activeLocationCount}/${subscriptionLocationLimit || 0}`} detail={selectedLocation?.name || selectedLocation?.address || "No location selected"} tone="amber" />
-              <DashboardMetric icon={CalendarClock} label="Trial ends" value={vendor.trialEndsAt || "-"} detail={vendor.status || "Status unavailable"} />
+                  <div className="grid gap-4 sm:grid-cols-2">
+                    <SummaryItem label="Owner" value={ownerName} />
+                    <SummaryItem label="Email" value={vendor.user?.email || "-"} />
+                    <SummaryItem label="Category" value={vendor.category?.name || "-"} />
+                    <SummaryItem label="Plan" value={vendor.plan?.name || "-"} />
+                    <SummaryItem label="Locations" value={`${activeLocationCount} active`} />
+                    <SummaryItem label="Services" value={`${serviceCount} total`} />
+                    <SummaryItem label="Professionals" value={`${professionalCount} total`} />
+                    <SummaryItem label="Joined" value={vendor.joinedAt || "-"} />
+                  </div>
+
+                  <div className="rounded-lg border border-slate-200 bg-slate-50 p-5">
+                    <p className="text-sm font-semibold text-slate-900">Business details</p>
+                    <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                      <DetailCard label="Default location" value={selectedLocation?.address || "Not assigned"} />
+                      <DetailCard label="Billing cycle" value={vendor.billingSummary?.billingCycle || "Not available"} />
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
             </section>
           </>
         ) : (
