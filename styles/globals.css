@@ -89,13 +89,13 @@ body {
 }
 @layer components{
   .card{
-    @apply !border !rounded-xl
+    @apply !border !rounded-xl bg-white overflow-hidden
   }
   .card-title{
     font-size: 16px;
   }
   .card-header{
-    @apply !flex !flex-row !items-center !justify-between !border-b !px-5 !py-2.5 !min-h-16;
+    @apply !flex !flex-row !items-center !justify-between !border-b !px-5 !py-2.5 !min-h-16 bg-white;
   }
   .card-body{
     @apply !px-0 !py-1
@@ -110,7 +110,7 @@ body {
     @apply p-4
   }
   .page-body{
-    @apply p-4 mt-0
+    @apply p-4 !mt-0
   }
   .page-title{
     @apply text-2xl font-bold tracking-tight
@@ -126,7 +126,7 @@ body {
   @apply p-6
 }
 .btn-primary{
-  @apply bg-primary text-white px-3 py-2 rounded hover:bg-primary-dark text-base
+  @apply bg-primary text-white px-3 py-2 rounded-lg hover:bg-primary-dark text-base
 }
 .boo-table th{
   @apply uppercase bg-white text-xs py-3 px-2 border-b

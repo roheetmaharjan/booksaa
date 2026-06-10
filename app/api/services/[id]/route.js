@@ -29,7 +29,7 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { name, description, price, duration, locationId } = await req.json();
+    const { name, description, price, duration, color, locationId, prepaymentType, depositType, depositValue } = await req.json();
     
     if (!name || !price || !duration) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
@@ -40,9 +40,13 @@ export async function PATCH(req, { params }) {
       data: {
         name,
         description,
+        color: color || "#2563eb",
         price: Number(price),
         duration: Number(duration),
         locationId: locationId || undefined,
+        prepaymentType: ["full", "deposit", "pay_later"].includes(prepaymentType) ? prepaymentType : "pay_later",
+        depositType: prepaymentType === "deposit" ? depositType || "percent" : null,
+        depositValue: prepaymentType === "deposit" && depositValue !== "" ? Number(depositValue) : null,
       },
     });
 

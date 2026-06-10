@@ -3,7 +3,7 @@ import { prisma } from "@/lib/prisma";
 
 export async function POST(req) {
   try {
-    const { name, price, duration, description, vendorId,locationId } = await req.json();
+    const { name, price, duration, description, color, vendorId, locationId, prepaymentType, depositType, depositValue } = await req.json();
 
     // Validate required fields
     if (!vendorId || !locationId) {
@@ -62,10 +62,14 @@ export async function POST(req) {
       data: {
         name,
         description,
+        color: color || "#2563eb",
         price: parseFloat(price),
         duration: parseFloat(duration),
         vendorId,
-        locationId
+        locationId,
+        prepaymentType: ["full", "deposit", "pay_later"].includes(prepaymentType) ? prepaymentType : "pay_later",
+        depositType: prepaymentType === "deposit" ? depositType || "percent" : null,
+        depositValue: prepaymentType === "deposit" && depositValue !== "" ? Number(depositValue) : null,
       },
     });
 

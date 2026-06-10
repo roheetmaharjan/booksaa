@@ -42,7 +42,7 @@ export async function middleware(request) {
   }
 
   // Role-based protection
-  if (pathname.startsWith('/api') && session.role !== 'ADMIN') {
+  if (pathname.startsWith('/api') && !['ADMIN', 'VENDOR', 'CUSTOMER'].includes(session.role)) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
   if (pathname.startsWith('/admin') && session.role !== 'ADMIN') {

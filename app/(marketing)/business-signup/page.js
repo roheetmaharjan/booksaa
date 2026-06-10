@@ -289,8 +289,8 @@ export default function BusinessSignupPage() {
       toast.success("Your trial is active. Welcome to Booksaa.");
       const vendorId = data.vendor?.id;
       const redirectUrl = vendorId
-        ? `/vendor?setup=step4&vendorId=${encodeURIComponent(vendorId)}`
-        : "/vendor";
+        ? `/business?setup=step4&vendorId=${encodeURIComponent(vendorId)}`
+        : "/business";
 
       await router.push(redirectUrl);
       if (typeof window !== "undefined") window.location.href = redirectUrl;

@@ -107,6 +107,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
             <thead>
               <tr className="bg-gray-100">
                 <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">S.N</th>
+                <th className="text-left w-20 text-sm px-2 py-1 border-gray-300">Color</th>
                 <th className="text-left w-1/6 text-sm px-2 py-1 border-gray-300">Service Name</th>
                 <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">Description</th>
                 <th className="text-left w-28 text-sm px-2 py-1 border-gray-300">Price</th>
@@ -121,6 +122,12 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
                 vendor.services.map((service, index) => (
                   <tr key={service.id}>
                     <td className="p-2 text-center">{index + 1}</td>
+                    <td className="p-2">
+                      <span
+                        className="inline-block h-5 w-5 rounded-full border border-gray-200 align-middle"
+                        style={{ backgroundColor: service.color || "#2563eb" }}
+                      />
+                    </td>
                     <td className="p-2">{service.name}</td>
                     <td className="p-2">{service.description || "-"}</td>
                     {/* <td className="p-2">{service.location.address}</td> */}
@@ -142,7 +149,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
                 ))
               ) : (
                 <tr>
-                  <td colSpan={6} className="text-center py-2">
+                  <td colSpan={7} className="text-center py-2">
                     No services found.
                   </td>
                 </tr>
