@@ -127,7 +127,7 @@ export function VendorSidebar({ startTransition }) {
 
   return (
     <Sidebar collapsible="icon" className="top-0 !border-r-0">
-      <SidebarHeader className="px-2 py-4">
+      <SidebarHeader className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             {locations.length > 1 ? (

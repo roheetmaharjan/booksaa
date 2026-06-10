@@ -88,9 +88,12 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
-@layer components {
+  @layer components{
   .section-heading {
     @apply text-center text-4xl font-bold mb-4;
+  }
+  .card{
+    @apply bg-white overflow-hidden
   }
 
   .card {
@@ -114,8 +117,8 @@ body {
   .page-header {
     @apply py-4 border-b;
   }
-  .page-body {
-    @apply !mt-0 !border-none !rounded-none;
+  .page-body{
+    @apply !mt-0 !border-none !rounded-none
   }
   .page-title {
     @apply text-xl font-bold tracking-tight;
@@ -167,6 +170,17 @@ body {
   }
   .card-item-value {
     @apply flex-1 font-normal text-base text-gray-900;
+  }
+  .content-area{
+    height: calc(100vh - 24px) !important;
+    @apply mr-3 mt-3
+  }
+  .content-area-header{
+    @apply flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4 sticky top-0 z-10
+  }
+  .content-area-body{
+    height: calc(100vh - 24px) !important;
+    @apply flex min-h-0 flex-1;
   }
 }
 .astrick {

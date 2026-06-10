@@ -114,17 +114,17 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
 
   return (
     <>
-      {showAddButton && (
-        <>
-          <div className="card">
-            <div className="card-header">
+      <div className="card">
+        <div className="card-header">
+          {showAddButton && (
+            <>
               {canAddProfessional ? (
                 <Button onClick={() => setAddProfessionalOpen(true)}>Add Professional</Button>
               ) : (
-                <Alert className="border-amber-200 w-auto bg-amber-50 text-amber-900">
+                <Alert className="max-w-lg border-amber-200 bg-amber-50 text-amber-900">
                   <InfoIcon className="text-amber-900 !top-[12px]" />
                   <AlertTitle className="mb-0">
-                    Professional limit reached. Your subscription allows only {professionalLimit} professional{professionalLimit !== 1 ? "s" : ""}. Please upgrade to add more Professional
+                    Professional limit reached. Your subscription allows only {professionalLimit} professional{professionalLimit !== 1 ? "s" : ""}.
                   </AlertTitle>
                 </Alert>
               )}
@@ -142,74 +142,73 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
                   }}
                 />
               )}
-            </div>
-            <div className="card-body !pt-0">
-              <Table className="boo-table">
-                <TableHeader>
-                  <TableRow>
-                    <TableHead className="w-16">S.N</TableHead>
-                    <TableHead className="w-1/2">Professional Name</TableHead>
-                    <TableHead>Role</TableHead>
-                    <TableHead>Phone</TableHead>
-                    <TableHead>Status</TableHead>
-                    {showActionButton && <TableHead>Action</TableHead>}
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {vendor.professionals?.length > 0 ? (
-                    vendor.professionals.map((professional, index) => (
-                      <TableRow key={professional.id}>
-                        <TableCell className="text-center">{index + 1}</TableCell>
-                        <TableCell>
-                          <p className="font-semibold">{professional.name}</p>
-                          <p className="text-sm text-muted-foreground">{professional.email}</p>
-                        </TableCell>
-                        <TableCell>{professional.role?.name}</TableCell>
-                        <TableCell>{professional.phone}</TableCell>
-                        <TableCell>{professional.status === "ACTIVE" ? <Badge className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]">Active</Badge> : <Badge className="bg-gray-500 hover:bg-gray-500 uppercase text-[10px]">Inactive</Badge>}</TableCell>
-                        {showActionButton && (
-                          <TableCell>
-                            <div className="flex gap-2">
-                              <button className="text-gray-500 hover:text-gray-700" onClick={() => handleEditProfessionalClick(professional)}>
-                                <PencilLineIcon size={20} weight="duotone" />
-                              </button>
-                              <button className="text-red-500 hover:text-red-700" onClick={() => handleDeleteProfessionalClick(professional)}>
-                                <TrashIcon size={20} weight="duotone" />
-                              </button>
-                            </div>
-                          </TableCell>
-                        )}
-                      </TableRow>
-                    ))
-                  ) : (
-                    <TableRow>
-                      <TableCell colSpan={showActionButton ? 6 : 5} className="text-center py-6 text-muted-foreground">
-                        No professionals found.
+            </>
+          )}
+        </div>
+        <div className="card-body">
+          <Table className="mt-3">
+            <TableHeader>
+              <TableRow>
+                <TableHead className="w-16">S.N</TableHead>
+                <TableHead className="w-1/2">Professional Name</TableHead>
+                <TableHead>Role</TableHead>
+                <TableHead>Phone</TableHead>
+                <TableHead>Status</TableHead>
+                {showActionButton && <TableHead>Action</TableHead>}
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {vendor.professionals?.length > 0 ? (
+                vendor.professionals.map((professional, index) => (
+                  <TableRow key={professional.id}>
+                    <TableCell className="text-center">{index + 1}</TableCell>
+                    <TableCell>
+                      <p className="font-semibold">{professional.name}</p>
+                      <p className="text-sm text-muted-foreground">{professional.email}</p>
+                    </TableCell>
+                    <TableCell>{professional.role?.name}</TableCell>
+                    <TableCell>{professional.phone}</TableCell>
+                    <TableCell>{professional.status === "ACTIVE" ? <Badge className="text-green-700 bg-green-200 hover:bg-green-200 uppercase text-[10px]">Active</Badge> : <Badge className="bg-gray-500 hover:bg-gray-500 uppercase text-[10px]">Inactive</Badge>}</TableCell>
+                    {showActionButton && (
+                      <TableCell>
+                        <div className="flex gap-2">
+                          <button className="text-gray-500 hover:text-gray-700" onClick={() => handleEditProfessionalClick(professional)}>
+                            <PencilLineIcon size={20} weight="duotone" />
+                          </button>
+                          <button className="text-red-500 hover:text-red-700" onClick={() => handleDeleteProfessionalClick(professional)}>
+                            <TrashIcon size={20} weight="duotone" />
+                          </button>
+                        </div>
                       </TableCell>
-                    </TableRow>
-                  )}
-                </TableBody>
-              </Table>
-
-              {selectedProfessional && (
-                <EditProfessional
-                  openEdit={openEditProfessional}
-                  setEditProfessionalOpen={setEditProfessionalOpen}
-                  vendorId={vendorId}
-                  professional={selectedProfessional}
-                  roles={roles}
-                  locationId={locationId || vendor.selectedLocationId}
-                  onEdited={async () => {
-                    const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
-                    setVendorDetail(updatedVendor);
-                  }}
-                />
+                    )}
+                  </TableRow>
+                ))
+              ) : (
+                <TableRow>
+                  <TableCell colSpan={showActionButton ? 6 : 5} className="text-center py-6 text-muted-foreground">
+                    No professionals found.
+                  </TableCell>
+                </TableRow>
               )}
-              {openAlert && <ConfirmAlert open={openAlert} onOpenChange={setAlertOpen} title="Delete Professional?" description={selectedProfessional ? `Are you sure you want to delete professional "${selectedProfessional.name}"?` : "Are you sure you want to delete this professional?"} confirmLabel="Delete" cancelLabel="Cancel" onConfirm={handleDeleteProfessional} />}
-            </div>
-          </div>
-        </>
+            </TableBody>
+          </Table>
+        </div>
+      </div>
+      {selectedProfessional && (
+        <EditProfessional
+          openEdit={openEditProfessional}
+          setEditProfessionalOpen={setEditProfessionalOpen}
+          vendorId={vendorId}
+          professional={selectedProfessional}
+          roles={roles}
+          locationId={locationId || vendor.selectedLocationId}
+          onEdited={async () => {
+            const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
+            setVendorDetail(updatedVendor);
+          }}
+        />
       )}
+      {openAlert && <ConfirmAlert open={openAlert} onOpenChange={setAlertOpen} title="Delete Professional?" description={selectedProfessional ? `Are you sure you want to delete professional "${selectedProfessional.name}"?` : "Are you sure you want to delete this professional?"} confirmLabel="Delete" cancelLabel="Cancel" onConfirm={handleDeleteProfessional} />}
     </>
   );
 }
