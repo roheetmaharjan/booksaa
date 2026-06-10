@@ -10,14 +10,14 @@ export default function VendorLayout({ children }) {
 
   return (
     <SidebarProvider
-      className="min-h-screen bg-slate-50"
+      className="min-h-screen bg-transparent bg-slate-50 overflow-hidden"
       style={{
         "--sidebar-width": "17rem",
         "--sidebar-width-mobile": "18rem",
       }}
     >
       <VendorSidebar startTransition={startTransition} />
-      <SidebarInset className="bg-slate-50">
+      <SidebarInset className="rounded-xl border shadow-lg overflow-y-auto content-area">
         {isPending ? <Loading /> : children}
       </SidebarInset>
     </SidebarProvider>

@@ -125,8 +125,8 @@ export function VendorSidebar({ startTransition }) {
   };
 
   return (
-    <Sidebar collapsible="icon" className="top-0 border-r border-slate-200 bg-white">
-      <SidebarHeader className="border-b border-slate-200 p-4">
+    <Sidebar collapsible="icon" className="top-0 !border-r-0">
+      <SidebarHeader className="p-4">
         <SidebarMenu>
           <SidebarMenuItem>
             {locations.length > 1 ? (
@@ -199,7 +199,7 @@ export function VendorSidebar({ startTransition }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="border-t border-slate-200 p-3">
+      <SidebarFooter className="p-2">
         <SidebarMenu>
           <SidebarMenuItem>
             <Popover open={profileOpen} onOpenChange={setProfileOpen}>
