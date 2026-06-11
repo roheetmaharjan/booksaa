@@ -88,21 +88,10 @@ model Bookings {
   createdAt   DateTime      @default(now())
   status      BookingStatus @default(PENDING)
   scheduledAt DateTime
-  customerName String?
-  customerEmail String?
-  customerPhone String?
-  notes       String?
-  paymentRequirement String @default("pay_later")
-  paymentAmount Float @default(0)
   userId      String
   user        Users         @relation(fields: [userId], references: [id])
   serviceId   String
   service     Service       @relation(fields: [serviceId], references: [id])
-  professionalId String?
-  professional Professional? @relation(fields: [professionalId], references: [id])
-
-  @@index([professionalId])
-  @@index([scheduledAt])
 }
 
 model Invitation {
@@ -147,16 +136,12 @@ model Service {
   id          String     @id @default(cuid())
   name        String
   description String?
-  color       String     @default("#2563eb")
   vendorId    String
   vendor      Vendors    @relation(fields: [vendorId], references: [id])
   locationId  String
   location    Location   @relation(fields: [locationId], references: [id])
   price       Float
   duration    Int
-  prepaymentType String @default("pay_later")
-  depositType String?
-  depositValue Float?
   booking     Bookings[]
 
   @@unique([name, vendorId, locationId])
@@ -176,7 +161,6 @@ model Professional {
   roleId    String
   role      ProfessionalRole   @relation(fields: [roleId], references: [id])
   status    ProfessionalStatus @default(INACTIVE)
-  bookings  Bookings[]
 }
 
 model ProfessionalRole {

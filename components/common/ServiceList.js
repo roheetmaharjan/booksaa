@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { usePathname } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 import { Card, CardContent, CardHeader } from "../ui/card";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 
 export default function ServiceList({ vendorId, locationId, canManage = false }) {
   const [openAddService, setAddServiceOpen] = useState(false);
@@ -104,68 +103,52 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
           )}
         </div>
         <div className="card-body">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-16">S.N</TableHead>
-                <TableHead className="w-20">Color</TableHead>
-                <TableHead className="w-1/6">Service Name</TableHead>
-                <TableHead className="w-1/3">Description</TableHead>
-                <TableHead className="w-28">Price</TableHead>
-                <TableHead className="w-1/6">
+          <table className="w-full boo-table border-collapse">
+            <thead>
+              <tr className="bg-gray-100">
+                <th className="text-left text-sm w-16 px-2 py-1 border-gray-300">S.N</th>
+                <th className="text-left w-1/6 text-sm px-2 py-1 border-gray-300">Service Name</th>
+                <th className="text-left w-1/3 text-sm px-2 py-1 border-gray-300">Description</th>
+                <th className="text-left w-28 text-sm px-2 py-1 border-gray-300">Price</th>
+                <th className="text-left w-1/6 text-sm px-2 py-1 border-gray-300">
                   Duration <small>(min)</small>
-                </TableHead>
-                {showActionButton && <TableHead className="w-1/5">Action</TableHead>}
-              </TableRow>
-            </TableHeader>
-
-            <TableBody>
+                </th>
+                {showActionButton && <th className="text-left text-sm px-2 py-1 w-1/5">Action</th>}
+              </tr>
+            </thead>
+            <tbody>
               {vendor.services && vendor.services.length > 0 ? (
                 vendor.services.map((service, index) => (
-                  <TableRow key={service.id}>
-                    <TableCell className="text-center">{index + 1}</TableCell>
-
-                    <TableCell>
-                      <span
-                        className="inline-block h-5 w-5 rounded-full border border-gray-200"
-                        style={{
-                          backgroundColor: service.color || "#2563eb",
-                        }}
-                      />
-                    </TableCell>
-
-                    <TableCell>{service.name}</TableCell>
-
-                    <TableCell>{service.description || "-"}</TableCell>
-
-                    <TableCell>$ {service.price}</TableCell>
-
-                    <TableCell>{service.duration} min</TableCell>
-
+                  <tr key={service.id}>
+                    <td className="p-2 text-center">{index + 1}</td>
+                    <td className="p-2">{service.name}</td>
+                    <td className="p-2">{service.description || "-"}</td>
+                    {/* <td className="p-2">{service.location.address}</td> */}
+                    <td className="p-2">$ {service.price}</td>
+                    <td className="p-2">{service.duration} min</td>
                     {showActionButton && (
-                      <TableCell>
+                      <td className="p-2">
                         <div className="flex gap-2">
                           <button className="text-gray-500" onClick={() => handleEditServiceClick(service)}>
                             <PencilLineIcon size={20} weight="duotone" />
                           </button>
-
                           <button className="text-red-500" onClick={() => handleDeleteServiceClick(service)}>
                             <TrashIcon size={20} weight="duotone" />
                           </button>
                         </div>
-                      </TableCell>
+                      </td>
                     )}
-                  </TableRow>
+                  </tr>
                 ))
               ) : (
-                <TableRow>
-                  <TableCell colSpan={showActionButton ? 7 : 6} className="text-center py-4">
+                <tr>
+                  <td colSpan={6} className="text-center py-2">
                     No services found.
-                  </TableCell>
-                </TableRow>
+                  </td>
+                </tr>
               )}
-            </TableBody>
-          </Table>
+            </tbody>
+          </table>
           {selectedService && (
             <EditService
               openEdit={openEditService}

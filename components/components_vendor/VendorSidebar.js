@@ -11,7 +11,7 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const primaryItems = [
   { title: "Dashboard", url: "/business", icon: Home },
-  { title: "Bookings", url: "/business/bookings", icon: CalendarClock },
+  { title: "Calendar", url: "/business/calendar", icon: CalendarClock },
   { title: "Services", url: "/business/services", icon: Scissors },
   { title: "Professionals", url: "/business/professionals", icon: Users },
   { title: "Reports", url: "/business/reports", icon: BarChart3 },
