@@ -2,31 +2,48 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import { BriefcaseBusiness, CalendarClock, CheckCircle2, Clock3, MapPin, Plus, Sparkles, Users } from "lucide-react";
+import {
+  BriefcaseBusiness,
+  CalendarClock,
+  Clock3,
+  MapPin,
+  Plus,
+  Sparkles,
+  Users,
+} from "lucide-react";
 import { toast } from "sonner";
 import AddService from "@/components/modals/AddService";
 import AddProfessional from "@/components/modals/AddProfessional";
 import AddLocation from "@/components/modals/AddLocation";
 import AddProfessionalAddon from "@/components/modals/AddProfessionalAddon";
 import BusinessHours from "@/components/common/BusinessHour";
-import { ActionTile, DashboardMetric, DetailCard, SetupCard, SummaryItem } from "@/components/components_vendor/VendorDashboardCards";
-import { Badge } from "@/components/ui/badge";
+import {
+  ActionTile,
+  DashboardMetric,
+  SetupCard,
+} from "@/components/components_vendor/VendorDashboardCards";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent } from "@/components/ui/card";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogFooter,
+} from "@/components/ui/dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function VendorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const [vendorId, setVendorId] = useState(null);
-  const [vendor, setVendor] = useState(null);
+
+  const [data, setData] = useState(null);       // raw API response { vendorId, vendor }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [roles, setRoles] = useState([]);
   const [rolesLoading, setRolesLoading] = useState(true);
   const [rolesError, setRolesError] = useState("");
+
   const [showSetupModal, setShowSetupModal] = useState(false);
   const [openAddService, setOpenAddService] = useState(false);
   const [openAddProfessional, setOpenAddProfessional] = useState(false);
@@ -35,103 +52,37 @@ export default function VendorPage() {
   const [addonType, setAddonType] = useState("professional");
   const [openBusinessHours, setOpenBusinessHours] = useState(false);
 
-  const locations = vendor?.locations || [];
-  const activeLocationCount = locations.filter((location) => location.isActive !== false).length;
-  const serviceCount = vendor?.services?.length || 0;
-  const subscriptionLocationLimit = Number(vendor?.subscriptionLocationLimit ?? vendor?.billingSummary?.activeLocationCount ?? vendor?.plan?.location ?? 0);
-  const subscriptionProfessionalLimit = Number(vendor?.subscriptionProfessionalLimit ?? vendor?.billingSummary?.professionalCount ?? vendor?.plan?.professional ?? 0);
-  const professionalCount = Number(vendor?.billingSummary?.actualProfessionalCount ?? vendor?.professionals?.length ?? 0);
-  const canAddProfessional = Boolean(vendorId) && professionalCount < subscriptionProfessionalLimit;
-  const canAddLocation = Boolean(vendorId) && activeLocationCount < subscriptionLocationLimit;
-  const hasReachedProfessionalLimit = Boolean(vendorId) && subscriptionProfessionalLimit > 0 && !canAddProfessional;
-  const hasReachedLocationLimit = Boolean(vendorId) && subscriptionLocationLimit > 0 && !canAddLocation;
-  const ownerName = [vendor?.user?.firstname, vendor?.user?.lastname].filter(Boolean).join(" ") || "Not assigned";
-  const selectedLocation = vendor?.selectedLocation || vendor?.location || locations[0];
+  // ─── Fetch vendor data ────────────────────────────────────────────────────
+  const fetchVendorData = async () => {
+    setLoading(true);
+    try {
+      const res = await fetch("/api/businesses/current", { cache: "no-store" });
+      const json = await res.json();
+      if (!res.ok) throw new Error(json.error || "Unable to resolve your business account.");
+      setData(json);
+      setError("");
+    } catch (err) {
+      setError(err.message || "Unable to resolve your business account.");
+      setData(null);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   useEffect(() => {
-    const setupStep = searchParams.get("setup");
-    let isActive = true;
-
-    const resolveCurrentVendor = async () => {
-      setLoading(true);
-      try {
-        const res = await fetch("/api/businesses/current", {
-          cache: "no-store",
-        });
-        const data = await res.json();
-
-        if (!res.ok) {
-          throw new Error(data.error || "Unable to resolve your business account.");
-        }
-
-        if (isActive) {
-          setVendorId(data.vendorId);
-          window.localStorage.removeItem("booksaa_vendorId");
-        }
-      } catch (err) {
-        if (isActive) {
-          setVendorId(null);
-          setVendor(null);
-          setError(err.message || "Unable to resolve your business account.");
-          setLoading(false);
-        }
-      }
-    };
-
-    resolveCurrentVendor();
-
-    setShowSetupModal(setupStep === "step4");
-
-    return () => {
-      isActive = false;
-    };
+    fetchVendorData();
+    setShowSetupModal(searchParams.get("setup") === "step4");
   }, [searchParams]);
 
-  useEffect(() => {
-    if (!vendorId) {
-      setLoading(false);
-      return;
-    }
-
-    const fetchVendor = async () => {
-      setLoading(true);
-      try {
-        const locationId = searchParams.get("locationId");
-        const url = locationId
-          ? `/api/businesses/${encodeURIComponent(vendorId)}?locationId=${encodeURIComponent(locationId)}`
-          : `/api/businesses/${encodeURIComponent(vendorId)}`;
-        const res = await fetch(url, {
-          cache: "no-store",
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || "Unable to load vendor details.");
-        }
-        setVendor(data);
-        setError("");
-      } catch (err) {
-        setError(err.message || "Unable to load vendor details.");
-        setVendor(null);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchVendor();
-  }, [vendorId, searchParams]);
-
+  // ─── Fetch professional roles ─────────────────────────────────────────────
   useEffect(() => {
     const fetchRoles = async () => {
       setRolesLoading(true);
       try {
-        const res = await fetch("/api/professional-roles", {
-          cache: "no-store",
-        });
-        const data = await res.json();
-        if (!res.ok) {
-          throw new Error(data.error || "Unable to load roles.");
-        }
-        setRoles(Array.isArray(data) ? data : []);
+        const res = await fetch("/api/professional-roles", { cache: "no-store" });
+        const json = await res.json();
+        if (!res.ok) throw new Error(json.error || "Unable to load roles.");
+        setRoles(Array.isArray(json) ? json : []);
         setRolesError("");
       } catch (err) {
         setRolesError(err.message || "Unable to load roles.");
@@ -139,113 +90,109 @@ export default function VendorPage() {
         setRolesLoading(false);
       }
     };
-
     fetchRoles();
   }, []);
 
-  const handleSkipSetup = () => {
-    setShowSetupModal(false);
-    router.replace("/business");
-  };
+  // ─── Derive values from API response ─────────────────────────────────────
+  const vendorId     = data?.vendorId ?? null;
+  const vendor       = data?.vendor ?? null;
+  const plan         = vendor?.plan ?? null;
+  const subscription = vendor?.subscription ?? null;   // from calculateBusinessSubscription
 
-  const refreshVendor = async () => {
-    if (!vendorId) return;
-    try {
-      const locationId = searchParams.get("locationId");
-      const url = locationId
-        ? `/api/businesses/${encodeURIComponent(vendorId)}?locationId=${encodeURIComponent(locationId)}`
-        : `/api/businesses/${encodeURIComponent(vendorId)}`;
-      const res = await fetch(url, {
-        cache: "no-store",
-      });
-      const data = await res.json();
-      if (res.ok) {
-        setVendor(data);
-      }
-    } catch {
-      // Keep the current dashboard state if a background refresh fails.
-    }
-  };
+  const locations          = vendor?.locations ?? [];
+  const activeLocationCount = subscription?.actualLocationCount ?? locations.filter((l) => l.isActive !== false).length;
+  const serviceCount        = vendor?.services?.length ?? 0;
 
-  const openUsageBilling = () => {
+  // Limits from calculateBusinessSubscription (plan base + addons)
+  const locationLimit     = subscription?.activeLocationCount ?? plan?.location ?? 0;
+  const professionalLimit = subscription?.professionalCount   ?? plan?.professional ?? 0;
+
+  // Actual usage
+  const actualProfessionals = subscription?.actualProfessionalCount ?? 0;
+
+  // Can add more?
+  const canAddProfessional      = Boolean(vendorId) && actualProfessionals < professionalLimit;
+  const canAddLocation          = Boolean(vendorId) && activeLocationCount < locationLimit;
+  const hasReachedProfessionalLimit = Boolean(vendorId) && professionalLimit > 0 && !canAddProfessional;
+  const hasReachedLocationLimit     = Boolean(vendorId) && locationLimit > 0 && !canAddLocation;
+
+  // Expiry date from calculateBusinessSubscription
+  const expiryDate = subscription?.expiryDate
+    ? new Date(subscription.expiryDate).toLocaleDateString()
+    : vendor?.trialEndsAt
+    ? new Date(vendor.trialEndsAt).toLocaleDateString()
+    : "—";
+
+  const selectedLocation = locations.find((l) => l.id === vendor?.defaultLocationId)
+    ?? locations[0]
+    ?? null;
+
+  // ─── Helpers ──────────────────────────────────────────────────────────────
+  const scrollToBilling = () => {
     document.getElementById("usage-billing")?.scrollIntoView({ behavior: "smooth", block: "start" });
   };
 
   const openAddon = (type = "professional") => {
     setAddonType(type);
     setOpenAddAddon(true);
-    openUsageBilling();
+    scrollToBilling();
+  };
+
+  const handleSkipSetup = () => {
+    setShowSetupModal(false);
+    router.replace("/business");
   };
 
   return (
     <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
+
+        {/* ── Header ──────────────────────────────────────────────────────── */}
         <header className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-start gap-3">
             <SidebarTrigger className="mt-1 md:hidden" />
             <div>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">Welcome back{vendor?.name ? `, ${vendor.name}` : ""}</h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Manage business details, services, professionals, and availability from one place.</p>
+              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
+                Welcome back{vendor?.name ? `, ${vendor.name}` : ""}
+              </h1>
+              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
+                Manage business details, services, professionals, and availability from one place.
+              </p>
             </div>
           </div>
-          {/* <div className="flex flex-wrap items-center gap-3">
-            <Button onClick={() => setOpenAddService(true)} disabled={!vendorId}>
-              <Plus className="mr-2 size-4" /> Add service
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (!canAddProfessional) {
-                  toast.error("Professional limit reached. Add an add-on from Usage & Billing to add more.");
-                  openUsageBilling();
-                  return;
-                }
-                setOpenAddProfessional(true);
-              }}
-              disabled={!vendorId || subscriptionProfessionalLimit === 0}
-            >
-              <Users className="mr-2 size-4" /> Add professional
-            </Button>
-            <Button
-              variant="secondary"
-              onClick={() => {
-                if (!canAddLocation) {
-                  toast.error("Location limit reached. Add an add-on from Usage & Billing to add more.");
-                  openUsageBilling();
-                  return;
-                }
-                setOpenAddLocation(true);
-              }}
-              disabled={!vendorId || subscriptionLocationLimit === 0}
-            >
-              <MapPin className="mr-2 size-4" /> Add location
-            </Button>
-            <Button variant="outline" onClick={() => setOpenBusinessHours(true)} disabled={!vendorId}>
-              <Clock3 className="mr-2 size-4" /> Business hours
-            </Button>
-          </div> */}
         </header>
 
+        {/* ── Body ────────────────────────────────────────────────────────── */}
         {loading ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">Loading your business details...</div>
+          <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">
+            Loading your business details...
+          </div>
         ) : error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>
+          <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">
+            {error}
+          </div>
         ) : vendor ? (
           <>
+            {/* Limit warning */}
             {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
               <Alert className="border-amber-200 bg-amber-50 text-amber-900">
                 <AlertTitle className="text-lg font-bold">Subscription limit reached</AlertTitle>
                 <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                   <span>
-                    {hasReachedProfessionalLimit && `You have used all ${subscriptionProfessionalLimit} professional slot${subscriptionProfessionalLimit !== 1 ? "s" : ""}. `}
-                    {hasReachedLocationLimit && `You have used all ${subscriptionLocationLimit} location slot${subscriptionLocationLimit !== 1 ? "s" : ""}. `}
+                    {hasReachedProfessionalLimit &&
+                      `You have used all ${professionalLimit} professional slot${professionalLimit !== 1 ? "s" : ""}. `}
+                    {hasReachedLocationLimit &&
+                      `You have used all ${locationLimit} location slot${locationLimit !== 1 ? "s" : ""}. `}
                     Add an add-on or review Usage & Billing to increase your limits.
                   </span>
                   <span className="flex flex-wrap gap-2">
-                    <Button size="sm" onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}>
+                    <Button
+                      size="sm"
+                      onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}
+                    >
                       Add add-on
                     </Button>
-                    <Button size="sm" variant="outline" onClick={openUsageBilling}>
+                    <Button size="sm" variant="outline" onClick={scrollToBilling}>
                       Usage & Billing
                     </Button>
                   </span>
@@ -253,33 +200,59 @@ export default function VendorPage() {
               </Alert>
             )}
 
+            {/* Metrics */}
             <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <DashboardMetric icon={BriefcaseBusiness} label="Services" value={serviceCount} detail="Bookable offerings in the selected location" tone="blue" />
-              <DashboardMetric icon={Users} label="Professionals" value={`${professionalCount}/${subscriptionProfessionalLimit || 0}`} detail="Team usage against your plan" tone="emerald" />
-              <DashboardMetric icon={MapPin} label="Locations" value={`${activeLocationCount}/${subscriptionLocationLimit || 0}`} detail={selectedLocation?.name || selectedLocation?.address || "No location selected"} tone="amber" />
-              <DashboardMetric icon={CalendarClock} label="Trial ends" value={vendor.trialEndsAt || "-"} detail={vendor.status || "Status unavailable"} />
+              <DashboardMetric
+                icon={BriefcaseBusiness}
+                label="Services"
+                value={serviceCount}
+                detail="Bookable offerings in the selected location"
+                tone="blue"
+              />
+              <DashboardMetric
+                icon={Users}
+                label="Professionals"
+                value={`${actualProfessionals}/${professionalLimit}`}
+                detail="Team usage against your plan"
+                tone="emerald"
+              />
+              <DashboardMetric
+                icon={MapPin}
+                label="Locations"
+                value={`${activeLocationCount}/${locationLimit}`}
+                detail={selectedLocation?.name ?? selectedLocation?.address ?? "No location"}
+                tone="amber"
+              />
+              <DashboardMetric
+                icon={CalendarClock}
+                label={subscription?.subscriptionStatus === "TRIAL_ACTIVE" ? "Trial ends" : "Renews"}
+                value={expiryDate}
+                detail={vendor?.subscriptionStatus ?? subscription?.subscriptionStatus ?? "—"}
+              />
             </section>
           </>
         ) : (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">No vendor data is available. Please sign in again or contact support.</div>
+          <div className="rounded-lg border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
+            No vendor data is available. Please sign in again or contact support.
+          </div>
         )}
       </div>
 
+      {/* ── Setup modal ───────────────────────────────────────────────────── */}
       <Dialog open={showSetupModal} onOpenChange={setShowSetupModal}>
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Finish your setup</DialogTitle>
-            <p className="mt-2 text-sm text-slate-600">Set up your first service, professional, and business hours now. You can skip this and continue later.</p>
+            <p className="mt-2 text-sm text-slate-600">
+              Set up your first service, professional, and business hours now. You can skip this and continue later.
+            </p>
           </DialogHeader>
           <div className="grid gap-4 py-6 md:grid-cols-3">
             <SetupCard
               icon={<Sparkles className="size-5 text-emerald-700" />}
               title="Add service"
               description="Create your first bookable offering."
-              onClick={() => {
-                setShowSetupModal(false);
-                setOpenAddService(true);
-              }}
+              onClick={() => { setShowSetupModal(false); setOpenAddService(true); }}
             />
             <SetupCard
               icon={<Users className="size-5 text-slate-700" />}
@@ -287,57 +260,43 @@ export default function VendorPage() {
               description={canAddProfessional ? "Invite a team member to your business." : "All professional slots are used."}
               onClick={() => {
                 setShowSetupModal(false);
-                if (canAddProfessional) {
-                  setOpenAddProfessional(true);
-                } else {
-                  openUsageBilling();
-                }
+                canAddProfessional ? setOpenAddProfessional(true) : scrollToBilling();
               }}
             />
             <SetupCard
               icon={<Clock3 className="size-5 text-slate-700" />}
               title="Business hours"
               description="Define the hours your business is available."
-              onClick={() => {
-                setShowSetupModal(false);
-                setOpenBusinessHours(true);
-              }}
+              onClick={() => { setShowSetupModal(false); setOpenBusinessHours(true); }}
             />
           </div>
           <DialogFooter className="flex flex-wrap items-center justify-between gap-3">
-            <Button variant="secondary" onClick={handleSkipSetup}>
-              Skip for now
-            </Button>
+            <Button variant="secondary" onClick={handleSkipSetup}>Skip for now</Button>
             <Button onClick={handleSkipSetup}>Continue to dashboard</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* ── Modals ────────────────────────────────────────────────────────── */}
       <AddService
         open={openAddService}
         setAddServiceOpen={setOpenAddService}
         vendorId={vendorId}
         locations={locations}
-        locationId={vendor?.selectedLocationId || locations[0]?.id}
-        onAdded={() => {
-          refreshVendor();
-          toast.success("Service added successfully.");
-        }}
+        locationId={vendor?.defaultLocationId ?? locations[0]?.id}
+        onAdded={() => { fetchVendorData(); toast.success("Service added successfully."); }}
       />
 
       <AddProfessional
         open={openAddProfessional}
         setAddProfessionalOpen={setOpenAddProfessional}
         vendorId={vendorId}
-        locationId={vendor?.selectedLocationId || locations[0]?.id}
+        locationId={vendor?.defaultLocationId ?? locations[0]?.id}
         vendor={vendor}
         roles={roles}
         loading={rolesLoading}
         error={rolesError}
-        onAdded={() => {
-          refreshVendor();
-          toast.success("Professional added successfully.");
-        }}
+        onAdded={() => { fetchVendorData(); toast.success("Professional added successfully."); }}
       />
 
       <AddLocation
@@ -345,13 +304,14 @@ export default function VendorPage() {
         setAddLocationOpen={setOpenAddLocation}
         vendorId={vendorId}
         vendor={vendor}
-        onAdded={() => {
-          refreshVendor();
-          toast.success("Location added successfully.");
-        }}
+        onAdded={() => { fetchVendorData(); toast.success("Location added successfully."); }}
       />
 
-      <AddProfessionalAddon open={openAddAddon} setAddProfessionalAddonOpen={setOpenAddAddon} type={addonType} />
+      <AddProfessionalAddon
+        open={openAddAddon}
+        setAddProfessionalAddonOpen={setOpenAddAddon}
+        type={addonType}
+      />
 
       <Dialog open={openBusinessHours} onOpenChange={setOpenBusinessHours}>
         <DialogContent className="sm:max-w-3xl">
@@ -360,17 +320,12 @@ export default function VendorPage() {
           </DialogHeader>
           <BusinessHours
             vendorId={vendorId}
-            locationId={vendor?.selectedLocationId || locations[0]?.id}
-            initialHours={vendor?.businessHours || []}
-            onSaved={() => {
-              refreshVendor();
-              toast.success("Business hours saved.");
-            }}
+            locationId={vendor?.defaultLocationId ?? locations[0]?.id}
+            initialHours={vendor?.businessHours ?? []}
+            onSaved={() => { fetchVendorData(); toast.success("Business hours saved."); }}
           />
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setOpenBusinessHours(false)}>
-              Close
-            </Button>
+            <Button variant="secondary" onClick={() => setOpenBusinessHours(false)}>Close</Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

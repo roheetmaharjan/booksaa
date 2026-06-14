@@ -50,7 +50,15 @@ model Vendors {
   user                Users          @relation(fields: [userId], references: [id])
   isComplete          Boolean        @default(false)
   professionals       Professional[]
-  subscriptions        VendorSubscription[]
+  subscriptions       VendorSubscription[]
+
+  stripeCustomerId    String?        @unique
+  subscriptionExpiresAt DateTime?
+  autoRenewEnabled    Boolean        @default(true)
+  lastPaymentAttemptAt DateTime?
+
+  paymentMethods      VendorPaymentMethod[]
+  paymentHistory      SubscriptionPaymentHistory[]
 }
 
 model Category {
@@ -200,6 +208,7 @@ model VendorSubscription {
   createdAt DateTime @default(now())
 
   entitlements SubscriptionEntitlement[]
+  paymentHistory SubscriptionPaymentHistory[]
 
   @@index([vendorId, createdAt])
 }
@@ -221,6 +230,52 @@ model SubscriptionEntitlement {
   createdAt      DateTime @default(now())
 
   @@index([subscriptionId, type])
+}
+
+model StripeAccount {
+  id                  String   @id @default(cuid())
+  stripeSecretKey     String   @unique
+  stripePublishableKey String  @unique
+  live                Boolean  @default(false)
+  setupComplete       Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+}
+
+model VendorPaymentMethod {
+  id                  String   @id @default(cuid())
+  vendorId            String
+  vendor              Vendors  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String @unique
+  isDefault           Boolean  @default(false)
+  last4Digits         String?
+  brand               String?
+  expiryMonth         Int?
+  expiryYear          Int?
+  createdAt           DateTime @default(now())
+
+  @@index([vendorId])
+}
+
+model SubscriptionPaymentHistory {
+  id                    String   @id @default(cuid())
+  vendorId              String
+  vendor                Vendors  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  subscriptionId        String?
+  subscription          VendorSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  type                  String   // "INITIAL" | "RENEWAL" | "ADDON"
+  amount                Float
+  currency              String   @default("USD")
+  stripePaymentIntentId String?
+  status                String   // "SUCCEEDED" | "FAILED" | "PENDING"
+  chargedAt             DateTime?
+  nextRetryAt           DateTime?
+  failureMessage        String?
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+
+  @@index([vendorId])
+  @@index([chargedAt])
 }
 
 enum UserStatus {

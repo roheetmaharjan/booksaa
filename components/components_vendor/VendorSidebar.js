@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users } from "lucide-react";
+import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users,Contact  } from "lucide-react";
 import { BellIcon, CreditCardIcon, RocketLaunchIcon, SignOutIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { signOut } from "@/lib/auth-client";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar";
@@ -14,6 +14,7 @@ const primaryItems = [
   { title: "Calendar", url: "/business/calendar", icon: CalendarClock },
   { title: "Services", url: "/business/services", icon: Scissors },
   { title: "Professionals", url: "/business/professionals", icon: Users },
+  { title: "Customers", url: "/business/customers", icon: Contact },
   { title: "Reports", url: "/business/reports", icon: BarChart3 },
 ];
 
