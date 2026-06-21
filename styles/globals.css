@@ -88,6 +88,12 @@ body {
   }
 }
 @layer components{
+  .section-heading{
+    @apply text-center text-4xl font-bold mb-4
+  }
+  .btn-primary{
+    @apply bg-primary text-slate-900 font-semibold px-7 py-4 rounded-xl hover:opacity-90 transition
+  }
   .card{
     @apply bg-white overflow-hidden
   }
@@ -172,7 +178,7 @@ body {
 }
 
 .container{
-  margin: 0 auto;
+  @apply max-w-7xl mx-auto
 }
 
 @layer base {

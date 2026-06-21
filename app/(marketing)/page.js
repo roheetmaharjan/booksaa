@@ -1,11 +1,13 @@
-import Hero from "@/components/components_marketing/Hero";
-import About from "@/components/components_marketing/About";
+import HeroSection from "@/components/components_marketing/HeroSection";
+import TargetAudience from "@/components/components_marketing/TargetAudience";
+import Solution from "@/components/components_marketing/Solution";
 
 export default function MarketingHome() {
   return (
     <div className="">
-      <Hero />
-      <About />
+      <HeroSection />
+      <TargetAudience />
+      <Solution />
     </div>
   );
 }

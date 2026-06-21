@@ -14,7 +14,7 @@ const config = {
   	extend: {
   		colors: {
   			primary: {
-  				DEFAULT: '#E93A20',
+  				DEFAULT: '#B5E86A',
   				light: '#E93A20',
   				dark: '#E93A20',
   				foreground: 'hsl(var(--primary-foreground))'
