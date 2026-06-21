@@ -9,7 +9,13 @@ export async function GET(req, { params }) {
     }
 
     const vendor = await prisma.vendors.findUnique({
-      where: { id: vendorId }
+      where: { id: vendorId },
+      select: {
+        id: true,
+        name: true,
+        image: true,
+        status: true,
+      },
     });
 
     if (!vendor) {

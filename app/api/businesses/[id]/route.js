@@ -81,13 +81,18 @@ export async function GET(req, { params }) {
 
     let accountStatus = vendor.status;
 
-    if (vendor.trialEndsAt) {
+    if (vendor.status === AccountStatus.TRIAL_ACTIVE && vendor.trialEndsAt) {
       if (now > trialEnd) {
         accountStatus = AccountStatus.TRIAL_EXPIRED;
       } else {
-        const diffMs = trialEnd - now;
-        const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-        accountStatus = diffDays <= 3 ? AccountStatus.TRIAL_EXPIRING : AccountStatus.TRIAL_ACTIVE;
+        const diffDays = Math.ceil(
+          (trialEnd.getTime() - now.getTime()) / (1000 * 60 * 60 * 24)
+        );
+
+        accountStatus =
+          diffDays <= 3
+            ? AccountStatus.TRIAL_EXPIRING
+            : AccountStatus.TRIAL_ACTIVE;
       }
     }
 

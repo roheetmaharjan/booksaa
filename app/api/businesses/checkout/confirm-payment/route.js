@@ -1,7 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
-import { confirmPaymentIntent, getStripeAccount, attachPaymentMethod, setDefaultPaymentMethod } from "@/lib/stripe-client";
+import { confirmPaymentIntent, getStripeClient, attachPaymentMethod, setDefaultPaymentMethod } from "@/lib/stripe-client";
 import { createVendorSubscription } from "@/lib/subscriptions";
 import { sendSubscriptionUpgradeEmail } from "@/lib/emails/subscriptionUpgradeSuccess";
 
@@ -13,7 +13,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { paymentIntentId, planId, paymentMethodId, saveCard } = await request.json();
+    const { paymentIntentId, planId, paymentMethodId, saveCard, locationCount, professionalCount } = await request.json();
 
     if (!paymentIntentId || !planId) {
       return NextResponse.json({ error: "paymentIntentId and planId are required" }, { status: 400 });
@@ -56,9 +56,13 @@ export async function POST(request) {
       return NextResponse.json({ error: `Payment failed with status: ${paymentIntent.status}` }, { status: 400 });
     }
 
+    const stripeCustomerId = paymentIntent.customer;
+
     // Attach payment method if provided and saveCard is true
     if (paymentMethodId && saveCard) {
       try {
+        const stripe = await getStripeClient();
+
         await attachPaymentMethod(paymentMethodId, vendor.id);
 
         // Set as default if no default exists
@@ -69,18 +73,23 @@ export async function POST(request) {
         if (!existingMethods) {
           await setDefaultPaymentMethod(paymentMethodId, vendor.id);
         }
-
+        // const stripe = getStripeAccount();
+        const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+        
         // Save payment method to database
         await prisma.vendorPaymentMethod.create({
           data: {
             vendorId: vendor.id,
             stripePaymentMethodId: paymentMethodId,
             isDefault: !existingMethods,
+            brand: pm.card?.brand ?? null,
+            last4Digits: pm.card?.last4 ?? null,      
+            expiryMonth: pm.card?.exp_month ?? null, 
+            expiryYear: pm.card?.exp_year ?? null,  
           },
         });
       } catch (error) {
         console.error("Error saving payment method:", error);
-        // Don't fail the whole request, payment already succeeded
       }
     }
 
@@ -95,6 +104,7 @@ export async function POST(request) {
         planId: planId,
         subscriptionExpiresAt: expiryDate,
         autoRenewEnabled: true,
+        status: "ACTIVE",
       },
     });
 
@@ -114,8 +124,8 @@ export async function POST(request) {
         plan,
         planId: plan.id,
         status: "ACTIVE",
-        locationCount: plan.location || 1,
-        professionalCount: plan.professional || 1,
+        locationCount,
+        professionalCount,
       });
     });
 

@@ -4,10 +4,12 @@ import { useEffect, useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import UpgradeButton from "@/components/business/UpgradeButton";
 import { api } from "@/utils/api";
-import { AlertTriangle, CreditCard, RefreshCw, Check, MapPin, Users } from "lucide-react";
+import { AlertTriangle, CreditCard, MapPin, Users } from "lucide-react";
 
 export default function BillingUsagePage() {
   const [data, setData] = useState(null); // raw API response { vendorId, vendor }
@@ -51,6 +53,7 @@ export default function BillingUsagePage() {
       const result = await api.put("/api/businesses/toggle", {
         enabled: !autoRenewEnabled,
       });
+
       setAutoRenewEnabled(result.autoRenewEnabled);
     } catch (err) {
       setError(err.message);
@@ -102,226 +105,218 @@ export default function BillingUsagePage() {
   const actualProfessionals = subscription?.actualProfessionalCount ?? 0;
   const actualLocations = subscription?.actualLocationCount ?? 0;
 
-  // Extra add-on counts (above plan base)
-  const extraProfessionals = subscription?.extraProfessionals ?? 0;
-  const extraLocations = subscription?.extraLocations ?? 0;
 
   // Pricing breakdown
   const basePrice = subscription?.basePrice ?? plan?.price ?? 0;
-  const extraLocationTotal = subscription?.extraLocationTotal ?? 0;
-  const extraProfessionalTotal = subscription?.extraProfessionalTotal ?? 0;
   const totalPrice = subscription?.totalPrice ?? basePrice;
   const billingCycle = subscription?.billingCycle ?? plan?.billing_cycle ?? "monthly";
 
   return (
-    <div className="p-6 max-w-3xl space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold">Billing & Subscription</h1>
-        <p className="text-gray-600">Manage your subscription and payment methods</p>
+    <div className="page-content">
+      <div className="page-header">
+        <div className="page-container gap-1">
+          <h1 className="page-title">Billing & Subscription</h1>
+          <p className="text-gray-600">Manage your subscription and payment methods</p>
+        </div>
       </div>
+      <div className="page-container">
 
-      {error && (
-        <Alert variant="destructive">
-          <AlertDescription>{error}</AlertDescription>
-        </Alert>
-      )}
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
 
-      {showWarning && expiryDate && (
-        <Alert>
-          <AlertTriangle className="h-4 w-4" />
-          <AlertDescription>
-            Your subscription expires on {expiryDate.toLocaleDateString()}.{paymentMethods.length === 0 && " Please add a payment method to enable auto-renewal."}
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* ── Current Subscription ─────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="card-title">Current Subscription</CardTitle>
-              <CardDescription>Your active plan and renewal details</CardDescription>
-            </div>
-            {subscriptionStatus && (
-              <Badge variant="outline" className={subscriptionStatus === "ACTIVE" ? "bg-green-50 text-green-700 border-green-200" : subscriptionStatus === "TRIAL_ACTIVE" ? "bg-blue-50 text-blue-700 border-blue-200" : "bg-gray-50 text-gray-700"}>
-                {subscriptionStatus?.replace("_", " ")}
-              </Badge>
-            )}
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {/* Plan overview */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div>
-              <p className="text-sm text-gray-500">Plan</p>
-              <p className="text-lg font-semibold">{plan?.name ?? "N/A"}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Total Price</p>
-              <p className="text-lg font-semibold">
-                <span>${Number(totalPrice).toFixed(2)}</span>
-                <span className="text-sm font-normal text-gray-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Billing Cycle</p>
-              <p className="text-lg font-semibold capitalize">{billingCycle}</p>
-            </div>
-            <div>
-              <p className="text-sm text-gray-500">Expires</p>
-              <p className="text-lg font-semibold">{expiryDate ? expiryDate.toLocaleDateString() : "Not set"}</p>
-            </div>
-          </div>
-
-          <hr />
-
-          <div className="space-y-4">
-            <h3 className="font-semibold">Includes</h3>
-            <p>{locationLimit} Location</p>
-            <p>{professionalLimit} Professionals</p>
-          </div>
-          <hr />
-
-          {/* Usage: locations */}
-          <div className="space-y-4">
-            <h3 className="font-semibold">Current Plan Usage</h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Locations */}
-              <div className="bg-gray-50 rounded-lg p-4 border space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <MapPin className="h-4 w-4 text-gray-500" />
-                    Locations
+        {showWarning && expiryDate && (
+          <Alert>
+            <AlertTriangle className="h-4 w-4" />
+            <AlertDescription>
+              Your subscription expires on {expiryDate.toLocaleDateString()}.{paymentMethods.length === 0 && " Please add a payment method to enable auto-renewal."}
+            </AlertDescription>
+          </Alert>
+        )}
+        <div className="grid grid-cols-12 gap-5">
+          <div className="col-span-12 lg:col-span-7">
+            {/* ── Current Subscription ─────────────────────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <div className="flex items-center justify-between gap-5">
+                  <div>
+                    <CardTitle className="card-title mb-2">Current Subscription</CardTitle>
+                    <CardDescription>Your active plan and renewal details</CardDescription>
                   </div>
-                  <span className="text-sm text-gray-500">
-                    {actualLocations} of {locationLimit} used
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${Math.min((actualLocations / locationLimit) * 100, 100)}%` }} />
-                </div>
-                <div className="flex items-center justify-between text-xs text-gray-500">
-                  {extraLocations > 0 && (
-                    <span className="text-blue-600">
-                      +{extraLocations} add-on × ${Number(plan?.extraLocationPrice ?? 0).toFixed(2)} = ${Number(extraLocationTotal).toFixed(2)}
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              {/* Professionals */}
-              <div className="bg-gray-50 rounded-lg p-4 border space-y-2">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2 text-sm font-medium">
-                    <Users className="h-4 w-4 text-gray-500" />
-                    Professionals
-                  </div>
-                  <span className="text-sm text-gray-500">
-                    {actualProfessionals} of {professionalLimit} Used
-                  </span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${Math.min((actualProfessionals / professionalLimit) * 100, 100)}%` }} />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div className="border-t pt-4">
-            <UpgradeButton vendor={vendor} showWarning={showWarning} />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ── Payment Methods ──────────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CreditCard className="h-5 w-5" />
-            Payment Methods
-          </CardTitle>
-          <CardDescription>Manage your saved payment methods</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {paymentMethods.length === 0 ? (
-            <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
-              <p className="mb-3">No payment methods saved. Add one to enable auto-renewal.</p>
-              <UpgradeButton vendor={vendor} isCompact showWarning={showWarning} />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {paymentMethods.map((method) => (
-                <div key={method.id} className="flex items-center justify-between bg-gray-50 p-4 rounded-lg border">
-                  <div className="flex items-center gap-3">
-                    <CreditCard className="text-gray-400 h-5 w-5" />
-                    <div>
-                      <p className="font-semibold">
-                        {method.brand || "Card"} ending in {method.last4Digits}
-                      </p>
-                      <p className="text-sm text-gray-600">
-                        Expires {method.expiryMonth}/{method.expiryYear}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {method.isDefault && (
-                      <Badge variant="outline" className="bg-green-50">
-                        Default
+                  <div className="flex flex-wrap justify-between flex-1 gap-3 items-center">
+                    {subscriptionStatus && (
+                      <Badge variant="outline" className={subscriptionStatus === "ACTIVE" ? "bg-green-50 text-green-700 border-green-200 text-[10px]" : subscriptionStatus === "TRIAL_ACTIVE" ? "bg-blue-50 text-blue-700 border-blue-200 text-[10px]" : "bg-gray-50 text-gray-700 text-[10px]"}>
+                        {subscriptionStatus?.replace("_", " ")}
                       </Badge>
                     )}
-                    <Button variant="ghost" size="sm" onClick={() => handleDeletePaymentMethod(method.id)}>
-                      Remove
-                    </Button>
+                    <UpgradeButton vendor={vendor} showWarning={showWarning} />
                   </div>
                 </div>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                {/* Plan overview */}
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div>
+                    <p className="text-sm text-gray-500">Plan</p>
+                    <p className="text-base font-semibold">{plan?.name ?? "N/A"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Total Price</p>
+                    <p className="text-base font-semibold">
+                      <span>${Number(totalPrice).toFixed(2)}</span>
+                      <span className="text-sm font-normal text-gray-500">/{billingCycle === "monthly" ? "mo" : "yr"}</span>
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Billing Cycle</p>
+                    <p className="text-base font-semibold capitalize">{billingCycle}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm text-gray-500">Expires</p>
+                    <p className="text-base font-semibold">{expiryDate ? expiryDate.toLocaleDateString() : "Not set"}</p>
+                  </div>
+                </div>
 
-      {/* ── Auto-Renewal ─────────────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <RefreshCw className="h-5 w-5" />
-            Auto-Renewal Settings
-          </CardTitle>
-          <CardDescription>Manage automatic subscription renewal</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg border">
-            <div>
-              <h3 className="font-semibold">Automatic Renewal</h3>
-              <p className="text-sm text-gray-600 mt-1">{autoRenewEnabled ? "Your subscription will automatically renew on the expiry date" : "Auto-renewal is disabled. Your subscription will not renew automatically."}</p>
-            </div>
-            <Button onClick={handleToggleAutoRenewal} variant={autoRenewEnabled ? "default" : "outline"}>
-              {autoRenewEnabled ? "Disable" : "Enable"}
-            </Button>
+                <hr />
+
+                <div className="space-y-1">
+                  <h3 className="font-semibold">Includes</h3>
+                  <p>{locationLimit} Location</p>
+                  <p>{professionalLimit} Professionals</p>
+                </div>
+                <hr/>
+
+                {/* Usage: locations */}
+                <div className="space-y-2">
+                  <h3 className="font-semibold">Current Plan Usage</h3>
+
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    {/* Locations */}
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <MapPin className="h-4 w-4 text-gray-500" />
+                          Locations
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {actualLocations} of {locationLimit} used
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${Math.min((actualLocations / locationLimit) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+
+                    {/* Professionals */}
+                    <div className=" space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-2 text-sm font-medium">
+                          <Users className="h-4 w-4 text-gray-500" />
+                          Professionals
+                        </div>
+                        <span className="text-sm text-gray-500">
+                          {actualProfessionals} of {professionalLimit} Used
+                        </span>
+                      </div>
+                      <div className="w-full bg-gray-200 rounded-full h-2">
+                        <div className="bg-blue-500 h-2 rounded-full transition-all" style={{ width: `${Math.min((actualProfessionals / professionalLimit) * 100, 100)}%` }} />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
+          <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
+            {/* ── Payment Methods ──────────────────────────────────────────────────── */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="card-title">
+                  Payment Methods
+                </CardTitle>
+                <CardDescription>Manage your saved payment methods</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4 h-full">
+                {paymentMethods.length === 0 ? (
+                  <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-yellow-800">
+                    <p className="mb-3">No payment methods saved. Add one to enable auto-renewal.</p>
+                    <UpgradeButton vendor={vendor} isCompact showWarning={showWarning} />
+                  </div>
+                ) : (
+                  <div className="space-y-3">
+                    {paymentMethods.map((method) => (
+                      <div key={method.id} className="flex items-center justify-between px-4 py-5 rounded-xl border">
+                        <div className="flex items-center gap-3">
+                          <CreditCard className="text-gray-400 h-5 w-5" />
+                          <div>
+                            <p className="font-semibold">
+                              xxx-xxxx-xxxx-{method.last4Digits}
+                            </p>
+                            <div className="flex flex-row gap-2 mt-1">
+                              <p className="text-sm text-gray-600">
+                                Expires: {method.expiryMonth}/{method.expiryYear}
+                              </p> <span className="text-gray-300">|</span> 
+                              <p className="text-sm text-gray-600">Type: {method.brand || "Card"}</p>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {method.isDefault && (
+                            <Badge variant="outline" className="bg-gray-50 text-[10px] uppercase">
+                              Default
+                            </Badge>
+                          )}
+                          <Button variant="link" size="sm" onClick={() => handleDeletePaymentMethod(method.id)}>
+                            Remove
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+            {/* ── Auto-Renewal ─────────────────────────────────────────────────────── */}
+            <Card>
+              <CardContent>
+                <div className="flex items-center justify-between pt-5">
+                  <div>
+                    <CardTitle className="card-title mb-2">
+                      Automatic Renewal
+                    </CardTitle>
+                    <p className="text-sm text-gray-600 mt-1">{autoRenewEnabled ? "Your subscription will automatically renew on the expiry date" : "Auto-renewal is disabled. Your subscription will not renew automatically."}</p>
+                  </div>
+                  <Switch
+                    id="auto-renew"
+                    checked={autoRenewEnabled}
+                    onCheckedChange={handleToggleAutoRenewal}
+                  />
+                </div>
 
-          {!autoRenewEnabled && (
-            <Alert className="mt-4">
-              <AlertDescription>Without auto-renewal, you'll need to manually renew your subscription before it expires.</AlertDescription>
-            </Alert>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* ── Billing History ──────────────────────────────────────────────────── */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Billing History</CardTitle>
-          <CardDescription>Your recent transactions</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="text-center py-12 text-gray-500">
-            <p>Billing history will appear here after your first payment.</p>
+                {!autoRenewEnabled && (
+                  <Alert className="mt-4">
+                    <AlertDescription>Without auto-renewal, you'll need to manually renew your subscription before it expires.</AlertDescription>
+                  </Alert>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </CardContent>
-      </Card>
-    </div>
+        </div>
+        {/* ── Billing History ──────────────────────────────────────────────────── */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="card-title">Billing History</CardTitle>
+            <CardDescription>Your recent transactions</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="text-center py-12 text-gray-500">
+              <p>No Billing History</p>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+      </div>
   );
 }

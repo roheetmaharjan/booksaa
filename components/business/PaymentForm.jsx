@@ -19,7 +19,7 @@ function getStripe() {
   return stripePromise;
 }
 
-function PaymentFormContent({ planId, onSuccess }) {
+function PaymentFormContent({ planId, locationCount, professionalCount, onSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -42,15 +42,26 @@ function PaymentFormContent({ planId, onSuccess }) {
         redirect: 'if_required',
       });
 
+      console.log('Stripe confirmPayment result:', result); // <-- ADD THIS
+
       if (result.error) {
         setError(result.error.message);
       } else if (result.paymentIntent) {
+        console.log('Sending to confirm-payment:', { // <-- ADD THIS
+          paymentIntentId: result.paymentIntent.id,
+          planId,
+          locationCount,
+          professionalCount,
+        }); // <-- ADD THIS
+
         // Confirm payment on backend
         const confirmation = await api.post('/api/businesses/checkout/confirm-payment', {
           paymentIntentId: result.paymentIntent.id,
           planId,
           paymentMethodId: result.paymentIntent.payment_method,
           saveCard,
+          locationCount,
+          professionalCount,
         });
 
         if (confirmation.success) {
@@ -101,7 +112,7 @@ function PaymentFormContent({ planId, onSuccess }) {
   );
 }
 
-export default function PaymentForm({ planId, amount, clientSecret, publishableKey, onSuccess }) {
+export default function PaymentForm({ planId, locationCount, professionalCount, amount, clientSecret, publishableKey, onSuccess }) {
   if (!clientSecret) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
@@ -112,7 +123,7 @@ export default function PaymentForm({ planId, amount, clientSecret, publishableK
 
   return (
     <Elements stripe={getStripe()} options={{ clientSecret }}>
-      <PaymentFormContent planId={planId} onSuccess={onSuccess} />
+      <PaymentFormContent planId={planId} locationCount={locationCount} professionalCount={professionalCount} onSuccess={onSuccess}  />
     </Elements>
   );
 }

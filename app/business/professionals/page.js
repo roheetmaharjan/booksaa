@@ -97,7 +97,9 @@ export default function ProfessionalsPage() {
     <div className="page-content">
       {/* Header with Location Selector */}
       <div className="page-header">
-        <h1 className="page-title">Professionals</h1>
+        <div className="page-container">
+          <h1 className="page-title">Professionals</h1>
+        </div>
       </div>
       {/* Professionals List */}
       <div className="page-body">

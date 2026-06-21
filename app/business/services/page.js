@@ -96,8 +96,10 @@ export default function ServicesPage() {
     <div className="page-content">
       {/* Header with Location Selector */}
       <div className="page-header">
-        <div className="flex items-center justify-between">
-          <h1 className="page-title">Services</h1>
+        <div className="page-container">
+          <div className="flex items-center justify-between">
+            <h1 className="page-title">Services</h1>
+          </div>
         </div>
       </div>
 

@@ -2,42 +2,24 @@
 
 import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  BriefcaseBusiness,
-  CalendarClock,
-  Clock3,
-  MapPin,
-  Plus,
-  Sparkles,
-  Users,
-} from "lucide-react";
+import { BriefcaseBusiness, CalendarClock, Clock3, MapPin, Plus, Sparkles, Users } from "lucide-react";
 import { toast } from "sonner";
 import AddService from "@/components/modals/AddService";
 import AddProfessional from "@/components/modals/AddProfessional";
 import AddLocation from "@/components/modals/AddLocation";
 import AddProfessionalAddon from "@/components/modals/AddProfessionalAddon";
 import BusinessHours from "@/components/common/BusinessHour";
-import {
-  ActionTile,
-  DashboardMetric,
-  SetupCard,
-} from "@/components/components_vendor/VendorDashboardCards";
+import { ActionTile, DashboardMetric, SetupCard } from "@/components/components_vendor/VendorDashboardCards";
 import { Button } from "@/components/ui/button";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import {
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogFooter,
-} from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 
 export default function VendorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
 
-  const [data, setData] = useState(null);       // raw API response { vendorId, vendor }
+  const [data, setData] = useState(null); // raw API response { vendorId, vendor }
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [roles, setRoles] = useState([]);
@@ -94,38 +76,32 @@ export default function VendorPage() {
   }, []);
 
   // ─── Derive values from API response ─────────────────────────────────────
-  const vendorId     = data?.vendorId ?? null;
-  const vendor       = data?.vendor ?? null;
-  const plan         = vendor?.plan ?? null;
-  const subscription = vendor?.subscription ?? null;   // from calculateBusinessSubscription
+  const vendorId = data?.vendorId ?? null;
+  const vendor = data?.vendor ?? null;
+  const plan = vendor?.plan ?? null;
+  const subscription = vendor?.subscription ?? null; // from calculateBusinessSubscription
 
-  const locations          = vendor?.locations ?? [];
+  const locations = vendor?.locations ?? [];
   const activeLocationCount = subscription?.actualLocationCount ?? locations.filter((l) => l.isActive !== false).length;
-  const serviceCount        = vendor?.services?.length ?? 0;
+  const serviceCount = vendor?.services?.length ?? 0;
 
   // Limits from calculateBusinessSubscription (plan base + addons)
-  const locationLimit     = subscription?.activeLocationCount ?? plan?.location ?? 0;
-  const professionalLimit = subscription?.professionalCount   ?? plan?.professional ?? 0;
+  const locationLimit = subscription?.activeLocationCount ?? plan?.location ?? 0;
+  const professionalLimit = subscription?.professionalCount ?? plan?.professional ?? 0;
 
   // Actual usage
   const actualProfessionals = subscription?.actualProfessionalCount ?? 0;
 
   // Can add more?
-  const canAddProfessional      = Boolean(vendorId) && actualProfessionals < professionalLimit;
-  const canAddLocation          = Boolean(vendorId) && activeLocationCount < locationLimit;
+  const canAddProfessional = Boolean(vendorId) && actualProfessionals < professionalLimit;
+  const canAddLocation = Boolean(vendorId) && activeLocationCount < locationLimit;
   const hasReachedProfessionalLimit = Boolean(vendorId) && professionalLimit > 0 && !canAddProfessional;
-  const hasReachedLocationLimit     = Boolean(vendorId) && locationLimit > 0 && !canAddLocation;
+  const hasReachedLocationLimit = Boolean(vendorId) && locationLimit > 0 && !canAddLocation;
 
   // Expiry date from calculateBusinessSubscription
-  const expiryDate = subscription?.expiryDate
-    ? new Date(subscription.expiryDate).toLocaleDateString()
-    : vendor?.trialEndsAt
-    ? new Date(vendor.trialEndsAt).toLocaleDateString()
-    : "—";
+  const expiryDate = subscription?.expiryDate ? new Date(subscription.expiryDate).toLocaleDateString() : vendor?.trialEndsAt ? new Date(vendor.trialEndsAt).toLocaleDateString() : "—";
 
-  const selectedLocation = locations.find((l) => l.id === vendor?.defaultLocationId)
-    ?? locations[0]
-    ?? null;
+  const selectedLocation = locations.find((l) => l.id === vendor?.defaultLocationId) ?? locations[0] ?? null;
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
   const scrollToBilling = () => {
@@ -144,98 +120,64 @@ export default function VendorPage() {
   };
 
   return (
-    <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-6">
-
-        {/* ── Header ──────────────────────────────────────────────────────── */}
-        <header className="flex flex-col gap-4 rounded-lg border border-slate-200 bg-white p-4 shadow-sm lg:flex-row lg:items-center lg:justify-between">
-          <div className="flex items-start gap-3">
-            <SidebarTrigger className="mt-1 md:hidden" />
-            <div>
-              <h1 className="mt-3 text-2xl font-semibold tracking-tight text-slate-950 sm:text-3xl">
-                Welcome back{vendor?.name ? `, ${vendor.name}` : ""}
-              </h1>
-              <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">
-                Manage business details, services, professionals, and availability from one place.
-              </p>
+    <div className="page-content">
+      <div className="page-header">
+        <div className="page-container">
+          {/* ── Header ──────────────────────────────────────────────────────── */}
+          <header className="">
+            <div className="flex items-start gap-2">
+              <SidebarTrigger className="mt-1 md:hidden" />
+              <div>
+                <h1 className="page-title">Welcome back {vendor?.name ? `, ${vendor.name}` : ""}</h1>
+                <p className="mt-2 max-w-2xl text-sm leading-6 text-slate-600">Manage business details, services, professionals, and availability from one place.</p>
+              </div>
             </div>
-          </div>
-        </header>
+          </header>
+        </div>
+      </div>
+      <div className="page-body pt-3">
+        <div className="page-container">
+          {/* ── Body ────────────────────────────────────────────────────────── */}
+          {loading ? (
+            <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">Loading your business details...</div>
+          ) : error ? (
+            <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>
+          ) : vendor ? (
+            <>
+              {/* Limit warning */}
+              {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
+                <Alert className="border-amber-200 bg-amber-50 text-amber-900">
+                  <AlertTitle className="text-lg font-bold">Subscription limit reached</AlertTitle>
+                  <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                    <span>
+                      {hasReachedProfessionalLimit && `You have used all ${professionalLimit} professional slot${professionalLimit !== 1 ? "s" : ""}. `}
+                      {hasReachedLocationLimit && `You have used all ${locationLimit} location slot${locationLimit !== 1 ? "s" : ""}. `}
+                      Add an add-on or review Usage & Billing to increase your limits.
+                    </span>
+                    <span className="flex flex-wrap gap-2">
+                      <Button size="sm" onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}>
+                        Add add-on
+                      </Button>
+                      <Button size="sm" variant="outline" onClick={scrollToBilling}>
+                        Usage & Billing
+                      </Button>
+                    </span>
+                  </AlertDescription>
+                </Alert>
+              )}
 
-        {/* ── Body ────────────────────────────────────────────────────────── */}
-        {loading ? (
-          <div className="rounded-lg border border-slate-200 bg-white p-10 text-center text-slate-600 shadow-sm">
-            Loading your business details...
-          </div>
-        ) : error ? (
-          <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">
-            {error}
-          </div>
-        ) : vendor ? (
-          <>
-            {/* Limit warning */}
-            {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
-              <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                <AlertTitle className="text-lg font-bold">Subscription limit reached</AlertTitle>
-                <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                  <span>
-                    {hasReachedProfessionalLimit &&
-                      `You have used all ${professionalLimit} professional slot${professionalLimit !== 1 ? "s" : ""}. `}
-                    {hasReachedLocationLimit &&
-                      `You have used all ${locationLimit} location slot${locationLimit !== 1 ? "s" : ""}. `}
-                    Add an add-on or review Usage & Billing to increase your limits.
-                  </span>
-                  <span className="flex flex-wrap gap-2">
-                    <Button
-                      size="sm"
-                      onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}
-                    >
-                      Add add-on
-                    </Button>
-                    <Button size="sm" variant="outline" onClick={scrollToBilling}>
-                      Usage & Billing
-                    </Button>
-                  </span>
-                </AlertDescription>
-              </Alert>
-            )}
-
-            {/* Metrics */}
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-              <DashboardMetric
-                icon={BriefcaseBusiness}
-                label="Services"
-                value={serviceCount}
-                detail="Bookable offerings in the selected location"
-                tone="blue"
-              />
-              <DashboardMetric
-                icon={Users}
-                label="Professionals"
-                value={`${actualProfessionals}/${professionalLimit}`}
-                detail="Team usage against your plan"
-                tone="emerald"
-              />
-              <DashboardMetric
-                icon={MapPin}
-                label="Locations"
-                value={`${activeLocationCount}/${locationLimit}`}
-                detail={selectedLocation?.name ?? selectedLocation?.address ?? "No location"}
-                tone="amber"
-              />
-              <DashboardMetric
-                icon={CalendarClock}
-                label={subscription?.subscriptionStatus === "TRIAL_ACTIVE" ? "Trial ends" : "Renews"}
-                value={expiryDate}
-                detail={vendor?.subscriptionStatus ?? subscription?.subscriptionStatus ?? "—"}
-              />
-            </section>
-          </>
-        ) : (
-          <div className="rounded-lg border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">
-            No vendor data is available. Please sign in again or contact support.
-          </div>
-        )}
+              {/* Metrics */}
+              <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
+                <DashboardMetric icon={BriefcaseBusiness} label="Services" value={serviceCount} detail="Bookable offerings in the selected location" tone="blue" />
+                <DashboardMetric icon={Users} label="Professionals" value={`${actualProfessionals}/${professionalLimit}`} detail="Team usage against your plan" tone="emerald" />
+                <DashboardMetric icon={MapPin} label="Locations" value={`${activeLocationCount}/${locationLimit}`} detail={selectedLocation?.name ?? selectedLocation?.address ?? "No location"} tone="amber" />
+                <DashboardMetric icon={CalendarClock} label={subscription?.subscriptionStatus === "TRIAL_ACTIVE" ? "Trial ends" : "Renews"} value={expiryDate} detail={vendor?.subscriptionStatus ?? subscription?.subscriptionStatus ?? "—"} />
+              </section>
+            </>
+          ) : (
+            <div className="rounded-lg border border-slate-200 bg-white p-8 text-slate-600 shadow-sm">No vendor data is available. Please sign in again or contact support.</div>
+          )}
+        </div>
       </div>
 
       {/* ── Setup modal ───────────────────────────────────────────────────── */}
@@ -243,16 +185,17 @@ export default function VendorPage() {
         <DialogContent className="sm:max-w-3xl">
           <DialogHeader>
             <DialogTitle>Finish your setup</DialogTitle>
-            <p className="mt-2 text-sm text-slate-600">
-              Set up your first service, professional, and business hours now. You can skip this and continue later.
-            </p>
+            <p className="mt-2 text-sm text-slate-600">Set up your first service, professional, and business hours now. You can skip this and continue later.</p>
           </DialogHeader>
           <div className="grid gap-4 py-6 md:grid-cols-3">
             <SetupCard
               icon={<Sparkles className="size-5 text-emerald-700" />}
               title="Add service"
               description="Create your first bookable offering."
-              onClick={() => { setShowSetupModal(false); setOpenAddService(true); }}
+              onClick={() => {
+                setShowSetupModal(false);
+                setOpenAddService(true);
+              }}
             />
             <SetupCard
               icon={<Users className="size-5 text-slate-700" />}
@@ -267,11 +210,16 @@ export default function VendorPage() {
               icon={<Clock3 className="size-5 text-slate-700" />}
               title="Business hours"
               description="Define the hours your business is available."
-              onClick={() => { setShowSetupModal(false); setOpenBusinessHours(true); }}
+              onClick={() => {
+                setShowSetupModal(false);
+                setOpenBusinessHours(true);
+              }}
             />
           </div>
           <DialogFooter className="flex flex-wrap items-center justify-between gap-3">
-            <Button variant="secondary" onClick={handleSkipSetup}>Skip for now</Button>
+            <Button variant="secondary" onClick={handleSkipSetup}>
+              Skip for now
+            </Button>
             <Button onClick={handleSkipSetup}>Continue to dashboard</Button>
           </DialogFooter>
         </DialogContent>
@@ -284,7 +232,10 @@ export default function VendorPage() {
         vendorId={vendorId}
         locations={locations}
         locationId={vendor?.defaultLocationId ?? locations[0]?.id}
-        onAdded={() => { fetchVendorData(); toast.success("Service added successfully."); }}
+        onAdded={() => {
+          fetchVendorData();
+          toast.success("Service added successfully.");
+        }}
       />
 
       <AddProfessional
@@ -296,7 +247,10 @@ export default function VendorPage() {
         roles={roles}
         loading={rolesLoading}
         error={rolesError}
-        onAdded={() => { fetchVendorData(); toast.success("Professional added successfully."); }}
+        onAdded={() => {
+          fetchVendorData();
+          toast.success("Professional added successfully.");
+        }}
       />
 
       <AddLocation
@@ -304,14 +258,13 @@ export default function VendorPage() {
         setAddLocationOpen={setOpenAddLocation}
         vendorId={vendorId}
         vendor={vendor}
-        onAdded={() => { fetchVendorData(); toast.success("Location added successfully."); }}
+        onAdded={() => {
+          fetchVendorData();
+          toast.success("Location added successfully.");
+        }}
       />
 
-      <AddProfessionalAddon
-        open={openAddAddon}
-        setAddProfessionalAddonOpen={setOpenAddAddon}
-        type={addonType}
-      />
+      <AddProfessionalAddon open={openAddAddon} setAddProfessionalAddonOpen={setOpenAddAddon} type={addonType} />
 
       <Dialog open={openBusinessHours} onOpenChange={setOpenBusinessHours}>
         <DialogContent className="sm:max-w-3xl">
@@ -322,10 +275,15 @@ export default function VendorPage() {
             vendorId={vendorId}
             locationId={vendor?.defaultLocationId ?? locations[0]?.id}
             initialHours={vendor?.businessHours ?? []}
-            onSaved={() => { fetchVendorData(); toast.success("Business hours saved."); }}
+            onSaved={() => {
+              fetchVendorData();
+              toast.success("Business hours saved.");
+            }}
           />
           <DialogFooter>
-            <Button variant="secondary" onClick={() => setOpenBusinessHours(false)}>Close</Button>
+            <Button variant="secondary" onClick={() => setOpenBusinessHours(false)}>
+              Close
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>

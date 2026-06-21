@@ -92,7 +92,7 @@ body {
     @apply bg-white overflow-hidden
   }
   .card-title{
-    font-size: 16px;
+    font-size: 18px;
   }
   .card-header{
     @apply !flex !flex-row !items-center !justify-between !border-b !px-5 !py-2.5 !min-h-16 bg-white;
@@ -107,13 +107,13 @@ body {
     @apply space-y-6
   }
   .page-header{
-    @apply p-4
+    @apply py-4 border-b
   }
   .page-body{
     @apply !mt-0 !border-none !rounded-none
   }
   .page-title{
-    @apply text-2xl font-bold tracking-tight
+    @apply text-xl font-bold tracking-tight
   }
   .content-area{
     height: calc(100vh - 24px) !important;
@@ -126,9 +126,40 @@ body {
     height: calc(100vh - 24px) !important;
     @apply flex min-h-0 flex-1;
   }
-}
-.page-title{
-  @apply text-xl font-bold
+  .boo-table thead{
+    @apply bg-slate-100
+  }
+  .boo-table th{
+    @apply text-gray-800 font-bold uppercase text-xs
+  }
+  .boo-table th:first-child{
+    @apply pl-5
+  }
+  .boo-table td:last-child{
+    @apply pr-3
+  }
+  .page-content{
+    @apply min-h-screen
+  }
+  .page-container{
+    @apply flex max-w-7xl flex-col gap-6 px-5 w-full
+  }
+  /* Card item */
+  .card-items{
+    @apply gap-0
+  }
+  .card-item{
+    @apply flex gap-4 flex-col lg:flex-row w-full py-2 border-b
+  }
+  .card-item:last-child{
+    @apply border-b-0
+  }
+  .card-item-label{
+    @apply flex-1 text-base text-gray-400
+  }
+  .card-item-value{
+    @apply flex-1 font-normal text-base text-gray-900
+  }
 }
 .astrick{
   @apply text-red-400
@@ -138,12 +169,6 @@ body {
 }
 .btn-primary{
   @apply bg-primary text-white px-3 py-2 rounded-lg hover:bg-primary-dark text-base
-}
-.boo-table th{
-  @apply uppercase bg-white text-xs py-3 px-2 border-b
-}
-.boo-table td{
-  @apply bg-white text-base py-3 px-2
 }
 
 .container{

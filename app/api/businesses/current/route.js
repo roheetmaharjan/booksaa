@@ -30,6 +30,7 @@ export async function GET() {
         lastPaymentAttemptAt: true,
         defaultLocationId: true,
         subscriptionExpiresAt: true,
+        status: true,
         trialEndsAt: true,
 
         plan: {

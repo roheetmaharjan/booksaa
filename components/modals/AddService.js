@@ -41,7 +41,7 @@ export default function AddService({ open, setAddServiceOpen,vendorId, locations
       setServiceForm((prev) => ({ ...prev, locationId }));
     }
   }, [locationId, setServiceForm]);
-  console.log("locations is:", locations)
+  // console.log("locations is:", locations)
   const validationRules = {
     name: { required: true, message: "Service name is required" },
     price: { required: true, message: "Price is required" },

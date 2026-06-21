@@ -17,7 +17,8 @@ export default function UpgradePage() {
   const searchParams = useSearchParams();
   const [currentStep, setCurrentStep] = useState(STEP_SELECT_PLAN);
   const [selectedPlanId, setSelectedPlanId] = useState(null);
-  const [data, setData] = useState(null); // raw API response { vendorId, vendor }
+  const [selectedCounts, setSelectedCounts] = useState(null); // selection + price breakdown from PlanSelector
+  const [data, setData] = useState(null);
   const [paymentSession, setPaymentSession] = useState(null);
   const [error, setError] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,13 +42,16 @@ export default function UpgradePage() {
     }
   };
 
-  const handlePlanSelect = async (planId) => {
+  const handlePlanSelect = async (planId, selection) => {
     setSelectedPlanId(planId);
+    setSelectedCounts(selection); // store the breakdown computed in PlanSelector
     setError(null);
 
     try {
       const session = await api.post("/api/businesses/checkout/create-session", {
         planId,
+        locationCount: selection.locationCount,
+        professionalCount: selection.professionalCount,
       });
 
       setPaymentSession(session);
@@ -58,12 +62,14 @@ export default function UpgradePage() {
   };
 
   const handlePaymentSuccess = () => {
+    setError(null);
     setCurrentStep(STEP_SUCCESS);
   };
 
   const handleBackToPlan = () => {
     setCurrentStep(STEP_SELECT_PLAN);
     setSelectedPlanId(null);
+    setSelectedCounts(null);
     setPaymentSession(null);
   };
 
@@ -79,137 +85,125 @@ export default function UpgradePage() {
     );
   }
 
-  // ─── Destructure from correct paths ────────────────────────────────────────
   const vendor = data?.vendor;
   const plan = vendor?.plan;
   const subscription = vendor?.subscription;
 
   const expiryDate = subscription?.expiryDate ? new Date(subscription.expiryDate) : null;
 
+  // Use the new selection's billing cycle if available, otherwise fall back to current subscription
+  const cycleLabel = (selectedCounts?.billingCycle ?? subscription?.billingCycle ?? plan?.billing_cycle ?? "monthly") === "monthly" ? "month" : "year";
+
   return (
-    <div className="min-h-screen bg-gray-50 py-12 px-4">
-      <div className="max-w-2xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900">Upgrade Your Plan</h1>
-          <p className="text-gray-600 mt-2">
-            {currentStep === STEP_SELECT_PLAN && "Select a new plan to unlock more features"}
-            {currentStep === STEP_PAYMENT && "Complete your payment"}
-            {currentStep === STEP_SUCCESS && "Your subscription has been upgraded"}
-          </p>
-        </div>
-
-        {/* Progress Indicator */}
-        <div className="mb-8 flex items-center gap-4">
-          {[
-            { step: STEP_SELECT_PLAN, label: "1. Select Plan" },
-            { step: STEP_PAYMENT, label: "2. Payment" },
-            { step: STEP_SUCCESS, label: "3. Confirm" },
-          ].map(({ step, label }) => (
-            <div key={step} className={`flex-1 py-2 px-4 rounded-lg text-center font-semibold ${currentStep === step ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"}`}>
-              {label}
+    <div className="page-content">
+        <div className="page-header">
+          <div className="page-container">
+            {/* Header */}
+            <div>
+              <h1 className="page-title">Upgrade Your Plan</h1>
+              <p className="text-gray-600 mt-2">
+                {currentStep === STEP_SELECT_PLAN && "Select a new plan to unlock more features"}
+                {currentStep === STEP_PAYMENT && "Complete your payment"}
+                {currentStep === STEP_SUCCESS && "Your subscription has been upgraded"}
+              </p>
             </div>
-          ))}
-        </div>
-
-        {/* Error Message */}
-        {error && <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">{error}</div>}
-
-        {/* Current plan summary (shown on plan selection step) */}
-        {currentStep === STEP_SELECT_PLAN && plan && (
-          <div className="mb-4 bg-white border rounded-lg p-4 text-sm text-gray-600 flex items-center justify-between">
-            <span>
-              Current plan: <strong>{plan.name}</strong>
-              {" · "}
-              {subscription?.professionalCount ?? plan.professional ?? 1} professional{(subscription?.professionalCount ?? plan.professional ?? 1) !== 1 ? "s" : ""}
-              {" · "}
-              {subscription?.activeLocationCount ?? plan.location ?? 1} location{(subscription?.activeLocationCount ?? plan.location ?? 1) !== 1 ? "s" : ""}
-            </span>
-            {expiryDate && <span className="text-gray-400">Expires {expiryDate.toLocaleDateString()}</span>}
           </div>
-        )}
+        </div>
+        <div className="page-body pt-8">
+          <div className="page-container max-w-3xl">
+            {/* Progress Indicator */}
+            <div className="mb-8 flex items-center gap-4">
+              {[
+                { step: STEP_SELECT_PLAN, label: "1. Select Plan" },
+                { step: STEP_PAYMENT, label: "2. Payment" },
+                { step: STEP_SUCCESS, label: "3. Confirm" },
+              ].map(({ step, label }) => (
+                <div key={step} className={`flex-1 py-2 px-4 rounded-lg text-center font-semibold ${currentStep === step ? "bg-blue-500 text-white" : "bg-gray-200 text-gray-700"}`}>
+                  {label}
+                </div>
+              ))}
+            </div>
 
-        {/* Content */}
-        <Card>
-          <CardContent className="pt-6">
-            {currentStep === STEP_SELECT_PLAN && (
-              <PlanSelector
-                currentPlanId={vendor?.plan?.id} // ← fixed: was vendor?.planId
-                onSelectPlan={handlePlanSelect}
-              />
-            )}
+            {/* Error Message */}
+            {error && <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">{error}</div>}
 
-            {currentStep === STEP_PAYMENT && paymentSession && (
-              <div className="space-y-4">
-                {/* Price breakdown */}
-                <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
-                  <h3 className="font-semibold text-sm text-gray-700">Price Breakdown</h3>
-                  <div className="text-sm space-y-1 text-gray-600">
-                    <div className="flex justify-between">
-                      <span>
-                        Base plan ({plan?.name}) — {subscription?.includedLocations ?? plan?.location ?? 1} location{(subscription?.includedLocations ?? 1) !== 1 ? "s" : ""}, {subscription?.includedProfessionals ?? plan?.professional ?? 1} professional{(subscription?.includedProfessionals ?? 1) !== 1 ? "s" : ""}
-                      </span>
-                      <span>${Number(subscription?.basePrice ?? plan?.price ?? 0).toFixed(2)}</span>
+            {/* Content */}
+            <Card>
+              <CardContent className="pt-6">
+                {currentStep === STEP_SELECT_PLAN && <PlanSelector currentPlanId={vendor?.plan?.id} onSelectPlan={handlePlanSelect} />}
+
+                {currentStep === STEP_PAYMENT && paymentSession && selectedCounts && (
+                  <div className="space-y-4">
+                    {/* Price breakdown — based on the NEW selection, not old subscription */}
+                    <div className="border rounded-lg p-4 space-y-2 bg-gray-50">
+                      <h3 className="font-semibold text-sm text-gray-700">Price Breakdown</h3>
+                      <div className="text-sm space-y-1 text-gray-600">
+                        <div className="flex justify-between">
+                          <span>
+                            Base plan ({plan?.name}) — {selectedCounts.includedLocations} location{selectedCounts.includedLocations !== 1 ? "s" : ""}, {selectedCounts.includedProfessionals} professional{selectedCounts.includedProfessionals !== 1 ? "s" : ""}
+                          </span>
+                          <span>${selectedCounts.basePrice.toFixed(2)}</span>
+                        </div>
+
+                        {selectedCounts.extraLocations > 0 && (
+                          <div className="flex justify-between">
+                            <span>
+                              +{selectedCounts.extraLocations} extra location{selectedCounts.extraLocations !== 1 ? "s" : ""} × ${selectedCounts.extraLocationPrice.toFixed(2)}
+                            </span>
+                            <span>${selectedCounts.extraLocationTotal.toFixed(2)}</span>
+                          </div>
+                        )}
+
+                        {selectedCounts.extraProfessionals > 0 && (
+                          <div className="flex justify-between">
+                            <span>
+                              +{selectedCounts.extraProfessionals} extra professional{selectedCounts.extraProfessionals !== 1 ? "s" : ""} × ${selectedCounts.extraProfessionalPrice.toFixed(2)}
+                            </span>
+                            <span>${selectedCounts.extraProfessionalTotal.toFixed(2)}</span>
+                          </div>
+                        )}
+
+                        <div className="flex justify-between font-semibold border-t pt-2 text-gray-900">
+                          <span>Total per {cycleLabel}</span>
+                          <span>${selectedCounts.totalPrice.toFixed(2)}</span>
+                        </div>
+                      </div>
                     </div>
 
-                    {(subscription?.extraLocations ?? 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span>
-                          +{subscription.extraLocations} extra location{subscription.extraLocations !== 1 ? "s" : ""} × ${Number(plan?.extraLocationPrice ?? 0).toFixed(2)}
-                        </span>
-                        <span>${Number(subscription?.extraLocationTotal ?? 0).toFixed(2)}</span>
-                      </div>
-                    )}
+                    <PaymentForm planId={selectedPlanId} locationCount={selectedCounts.locationCount} professionalCount={selectedCounts.professionalCount} amount={paymentSession.amount} clientSecret={paymentSession.clientSecret} publishableKey={paymentSession.publishableKey} onSuccess={handlePaymentSuccess} />
 
-                    {(subscription?.extraProfessionals ?? 0) > 0 && (
-                      <div className="flex justify-between">
-                        <span>
-                          +{subscription.extraProfessionals} extra professional{subscription.extraProfessionals !== 1 ? "s" : ""} × ${Number(plan?.extraProfessionalPrice ?? 0).toFixed(2)}
-                        </span>
-                        <span>${Number(subscription?.extraProfessionalTotal ?? 0).toFixed(2)}</span>
-                      </div>
-                    )}
-
-                    <div className="flex justify-between font-semibold border-t pt-2 text-gray-900">
-                      <span>Total per {(subscription?.billingCycle ?? plan?.billing_cycle ?? "monthly") === "monthly" ? "month" : "year"}</span>
-                      <span>${Number(subscription?.totalPrice ?? plan?.price ?? 0).toFixed(2)}</span>
-                    </div>
+                    <Button variant="outline" onClick={handleBackToPlan} className="w-full">
+                      Back to Plan Selection
+                    </Button>
                   </div>
-                </div>
+                )}
 
-                <PaymentForm planId={selectedPlanId} amount={paymentSession.amount} clientSecret={paymentSession.clientSecret} publishableKey={paymentSession.publishableKey} onSuccess={handlePaymentSuccess} />
+                {currentStep === STEP_SUCCESS && (
+                  <div className="space-y-6 text-center">
+                    <div className="text-5xl">✓</div>
+                    <div>
+                      <h2 className="text-2xl font-bold text-green-600">Upgrade Successful!</h2>
+                      <p className="text-gray-600 mt-2">Your subscription has been upgraded successfully. You now have access to all features.</p>
+                    </div>
 
-                <Button variant="outline" onClick={handleBackToPlan} className="w-full">
-                  Back to Plan Selection
-                </Button>
-              </div>
-            )}
+                    <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-left space-y-2">
+                      <p className="text-sm">
+                        <strong>Confirmation:</strong> Check your email for receipt and details.
+                      </p>
+                      <p className="text-sm">
+                        <strong>Next Renewal:</strong> Your subscription will automatically renew on your renewal date.
+                      </p>
+                    </div>
 
-            {currentStep === STEP_SUCCESS && (
-              <div className="space-y-6 text-center">
-                <div className="text-5xl">✓</div>
-                <div>
-                  <h2 className="text-2xl font-bold text-green-600">Upgrade Successful!</h2>
-                  <p className="text-gray-600 mt-2">Your subscription has been upgraded successfully. You now have access to all features.</p>
-                </div>
-
-                <div className="bg-green-50 border border-green-200 rounded-lg p-4 text-left space-y-2">
-                  <p className="text-sm">
-                    <strong>Confirmation:</strong> Check your email for receipt and details.
-                  </p>
-                  <p className="text-sm">
-                    <strong>Next Renewal:</strong> Your subscription will automatically renew on your renewal date.
-                  </p>
-                </div>
-
-                <Button onClick={handleReturnToBilling} className="w-full">
-                  Return to Billing & Usage
-                </Button>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-      </div>
+                    <Button onClick={handleReturnToBilling} className="w-full">
+                      Return to Billing & Usage
+                    </Button>
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </div>
+        </div>
     </div>
   );
 }
