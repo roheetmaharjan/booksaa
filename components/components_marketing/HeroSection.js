@@ -1,3 +1,5 @@
+import StartFreeTrialButton from "@/components/common/StartFreeTrialButton";
+
 export default function HeroSection() {
   return (
     <section className="relative min-h-screen bg-[#062B3D] overflow-hidden">
@@ -11,7 +13,7 @@ export default function HeroSection() {
         <div className="max-w-4xl mx-auto text-center">
 
           <h1 className="text-white text-5xl md:text-6xl font-medium leading-[1.05] tracking-tight">
-            Run your entire service business from one platform
+            Run your entire business from <br /> <span className="text-primary">one platform</span>
           </h1>
 
           <p className="mt-8 text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
@@ -22,9 +24,7 @@ export default function HeroSection() {
 
           {/* CTA */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
-            <button className="bg-primary text-slate-900 font-semibold px-7 py-4 rounded-xl hover:opacity-90 transition">
-              Start Free Trial →
-            </button>
+            <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>
 
             <button className="bg-white/10 backdrop-blur text-white px-7 py-4 rounded-xl border border-white/10 hover:bg-white/15 transition">
               Watch Demo

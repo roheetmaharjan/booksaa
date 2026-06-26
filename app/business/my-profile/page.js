@@ -182,7 +182,7 @@ export default function BusinessProfilePage() {
         ) : vendor ? (
           <>
             <section className="grid gap-6 grid-cols-1">
-              <Card>
+              <Card className="card">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-5">
                     <div>
@@ -220,7 +220,7 @@ export default function BusinessProfilePage() {
                   </div>
                 </CardContent>
               </Card>
-              <Card>
+              <Card className="card">
                 <CardHeader>
                   <div className="flex items-center justify-between gap-5">
                     <div>

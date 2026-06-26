@@ -2,7 +2,7 @@
 @tailwind components;
 @tailwind utilities;
 
-@media (prefers-color-scheme: light){
+@media (prefers-color-scheme: light) {
   :root {
     --background: #0a0a0a;
     --foreground: #ededed;
@@ -11,11 +11,11 @@
 
 body {
   font-family: var(--font-archivo);
-  @apply text-base
+  @apply text-base;
 }
 @layer base {
   input {
-    @apply border rounded px-3 py-2 focus:outline-none 
+    @apply border rounded px-3 py-2 focus:outline-none;
   }
   :root {
     --background: 0 0% 100%;
@@ -87,100 +87,103 @@ body {
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
-@layer components{
-  .section-heading{
-    @apply text-center text-4xl font-bold mb-4
+@layer components {
+  .section-heading {
+    @apply text-center text-4xl font-bold mb-4;
   }
-  .btn-primary{
-    @apply bg-primary text-slate-900 font-semibold px-7 py-4 rounded-xl hover:opacity-90 transition
+
+  .card {
+    @apply bg-white overflow-hidden;
   }
-  .card{
-    @apply bg-white overflow-hidden
-  }
-  .card-title{
+  .card-title {
     font-size: 18px;
   }
-  .card-header{
+  .card-header {
     @apply !flex !flex-row !items-center !justify-between !border-b !px-5 !py-2.5 !min-h-16 bg-white;
   }
-  .card-body{
-    @apply !px-0 !py-1
+  .card-body {
+    @apply !px-0 !py-1;
   }
-  .card-value{
-    @apply !px-5 !py-3 !gap-2 !grid !grid-cols-[1fr_2fr] !justify-between items-center
+  .card-value {
+    @apply !px-5 !py-3 !gap-2 !grid !grid-cols-[1fr_2fr] !justify-between items-center;
   }
-  .page-content{
-    @apply space-y-6
+  .page-content {
+    @apply space-y-6;
   }
-  .page-header{
-    @apply py-4 border-b
+  .page-header {
+    @apply py-4 border-b;
   }
-  .page-body{
-    @apply !mt-0 !border-none !rounded-none
+  .page-body {
+    @apply !mt-0 !border-none !rounded-none;
   }
-  .page-title{
-    @apply text-xl font-bold tracking-tight
+  .page-title {
+    @apply text-xl font-bold tracking-tight;
   }
-  .content-area{
+  .content-area {
     height: calc(100vh - 24px) !important;
-    @apply mr-3 mt-3
+    @apply mr-3 mt-3;
   }
-  .content-area-header{
-    @apply flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4 sticky top-0 z-10
+  .content-area-header {
+    @apply flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4 sticky top-0 z-10;
   }
-  .content-area-body{
+  .content-area-body {
     height: calc(100vh - 24px) !important;
     @apply flex min-h-0 flex-1;
   }
-  .boo-table thead{
-    @apply bg-slate-100
+  .boo-table thead {
+    @apply bg-slate-100;
   }
-  .boo-table th{
-    @apply text-gray-800 font-bold uppercase text-xs
+  .boo-table th {
+    @apply text-gray-800 font-bold uppercase text-xs;
   }
-  .boo-table th:first-child{
-    @apply pl-5
+  .boo-table th:first-child {
+    @apply pl-5;
   }
-  .boo-table td:last-child{
-    @apply pr-3
+  .boo-table td:last-child {
+    @apply pr-3;
   }
-  .page-content{
-    @apply min-h-screen
+  .page-content {
+    @apply min-h-screen;
   }
-  .page-container{
-    @apply flex max-w-7xl flex-col gap-6 px-5 w-full
+  .page-container {
+    @apply flex max-w-7xl flex-col gap-6 px-5 w-full;
   }
   /* Card item */
-  .card-items{
-    @apply gap-0
+  .card{
+    @apply !border !rounded-xl !shadow-none
   }
-  .card-item{
-    @apply flex gap-4 flex-col lg:flex-row w-full py-2 border-b
+  .card-items {
+    @apply gap-0;
   }
-  .card-item:last-child{
-    @apply border-b-0
+  .card-item {
+    @apply flex gap-4 flex-col lg:flex-row w-full py-2 border-b;
   }
-  .card-item-label{
-    @apply flex-1 text-base text-gray-400
+  .card-item:last-child {
+    @apply border-b-0;
   }
-  .card-item-value{
-    @apply flex-1 font-normal text-base text-gray-900
+  .card-item-label {
+    @apply flex-1 text-base text-gray-400;
+  }
+  .card-item-value {
+    @apply flex-1 font-normal text-base text-gray-900;
   }
 }
-.astrick{
-  @apply text-red-400
+.astrick {
+  @apply text-red-400;
 }
-.container-fluid{
-  @apply p-6
+.container-fluid {
+  @apply p-6;
 }
-.btn-primary{
-  @apply bg-primary text-white px-3 py-2 rounded-lg hover:bg-primary-dark text-base
+.btn-primary {
+  @apply bg-primary text-white px-3 py-2 rounded-lg hover:bg-primary-dark text-base;
 }
 
-.container{
-  @apply max-w-7xl mx-auto
+.container {
+  @apply max-w-7xl mx-auto;
 }
-
+.btn-primary {
+  @apply bg-primary text-slate-900 font-semibold px-5 py-3.5 rounded-xl hover:opacity-90 transition;
+}
 @layer base {
   * {
     @apply border-border;
@@ -189,4 +192,3 @@ body {
     @apply bg-background text-foreground;
   }
 }
-

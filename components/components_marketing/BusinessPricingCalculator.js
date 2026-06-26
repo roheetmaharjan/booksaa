@@ -165,7 +165,7 @@ export default function BusinessPricingCalculator() {
 
       {/* CTA */}
       <div className="mt-5">
-        <Button asChild size="lg" className="w-full gap-2 text-base font-semibold h-12">
+        <Button asChild className="btn-primary w-full h-auto">
           <Link href={signupHref}>
             Start Free Trial
             <ArrowRight className="h-4 w-4" />

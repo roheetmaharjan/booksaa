@@ -5,36 +5,16 @@ import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import {
-  ArrowLeft,
-  ArrowRight,
-  Building2,
-  Check,
-  CheckCircle2,
-  Loader2,
-  LockKeyhole,
-  MapPin,
-  Sparkles,
-  UserRound,
-} from "lucide-react";
+import { ArrowLeft, ArrowRight, Building2, Check, CheckCircle2, Loader2, LockKeyhole, MapPin, Sparkles, UserRound } from "lucide-react";
 import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
-const BusinessLocation = dynamic(
-  () => import("@/components/common/BusinessLocation"),
-  { ssr: false },
-);
+const BusinessLocation = dynamic(() => import("@/components/common/BusinessLocation"), { ssr: false });
 
 const initialForm = {
   firstname: "",
@@ -54,10 +34,7 @@ const steps = [
   { title: "Location", icon: MapPin },
 ];
 
-const daysOfWeek = [
-  "Sunday", "Monday", "Tuesday", "Wednesday",
-  "Thursday", "Friday", "Saturday",
-];
+const daysOfWeek = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
 
 const initialSetup = {
   service: { name: "", description: "", price: "", duration: "" },
@@ -115,10 +92,7 @@ export default function BusinessSignupPage() {
         });
         setForm((prev) => ({
           ...prev,
-          planId:
-            requestedPlan && nextPlans.some((p) => p.id === requestedPlan)
-              ? requestedPlan
-              : nextPlans[0]?.id || "",
+          planId: requestedPlan && nextPlans.some((p) => p.id === requestedPlan) ? requestedPlan : nextPlans[0]?.id || "",
         }));
       } catch (error) {
         toast.error(error.message);
@@ -130,28 +104,25 @@ export default function BusinessSignupPage() {
     loadOptions();
   }, [searchParams]);
 
-  const selectedPlan = useMemo(
-    () => plans.find((p) => p.id === form.planId),
-    [plans, form.planId],
-  );
+  const selectedPlan = useMemo(() => plans.find((p) => p.id === form.planId), [plans, form.planId]);
 
-  const subscriptionEstimate = useMemo(() => {
-    if (!selectedPlan) return null;
+  // const subscriptionEstimate = useMemo(() => {
+  //   if (!selectedPlan) return null;
 
-    const basePrice = Number(selectedPlan.price || 0);
-    const includedProfessionals = Number(selectedPlan.professional || 1);
-    const includedLocations = Number(selectedPlan.location || 1);
-    const extraProfessionalPrice = Number(selectedPlan.extraProfessionalPrice || 0);
-    const extraLocationPrice = Number(selectedPlan.extraLocationPrice || 0);
-    const extraProfessionals = Math.max(subscriptionCounts.professionals - includedProfessionals, 0);
-    const extraLocations = Math.max(subscriptionCounts.locations - includedLocations, 0);
-    const total =
-      basePrice +
-      extraProfessionals * extraProfessionalPrice +
-      extraLocations * extraLocationPrice;
+  //   const basePrice = Number(selectedPlan.price || 0);
+  //   const includedProfessionals = Number(selectedPlan.professional || 1);
+  //   const includedLocations = Number(selectedPlan.location || 1);
+  //   const extraProfessionalPrice = Number(selectedPlan.extraProfessionalPrice || 0);
+  //   const extraLocationPrice = Number(selectedPlan.extraLocationPrice || 0);
+  //   const extraProfessionals = Math.max(subscriptionCounts.professionals - includedProfessionals, 0);
+  //   const extraLocations = Math.max(subscriptionCounts.locations - includedLocations, 0);
+  //   const total =
+  //     basePrice +
+  //     extraProfessionals * extraProfessionalPrice +
+  //     extraLocations * extraLocationPrice;
 
-    return { basePrice, extraProfessionals, extraLocations, extraProfessionalPrice, extraLocationPrice, total };
-  }, [selectedPlan, subscriptionCounts]);
+  //   return { basePrice, extraProfessionals, extraLocations, extraProfessionalPrice, extraLocationPrice, total };
+  // }, [selectedPlan, subscriptionCounts]);
 
   const handleChange = (event) => {
     const { name, value } = event.target;
@@ -199,12 +170,9 @@ export default function BusinessSignupPage() {
     if (targetStep === 1) {
       if (!form.firstname.trim()) nextErrors.firstname = "First name is required.";
       if (!form.lastname.trim()) nextErrors.lastname = "Last name is required.";
-      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email))
-        nextErrors.email = "Enter a valid email address.";
-      if (form.password.length < 8)
-        nextErrors.password = "Use at least 8 characters.";
-      if (form.password !== form.confirmPassword)
-        nextErrors.confirmPassword = "Passwords do not match.";
+      if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) nextErrors.email = "Enter a valid email address.";
+      if (form.password.length < 8) nextErrors.password = "Use at least 8 characters.";
+      if (form.password !== form.confirmPassword) nextErrors.confirmPassword = "Passwords do not match.";
     }
 
     if (targetStep === 2) {
@@ -215,10 +183,8 @@ export default function BusinessSignupPage() {
 
     if (targetStep === 3) {
       const lf = locationData?.locationForm || {};
-      if (!lf.address || !lf.city || !lf.postal_code || !lf.country || !lf.state)
-        nextErrors.location = "Search and confirm your full business location.";
-      if (!lf.offerAtBusiness && !lf.offerAtClient)
-        nextErrors.locationOption = "Select where you offer services.";
+      if (!lf.address || !lf.city || !lf.postal_code || !lf.country || !lf.state) nextErrors.location = "Search and confirm your full business location.";
+      if (!lf.offerAtBusiness && !lf.offerAtClient) nextErrors.locationOption = "Select where you offer services.";
     }
 
     setErrors(nextErrors);
@@ -239,13 +205,14 @@ export default function BusinessSignupPage() {
   const handleSubmit = async (event) => {
     event.preventDefault();
     if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return;
-    if (!(await checkEmailAvailability())) { setStep(1); return; }
+    if (!(await checkEmailAvailability())) {
+      setStep(1);
+      return;
+    }
 
     const lf = locationData.locationForm;
     const serviceEntered = setup.service.name || setup.service.price || setup.service.duration;
-    const professionalEntered =
-      setup.professional.name || setup.professional.email ||
-      setup.professional.phone || setup.professional.roleId;
+    const professionalEntered = setup.professional.name || setup.professional.email || setup.professional.phone || setup.professional.roleId;
 
     const payload = {
       firstname: form.firstname.trim(),
@@ -288,9 +255,7 @@ export default function BusinessSignupPage() {
 
       toast.success("Your trial is active. Welcome to Booksaa.");
       const vendorId = data.vendor?.id;
-      const redirectUrl = vendorId
-        ? `/business?setup=step4&vendorId=${encodeURIComponent(vendorId)}`
-        : "/business";
+      const redirectUrl = vendorId ? `/business?setup=step4&vendorId=${encodeURIComponent(vendorId)}` : "/business";
 
       await router.push(redirectUrl);
       if (typeof window !== "undefined") window.location.href = redirectUrl;
@@ -304,75 +269,18 @@ export default function BusinessSignupPage() {
   return (
     <main className="min-h-screen bg-[#f8fafc] text-slate-950">
       <div className="mx-auto grid min-h-screen w-full max-w-7xl grid-cols-1 lg:grid-cols-[0.8fr_1.2fr]">
-
         {/* ── Sidebar ── */}
         <aside className="hidden border-r bg-white px-10 py-8 lg:flex lg:flex-col lg:justify-between">
           <div>
-            <Link href="/business-pro" className="inline-flex items-center gap-2 text-sm text-slate-600">
+            <Button variant="ghost" size="sm" className="h-4 inline-flex items-center gap-2 p-0 text-sm text-slate-600" onClick={() => router.back()}>
               <ArrowLeft className="h-4 w-4" />
-              Business Pro
-            </Link>
+              Back
+            </Button>
             <br />
             <Link href="/" className="mt-5 inline-flex">
               <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority />
             </Link>
           </div>
-
-          {/* Pricing summary — only shown once a plan is loaded */}
-          {selectedPlan && subscriptionEstimate && (
-            <div className="my-6">
-              <Badge className="mb-3 bg-emerald-100 text-emerald-800 hover:bg-emerald-100">
-                Free trial signup
-              </Badge>
-
-              <div className="rounded-t-lg border bg-slate-50 p-4">
-                <div className="grid gap-3 sm:grid-cols-2">
-                  <PlanStat
-                    label="Estimated price"
-                    value={`$${money(subscriptionEstimate.total)} / ${selectedPlan.billing_cycle || "month"}`}
-                  />
-                  <PlanStat label="Trial" value={`${selectedPlan.trial_period || 0} days`} />
-                </div>
-              </div>
-
-              <div className="rounded-b-lg border border-t-0 bg-white p-4 space-y-4">
-                <div>
-                  <h3 className="text-sm font-semibold">Subscription size</h3>
-                  <p className="text-xs text-slate-500 mt-0.5">
-                    Saved to your business subscription on signup.
-                  </p>
-                </div>
-
-                <NumberPicker
-                  label="Professionals"
-                  value={subscriptionCounts.professionals}
-                  included={Number(selectedPlan.professional || 1)}
-                  onChange={(value) =>
-                    setSubscriptionCounts((prev) => ({ ...prev, professionals: value }))
-                  }
-                />
-
-                <NumberPicker
-                  label="Locations"
-                  value={subscriptionCounts.locations}
-                  included={Number(selectedPlan.location || 1)}
-                  onChange={(value) =>
-                    setSubscriptionCounts((prev) => ({ ...prev, locations: value }))
-                  }
-                />
-
-                <div className="flex justify-between items-center border-t pt-3">
-                  <span className="text-sm font-semibold text-slate-700">Total</span>
-                  <span className="text-base font-bold text-slate-900">
-                    ${money(subscriptionEstimate.total)}
-                    <span className="text-slate-400 font-normal text-sm">
-                      {" "}/ {selectedPlan.billing_cycle || "month"}
-                    </span>
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
 
           <div className="space-y-4 rounded-lg border bg-slate-50 p-5">
             <div className="flex items-center gap-3">
@@ -381,20 +289,14 @@ export default function BusinessSignupPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">Trial activates instantly</p>
-                <p className="text-sm text-slate-500">
-                  {selectedPlan?.trial_period
-                    ? `${selectedPlan.trial_period} days on ${selectedPlan.name}`
-                    : "Based on your selected plan"}
-                </p>
+                <p className="text-sm text-slate-500">{selectedPlan?.trial_period ? `${selectedPlan.trial_period} days on ${selectedPlan.name}` : "Based on your selected plan"}</p>
               </div>
             </div>
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-md bg-white">
                 <LockKeyhole className="h-5 w-5 text-slate-700" />
               </div>
-              <p className="text-sm text-slate-600">
-                Your owner login is created during signup, so there is no invite step.
-              </p>
+              <p className="text-sm text-slate-600">Your owner login is created during signup, so there is no invite step.</p>
             </div>
           </div>
         </aside>
@@ -426,15 +328,7 @@ export default function BusinessSignupPage() {
                     const complete = step > stepNumber;
                     return (
                       <div key={item.title} className="flex min-w-[132px] flex-1 items-center gap-3">
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${
-                          complete
-                            ? "border-emerald-600 bg-emerald-600 text-white"
-                            : active
-                              ? "border-slate-950 bg-slate-950 text-white"
-                              : "border-slate-200 bg-white text-slate-500"
-                        }`}>
-                          {complete ? <Check className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}
-                        </div>
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${complete ? "border-emerald-600 bg-emerald-600 text-white" : active ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-500"}`}>{complete ? <Check className="h-4 w-4" /> : <StepIcon className="h-4 w-4" />}</div>
                         <div>
                           <p className="text-xs uppercase text-slate-500">Step {stepNumber}</p>
                           <p className="text-sm font-semibold">{item.title}</p>
@@ -457,9 +351,7 @@ export default function BusinessSignupPage() {
                       <div className="space-y-5">
                         <div>
                           <h2 className="text-2xl font-bold">Create an account</h2>
-                          <p className="mt-1 text-sm text-slate-500">
-                            A quick setup for a smoother booking experience
-                          </p>
+                          <p className="mt-1 text-sm text-slate-500">A quick setup for a smoother booking experience</p>
                         </div>
                         <div className="grid gap-4 sm:grid-cols-2 mt-3">
                           <Field label="First name" id="firstname" error={errors.firstname}>
@@ -470,9 +362,7 @@ export default function BusinessSignupPage() {
                           </Field>
                           <Field label="Email" id="email" error={errors.email}>
                             <Input id="email" name="email" type="email" value={form.email} onBlur={checkEmailAvailability} onChange={handleChange} />
-                            {emailChecking && (
-                              <p className="text-sm text-slate-500">Checking email...</p>
-                            )}
+                            {emailChecking && <p className="text-sm text-slate-500">Checking email...</p>}
                           </Field>
                           <Field label="Phone" id="phone">
                             <Input id="phone" name="phone" value={form.phone} onChange={handleChange} />
@@ -492,19 +382,14 @@ export default function BusinessSignupPage() {
                       <div className="space-y-5">
                         <div>
                           <h2 className="text-2xl font-bold">Business details</h2>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Match the admin business setup, with plan-based trial activation.
-                          </p>
+                          <p className="mt-1 text-sm text-slate-500">Match the admin business setup, with plan-based trial activation.</p>
                         </div>
                         <div className="grid gap-4">
                           <Field label="Business name" id="name" error={errors.name}>
                             <Input id="name" name="name" value={form.name} onChange={handleChange} />
                           </Field>
                           <Field label="Category" id="categoryId" error={errors.categoryId}>
-                            <Select
-                              value={form.categoryId}
-                              onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}
-                            >
+                            <Select value={form.categoryId} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
                               <SelectTrigger id="categoryId">
                                 <SelectValue placeholder="Select category" />
                               </SelectTrigger>
@@ -518,10 +403,7 @@ export default function BusinessSignupPage() {
                             </Select>
                           </Field>
                           <Field label="Plan" id="planId" error={errors.planId}>
-                            <Select
-                              value={form.planId}
-                              onValueChange={(value) => setForm((prev) => ({ ...prev, planId: value }))}
-                            >
+                            <Select value={form.planId} onValueChange={(value) => setForm((prev) => ({ ...prev, planId: value }))}>
                               <SelectTrigger id="planId">
                                 <SelectValue placeholder="Select plan" />
                               </SelectTrigger>
@@ -543,16 +425,10 @@ export default function BusinessSignupPage() {
                       <div className="space-y-5">
                         <div>
                           <h2 className="text-2xl font-bold">Primary location</h2>
-                          <p className="mt-1 text-sm text-slate-500">
-                            Search your address and confirm where customers can book you.
-                          </p>
+                          <p className="mt-1 text-sm text-slate-500">Search your address and confirm where customers can book you.</p>
                         </div>
                         <BusinessLocation onDataChange={handleLocationChange} />
-                        {(errors.location || errors.locationOption) && (
-                          <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-                            {errors.location || errors.locationOption}
-                          </div>
-                        )}
+                        {(errors.location || errors.locationOption) && <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">{errors.location || errors.locationOption}</div>}
                       </div>
                     )}
 
@@ -569,10 +445,7 @@ export default function BusinessSignupPage() {
                         </Button>
                       ) : (
                         <Button type="submit" disabled={submitting}>
-                          {submitting
-                            ? <Loader2 className="h-4 w-4 animate-spin" />
-                            : <CheckCircle2 className="h-4 w-4" />
-                          }
+                          {submitting ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
                           Start free trial
                         </Button>
                       )}
@@ -607,9 +480,7 @@ function NumberPicker({ label, value, onChange }) {
         >
           −
         </button>
-        <div className="min-w-[3rem] h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white font-semibold text-sm text-slate-900 px-3">
-          {value}
-        </div>
+        <div className="min-w-[3rem] h-9 flex items-center justify-center rounded-lg border border-slate-200 bg-white font-semibold text-sm text-slate-900 px-3">{value}</div>
         <button
           type="button"
           onClick={increment}

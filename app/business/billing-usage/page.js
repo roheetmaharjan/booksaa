@@ -138,7 +138,7 @@ export default function BillingUsagePage() {
         <div className="grid grid-cols-12 gap-5">
           <div className="col-span-12 lg:col-span-7">
             {/* ── Current Subscription ─────────────────────────────────────────────── */}
-            <Card>
+            <Card className="card">
               <CardHeader>
                 <div className="flex items-center justify-between gap-5">
                   <div>
@@ -231,7 +231,7 @@ export default function BillingUsagePage() {
           </div>
           <div className="col-span-12 lg:col-span-5 flex flex-col gap-5">
             {/* ── Payment Methods ──────────────────────────────────────────────────── */}
-            <Card>
+            <Card className="card">
               <CardHeader>
                 <CardTitle className="card-title">
                   Payment Methods
@@ -279,7 +279,7 @@ export default function BillingUsagePage() {
               </CardContent>
             </Card>
             {/* ── Auto-Renewal ─────────────────────────────────────────────────────── */}
-            <Card>
+            <Card className="card">
               <CardContent>
                 <div className="flex items-center justify-between pt-5">
                   <div>
@@ -305,7 +305,7 @@ export default function BillingUsagePage() {
           </div>
         </div>
         {/* ── Billing History ──────────────────────────────────────────────────── */}
-        <Card>
+        <Card className="card">
           <CardHeader>
             <CardTitle className="card-title">Billing History</CardTitle>
             <CardDescription>Your recent transactions</CardDescription>
