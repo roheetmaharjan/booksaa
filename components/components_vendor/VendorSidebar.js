@@ -155,8 +155,8 @@ export function VendorSidebar({ startTransition }) {
                         >
                           <MapPin className="mt-0.5 size-4 shrink-0 text-slate-400" />
                           <span className="min-w-0 flex-1">
-                            <span className="block truncate font-medium text-slate-900">{location.name || "Unnamed location"}</span>
-                            <span className="block truncate text-xs text-slate-500">{location.address || "No address"}</span>
+                            <span className="block line-clamp-1 font-medium text-slate-900">{location.name || "Unnamed location"}</span>
+                            <span className="block line-clamp-1 text-xs text-slate-500">{location.address || "No address"}</span>
                           </span>
                           {isSelected && <Check className="mt-0.5 size-4 shrink-0 text-primary" />}
                         </button>

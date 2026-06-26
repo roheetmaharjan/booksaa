@@ -139,6 +139,11 @@ export async function PUT(req, { params }) {
   }
 
   try {
+    const session = await getCurrentSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+
     const data = await req.json();
 
     const name = data.name;
@@ -169,6 +174,13 @@ export async function PUT(req, { params }) {
         throw new Error("Vendor not found");
       }
 
+      const isAdmin = session.role === "ADMIN";
+      const isOwner = session.role === "VENDOR" && existingVendor.userId === session.id;
+
+      if (!isAdmin && !isOwner) {
+        throw new Error("Forbidden");
+      }
+
       const updated = await tx.vendors.update({
         where: { id },
         data: {
@@ -176,13 +188,13 @@ export async function PUT(req, { params }) {
           description,
           phone,
           cancellation_policy,
-          planId,
+          planId: isAdmin ? planId : existingVendor.planId,
           categoryId,
         },
         include: { user: true },
       });
 
-      if (planId && planId !== existingVendor.planId) {
+      if (isAdmin && planId && planId !== existingVendor.planId) {
         const nextPlan = await tx.plans.findUnique({ where: { id: planId } });
         const activeSubscription = await getActiveVendorSubscription(id, tx);
 
@@ -218,6 +230,12 @@ export async function PUT(req, { params }) {
     return NextResponse.json({ message: "Vendor updated successfully" }, { status: 200 });
   } catch (error) {
     console.error("Error updating vendor:", error);
+    if (error.message === "Forbidden") {
+      return NextResponse.json({ error: "You do not have access to update this business." }, { status: 403 });
+    }
+    if (error.message === "Vendor not found") {
+      return NextResponse.json({ error: "Business not found" }, { status: 404 });
+    }
     return NextResponse.json({ error: "Failed to update vendor" }, { status: 500 });
   }
 }

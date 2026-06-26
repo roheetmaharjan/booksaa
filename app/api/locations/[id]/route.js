@@ -31,21 +31,28 @@ export async function PATCH(req, { params }) {
 
   try {
     const session = await getCurrentSession();
-    if (session?.role !== "ADMIN") {
-      return NextResponse.json(
-        { error: "Only platform admins can update business locations." },
-        { status: 403 }
-      );
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
     const body = await req.json();
     const existing = await prisma.location.findUnique({
       where: { id },
-      include: { vendor: { include: { locations: true } } },
+      include: { vendor: { select: { id: true, userId: true, locations: true } } },
     });
 
     if (!existing) {
       return NextResponse.json({ error: "Location not found" }, { status: 404 });
+    }
+
+    const isAdmin = session.role === "ADMIN";
+    const isOwner = session.role === "VENDOR" && existing.vendor?.userId === session.id;
+
+    if (!isAdmin && !isOwner) {
+      return NextResponse.json(
+        { error: "You do not have access to update this location." },
+        { status: 403 }
+      );
     }
 
     if (existing.isDefault && body.isActive === false) {
