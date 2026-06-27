@@ -149,6 +149,8 @@ export async function PUT(req, { params }) {
     const name = data.name;
     const description = data.description;
     const phone = data.phone;
+    const image = data.image;
+    const photos = data.photos;
     const cancellation_policy = data.cancellation_policy;
     const planId = data.planId;
     const categoryId = data.categoryId;
@@ -187,6 +189,8 @@ export async function PUT(req, { params }) {
           name,
           description,
           phone,
+          image,
+          photos,
           cancellation_policy,
           planId: isAdmin ? planId : existingVendor.planId,
           categoryId,

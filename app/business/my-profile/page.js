@@ -7,6 +7,8 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { FileUpload } from "@/components/ui/file-upload";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,7 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation } from "@/hooks/useMutation";
 import { validateForm } from "@/utils/formValidator";
 import { CameraIcon, InfoIcon, PenIcon } from "@phosphor-icons/react";
-import { MapPin, Plus } from "lucide-react";
+import { ImageIcon, MapPin, Plus, Trash2, UploadCloud } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -30,6 +32,7 @@ const initialForm = {
   categoryId: "",
   status: "",
   image: "",
+  photos: "",
   joinedAt: "",
   cancellation_policy: "",
   description: "",
@@ -57,6 +60,55 @@ function getLocationLabel(location) {
   return location?.name || location?.address || "Location";
 }
 
+function getImageUrl(value) {
+  if (!value) return "";
+  if (String(value).startsWith("http") || String(value).startsWith("/")) return value;
+  return `/uploads/${value}`;
+}
+
+function normalizePhotoItem(item) {
+  if (!item) return null;
+  if (typeof item === "string") {
+    return { url: getImageUrl(item), key: "", name: item.split("/").pop() || "Photo" };
+  }
+  return {
+    url: getImageUrl(item.url),
+    key: item.key || "",
+    name: item.name || item.url?.split("/").pop() || "Photo",
+    size: item.size,
+    type: item.type,
+  };
+}
+
+function parsePhotoList(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) return value.map(normalizePhotoItem).filter(Boolean);
+
+  try {
+    const parsed = JSON.parse(value);
+    if (Array.isArray(parsed)) return parsed.map(normalizePhotoItem).filter(Boolean);
+  } catch {
+    return String(value)
+      .split(",")
+      .map((item) => normalizePhotoItem(item.trim()))
+      .filter((item) => item?.url);
+  }
+
+  return [];
+}
+
+function stringifyPhotoList(photos) {
+  return JSON.stringify(
+    photos.map((photo) => ({
+      url: photo.url,
+      key: photo.key || "",
+      name: photo.name || "Photo",
+      size: photo.size,
+      type: photo.type,
+    }))
+  );
+}
+
 export default function BusinessProfilePage() {
   const searchParams = useSearchParams();
   const selectedLocationFromSidebar = searchParams.get("locationId") || "";
@@ -73,6 +125,14 @@ export default function BusinessProfilePage() {
   const [formErrors, setFormErrors] = useState({});
   const [locationForm, setLocationForm] = useState({});
   const [openAddLocation, setOpenAddLocation] = useState(false);
+  const [openLogoDialog, setOpenLogoDialog] = useState(false);
+  const [logoFiles, setLogoFiles] = useState([]);
+  const [galleryFiles, setGalleryFiles] = useState([]);
+  const [selectedPhotoUrls, setSelectedPhotoUrls] = useState([]);
+  const [logoUploading, setLogoUploading] = useState(false);
+  const [galleryUploading, setGalleryUploading] = useState(false);
+  const [logoUploadResetKey, setLogoUploadResetKey] = useState(0);
+  const [galleryUploadResetKey, setGalleryUploadResetKey] = useState(0);
 
   const selectedLocationId = selectedLocationFromSidebar || form.selectedLocationId || form.defaultLocationId || form.locations?.[0]?.id || "";
   const selectedLocation = useMemo(
@@ -89,6 +149,7 @@ export default function BusinessProfilePage() {
   const { mutate: updateBusiness, loading: savingBusiness } = useMutation(vendorId ? `/api/businesses/${vendorId}` : "", { method: "PUT" });
   const { mutate: updateLocation, loading: savingLocation } = useMutation(selectedLocationId ? `/api/locations/${selectedLocationId}` : "", { method: "PATCH" });
   const locations = form.locations || [];
+  const galleryPhotos = useMemo(() => parsePhotoList(form.photos), [form.photos]);
 
   const validationRules = {
     name: { required: true, message: "Business name is required" },
@@ -98,6 +159,27 @@ export default function BusinessProfilePage() {
   useEffect(() => {
     setActiveTab(searchParams.get("tab") || "detail");
   }, [searchParams]);
+
+  useEffect(() => {
+    if (activeTab !== "photos" || galleryPhotos.length === 0) return undefined;
+
+    let lightbox;
+    let isActive = true;
+
+    import("glightbox").then((module) => {
+      if (!isActive) return;
+      lightbox = module.default({
+        selector: ".business-gallery-lightbox",
+        touchNavigation: true,
+        loop: true,
+      });
+    });
+
+    return () => {
+      isActive = false;
+      lightbox?.destroy();
+    };
+  }, [activeTab, galleryPhotos]);
 
   useEffect(() => {
     let isActive = true;
@@ -231,6 +313,110 @@ export default function BusinessProfilePage() {
     }
   };
 
+  const uploadFiles = async (files, folder) => {
+    const formData = new FormData();
+    formData.append("folder", folder);
+    files.forEach((file) => formData.append("files", file));
+
+    const res = await fetch("/api/upload", {
+      method: "POST",
+      body: formData,
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Upload failed.");
+    return data.files || [];
+  };
+
+  const saveBusinessMedia = async (mediaFields) => {
+    await updateBusiness({
+      name: form.name,
+      categoryId: form.categoryId,
+      description: form.description,
+      cancellation_policy: form.cancellation_policy,
+      user: form.user,
+      ...mediaFields,
+    });
+    await refreshBusiness(selectedLocationId);
+  };
+
+  const handleLogoUpload = async () => {
+    if (logoFiles.length !== 1) {
+      toast.error("Select one logo image.");
+      return;
+    }
+
+    try {
+      setLogoUploading(true);
+      const [uploaded] = await uploadFiles(logoFiles, `businesses/${vendorId}/logo`);
+      await saveBusinessMedia({ image: uploaded.url });
+      setLogoFiles([]);
+      setLogoUploadResetKey((key) => key + 1);
+      setOpenLogoDialog(false);
+      toast.success("Business logo updated.");
+    } catch (err) {
+      toast.error(err.message || "Failed to update logo.");
+    } finally {
+      setLogoUploading(false);
+    }
+  };
+
+  const handleGalleryUpload = async () => {
+    if (galleryFiles.length === 0) {
+      toast.error("Select at least one photo.");
+      return;
+    }
+
+    try {
+      setGalleryUploading(true);
+      const uploaded = await uploadFiles(galleryFiles, `businesses/${vendorId}/gallery`);
+      const nextPhotos = [...galleryPhotos, ...uploaded];
+      await saveBusinessMedia({ photos: stringifyPhotoList(nextPhotos) });
+      setGalleryFiles([]);
+      setGalleryUploadResetKey((key) => key + 1);
+      toast.success(`${uploaded.length} photo${uploaded.length > 1 ? "s" : ""} added.`);
+    } catch (err) {
+      toast.error(err.message || "Failed to upload photos.");
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
+  const togglePhotoSelection = (url) => {
+    setSelectedPhotoUrls((prev) => (prev.includes(url) ? prev.filter((item) => item !== url) : [...prev, url]));
+  };
+
+  const handleDeleteSelectedPhotos = async () => {
+    if (selectedPhotoUrls.length === 0) {
+      toast.error("Select photos to delete.");
+      return;
+    }
+
+    try {
+      setGalleryUploading(true);
+      const photosToDelete = galleryPhotos.filter((photo) => selectedPhotoUrls.includes(photo.url));
+      const keys = photosToDelete.map((photo) => photo.key).filter(Boolean);
+
+      if (keys.length > 0) {
+        const res = await fetch("/api/upload", {
+          method: "DELETE",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ keys }),
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "Failed to delete uploaded photos.");
+      }
+
+      const nextPhotos = galleryPhotos.filter((photo) => !selectedPhotoUrls.includes(photo.url));
+      await saveBusinessMedia({ photos: stringifyPhotoList(nextPhotos) });
+      setSelectedPhotoUrls([]);
+      toast.success("Selected photos deleted.");
+    } catch (err) {
+      toast.error(err.message || "Failed to delete photos.");
+    } finally {
+      setGalleryUploading(false);
+    }
+  };
+
   return (
     <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-6">
@@ -250,14 +436,14 @@ export default function BusinessProfilePage() {
               <div className="relative w-fit">
                 {form.image ? (
                   <figure className="h-32 w-32 overflow-hidden rounded-md">
-                    <img src={form.image} alt={`${form.name} image`} className="h-full w-full object-cover" />
+                    <img src={getImageUrl(form.image)} alt={`${form.name} image`} className="h-full w-full object-cover" />
                   </figure>
                 ) : (
                   <span className="flex h-32 w-32 items-center justify-center rounded-md border border-primary bg-primary/10 text-3xl font-bold uppercase">
                     {form.name?.charAt(0) || "B"}
                   </span>
                 )}
-                <Button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none">
+                <Button type="button" onClick={() => setOpenLogoDialog(true)} className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none">
                   <CameraIcon />
                 </Button>
               </div>
@@ -367,7 +553,56 @@ export default function BusinessProfilePage() {
                 )}
               </TabsContent>
 
-              <TabsContent value="photos">Coming Soon</TabsContent>
+              <TabsContent value="photos">
+                <div className="space-y-5">
+                  <Card>
+                    <CardHeader className="card-header">
+                      <CardTitle className="card-title">Business Photos</CardTitle>
+                      {selectedPhotoUrls.length > 0 && (
+                        <Button type="button" variant="destructive" onClick={handleDeleteSelectedPhotos} disabled={galleryUploading}>
+                          <Trash2 className="size-4" />
+                          Delete Selected
+                        </Button>
+                      )}
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                      <FileUpload multiple maxFiles={12} disabled={galleryUploading} resetKey={galleryUploadResetKey} label="Upload business photos" onFilesChange={setGalleryFiles} />
+                      <Button type="button" onClick={handleGalleryUpload} disabled={galleryUploading || galleryFiles.length === 0}>
+                        <UploadCloud className="size-4" />
+                        {galleryUploading ? "Uploading..." : "Add Photos"}
+                      </Button>
+                    </CardContent>
+                  </Card>
+
+                  {galleryPhotos.length > 0 ? (
+                    <div className="grid grid-cols-12 gap-3">
+                      {galleryPhotos.map((photo) => {
+                        const isSelected = selectedPhotoUrls.includes(photo.url);
+                        return (
+                          <div key={photo.url} className={`relative col-span-12 overflow-hidden rounded-md border bg-white sm:col-span-6 lg:col-span-4 ${isSelected ? "border-primary ring-2 ring-primary/20" : "border-slate-200"}`}>
+                            <label className="absolute left-3 top-3 z-10 flex size-8 items-center justify-center rounded bg-white/90 shadow-sm">
+                              <input type="checkbox" checked={isSelected} onChange={() => togglePhotoSelection(photo.url)} className="size-4" />
+                            </label>
+                            <a href={photo.url} className="business-gallery-lightbox block aspect-[4/3]" data-gallery="business-gallery" data-title={photo.name || form.name}>
+                              <img src={photo.url} alt={photo.name || "Business photo"} className="h-full w-full object-cover" />
+                            </a>
+                            <div className="flex items-center justify-between gap-2 p-3 text-sm">
+                              <span className="truncate text-slate-600">{photo.name || "Business photo"}</span>
+                              <ImageIcon className="size-4 shrink-0 text-slate-400" />
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center gap-2 rounded border py-8 text-center">
+                      <ImageIcon className="size-8 text-muted-foreground" />
+                      <h4 className="text-lg font-bold">No photos added</h4>
+                      <p className="text-base text-muted-foreground">Upload one or more business photos to show in your gallery.</p>
+                    </div>
+                  )}
+                </div>
+              </TabsContent>
               <TabsContent value="reviews">Reviews Coming Soon</TabsContent>
 
               <TabsContent value="businesshours">
@@ -471,6 +706,23 @@ export default function BusinessProfilePage() {
               vendor={form}
               onAdded={(created) => refreshBusiness(created?.id || selectedLocationId)}
             />
+
+            <Dialog open={openLogoDialog} onOpenChange={setOpenLogoDialog}>
+              <DialogContent className="sm:max-w-lg">
+                <DialogHeader>
+                  <DialogTitle>Change business logo</DialogTitle>
+                </DialogHeader>
+                <FileUpload maxFiles={1} disabled={logoUploading} resetKey={logoUploadResetKey} label="Choose one logo image" description="Select exactly one image for your business logo." onFilesChange={setLogoFiles} />
+                <DialogFooter>
+                  <Button type="button" variant="outline" onClick={() => setOpenLogoDialog(false)} disabled={logoUploading}>
+                    Cancel
+                  </Button>
+                  <Button type="button" onClick={handleLogoUpload} disabled={logoUploading || logoFiles.length !== 1}>
+                    {logoUploading ? "Uploading..." : "Save Logo"}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </>
         )}
       </div>
