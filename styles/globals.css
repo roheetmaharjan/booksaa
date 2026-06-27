@@ -193,3 +193,47 @@ body {
     @apply bg-background text-foreground;
   }
 }
+.phone-input {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 2.5rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: calc(var(--radius));
+  background: hsl(var(--background));
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.phone-input:focus-within {
+  border-color: hsl(var(--ring));
+  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
+}
+
+.phone-input .PhoneInputCountry {
+  padding-left: 0.75rem;
+  padding-right: 0.5rem;
+}
+
+.phone-input .PhoneInputCountrySelect {
+  border: none;
+  background: transparent;
+  cursor: pointer;
+}
+
+.phone-input .PhoneInputInput {
+  flex: 1;
+  height: 100%;
+  border: none;
+  outline: none;
+  background: transparent;
+  padding: 0 0.75rem;
+  font-size: 0.875rem;
+}
+
+.phone-input .PhoneInputInput::placeholder {
+  color: hsl(var(--muted-foreground));
+}
+
+.phone-input .PhoneInputInput:disabled {
+  cursor: not-allowed;
+}
