@@ -1,7 +1,7 @@
 "use client";
 
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { cn } from "@/lib/utils";
 
 import { Button } from "@/components/ui/button";
@@ -12,8 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import ProfessionalAvatar from "@/components/common/ProfessionalAvatar";
 import { format, startOfDay } from "date-fns";
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
-import { Clock } from "lucide-react";
+import { Clock,ChevronsUpDown,Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
+import { CommandList } from "cmdk";
 
 function toDateString(date) {
   return format(date, "yyyy-MM-dd");
@@ -23,6 +25,7 @@ function toDateString(date) {
 function DatePickerField({ value, onChange, minDate }) {
   const [calendarOpen, setCalendarOpen] = useState(false);
   const selected = value ? new Date(value) : undefined;
+
   return (
     <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
       <PopoverTrigger asChild>
@@ -37,7 +40,7 @@ function DatePickerField({ value, onChange, minDate }) {
           onSelect={(day) => {
             if (day) {
               onChange(toDateString(day));
-              setOpen(false);
+              setCalendarOpen(false); // FIX: was setOpen(false)
             }
           }}
           disabled={(day) => (minDate ? startOfDay(day) < startOfDay(minDate) : false)}
@@ -69,38 +72,107 @@ function ServiceCard({ service, selected, onSelect, paymentLabel }) {
   );
 }
 
-export default function NewAppointment({ open, onOpenChange, handleCreateBooking, bookingForm, setBookingForm, minStartTime, handleStartTimeChange, professionals, services, selectedService, paymentLabel }) {
+export default function NewAppointment({
+  open,
+  onOpenChange,
+  handleCreateBooking,
+  bookingForm,
+  setBookingForm,
+  minStartTime,
+  handleStartTimeChange,
+  professionals,
+  services,
+  selectedService,
+  paymentLabel,
+  onNewCustomer, // FIX: receive callback from parent instead of managing dead local state
+}) {
+  const [customers, setCustomers] = useState([]);
+  const [customerOpen, setCustomerOpen] = useState(false);
+
+  // FIX: wrapped in useCallback so the effect dep is stable
+  const loadCustomers = useCallback(async () => {
+    try {
+      const res = await fetch("/api/customers");
+      const data = await res.json();
+      setCustomers(data.customers || []); // FIX: was data (raw), API returns { customers: [] }
+    } catch {
+      // fail silently — customer list will just be empty
+    }
+  }, []);
+
+  useEffect(() => {
+    loadCustomers();
+  }, [loadCustomers]);
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="p-0 sm:max-w-[700px]">
         <DialogHeader className="border-b border-slate-100 px-6 py-4">
           <DialogTitle className="font-semibold text-slate-900">New appointment</DialogTitle>
         </DialogHeader>
-        <form onSubmit={handleCreateBooking}>
-          <div className="no-scrollbar max-h-[50vh] overflow-y-auto px-2">
-            <div className="grid grid-cols-2 divide-x divide-slate-100">
-              {/* Left: customer + scheduling */}
-              <div className="flex flex-col gap-5 p-6">
-                <section>
-                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Customer</p>
-                  <div className="flex flex-col gap-2.5">
-                    <div>
-                      <Label className="text-xs text-slate-600">Name</Label>
-                      <Input value={bookingForm.customerName} onChange={(e) => setBookingForm((p) => ({ ...p, customerName: e.target.value }))} placeholder="Full name" className="mt-1 h-9 text-sm" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-600">Phone</Label>
-                      <Input value={bookingForm.customerPhone} onChange={(e) => setBookingForm((p) => ({ ...p, customerPhone: e.target.value }))} placeholder="+1 555 000" className="mt-1 h-9 text-sm" />
-                    </div>
-                    <div>
-                      <Label className="text-xs text-slate-600">Email</Label>
-                      <Input type="email" value={bookingForm.customerEmail} onChange={(e) => setBookingForm((p) => ({ ...p, customerEmail: e.target.value }))} placeholder="yourname@email.com" className="mt-1 h-9 text-sm" />
-                    </div>
-                  </div>
-                </section>
 
+        <form onSubmit={handleCreateBooking}>
+          <div className="no-scrollbar max-h-[50vh] overflow-y-auto px-3">
+            <section>
+              <div className="flex flex-row items-end gap-2.5">
+                <div className="flex-1">
+                  <Label className="text-xs text-slate-600">Customer</Label>
+
+                  <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
+                    <PopoverTrigger asChild>
+                      <Button variant="outline" role="combobox" aria-expanded={customerOpen} className="w-full justify-between font-normal">
+                        {bookingForm.customerId ? customers.find((c) => c.id === bookingForm.customerId)?.fullName : "Select customer"}
+
+                        <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                      </Button>
+                    </PopoverTrigger>
+
+                    <PopoverContent className="w-full p-0">
+                      <Command>
+                        <CommandInput placeholder="Search customer..." />
+                        <CommandList>
+                          <CommandEmpty>No customer found.</CommandEmpty>
+                          <CommandGroup className="max-h-64 overflow-y-auto">
+                            {customers.map((customer) => (
+                              <CommandItem
+                                key={customer.id}
+                                value={`${customer.fullName} ${customer.phone} ${customer.email}`}
+                                onSelect={() => {
+                                  setBookingForm((prev) => ({
+                                    ...prev,
+                                    customerId: customer.id,
+                                    customerName: customer.fullName,
+                                    customerPhone: customer.phone,
+                                    customerEmail: customer.email,
+                                  }));
+
+                                  setCustomerOpen(false);
+                                }}
+                              >
+                                <Check className={`mr-2 h-4 w-4 ${bookingForm.customerId === customer.id ? "opacity-100" : "opacity-0"}`} />
+
+                                <div className="flex flex-col">
+                                  <span>{customer.fullName}</span>
+                                  <span className="text-xs text-slate-500">{customer.phone}</span>
+                                </div>
+                              </CommandItem>
+                            ))}
+                          </CommandGroup>
+                        </CommandList>
+                      </Command>
+                    </PopoverContent>
+                  </Popover>
+                </div>
+                <Button type="button" onClick={onNewCustomer}>
+                  + New Customer
+                </Button>
+              </div>
+            </section>
+            <div className="grid grid-cols-2 divide-x divide-slate-100 border-t gap-4 pt-4 mt-4">
+              {/* Left: customer + scheduling */}
+              <div className="flex flex-col gap-5">
                 <section>
-                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Scheduling</p>
+                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Scheduling</p>
                   <div className="flex flex-col gap-2.5">
                     <div>
                       <Label className="text-xs text-slate-600">Date</Label>
@@ -145,8 +217,8 @@ export default function NewAppointment({ open, onOpenChange, handleCreateBooking
               </div>
 
               {/* Right: service picker */}
-              <div className="flex flex-col p-6">
-                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-400">Service</p>
+              <div className="flex flex-col">
+                <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Service</p>
                 {services.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-200 p-6 text-center">
                     <p className="text-sm text-slate-400">No services configured</p>
@@ -154,35 +226,19 @@ export default function NewAppointment({ open, onOpenChange, handleCreateBooking
                 ) : (
                   <div className="flex flex-col gap-2 overflow-y-auto">
                     {services.map((svc) => (
-                      <ServiceCard
-                        key={svc.id}
-                        service={svc}
-                        selected={bookingForm.serviceId === svc.id}
-                        paymentLabel={paymentLabel}
-                        onSelect={(id) =>
-                          setBookingForm((p) => ({
-                            ...p,
-                            serviceId: id,
-                          }))
-                        }
-                      />
+                      <ServiceCard key={svc.id} service={svc} selected={bookingForm.serviceId === svc.id} paymentLabel={paymentLabel} onSelect={(id) => setBookingForm((p) => ({ ...p, serviceId: id }))} />
                     ))}
                   </div>
                 )}
               </div>
             </div>
           </div>
-          <DialogFooter>
-            {/* Footer */}
-            <div className="flex items-center justify-between border-t border-slate-100 px-6 py-4">
-              <span className="text-xs text-slate-400">{selectedService ? `${selectedService.duration} min · ${paymentLabel(selectedService)}` : "Select a service"}</span>
-              <div className="flex gap-2">
-                <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-8 text-slate-600">
-                  Cancel
-                </Button>
-                <Button type="submit">Confirm booking</Button>
-              </div>
-            </div>
+          <DialogFooter className="border-t border-slate-100 px-6 py-4">
+            <span className="mr-auto text-xs text-slate-400">{selectedService ? `${selectedService.duration} min · ${paymentLabel(selectedService)}` : "Select a service"}</span>
+            <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-8 text-slate-600">
+              Cancel
+            </Button>
+            <Button type="submit">Confirm booking</Button>
           </DialogFooter>
         </form>
       </DialogContent>

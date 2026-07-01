@@ -3,12 +3,13 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 import { useMutation } from "@/hooks/useMutation";
+import { validateCustomer } from "@/lib/validations/customer";
 
-import { CustomerPageHeader }    from "@/components/customers/CustomerPageHeader";
-import { CustomerSummaryCards }  from "@/components/customers/CustomerSummaryCards";
-import { CustomerTable }         from "@/components/customers/CustomerTable";
-import { CustomerCreateDialog }  from "@/components/customers/CustomerCreateDialog";
-import { CustomerImportDialog }  from "@/components/customers/CustomerImportDialog";
+import { CustomerPageHeader } from "@/components/customers/CustomerPageHeader";
+import { CustomerSummaryCards } from "@/components/customers/CustomerSummaryCards";
+import { CustomerTable } from "@/components/customers/CustomerTable";
+import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
+import { CustomerImportDialog } from "@/components/customers/CustomerImportDialog";
 import { CustomerProfileDialog } from "@/components/customers/CustomerProfileDialog";
 
 const emptyCustomer = {
@@ -40,14 +41,14 @@ function encodeQuery(params) {
 
 export default function CustomersPage() {
   // List state
-  const [customers, setCustomers]   = useState([]);
-  const [stats, setStats]           = useState({});
+  const [customers, setCustomers] = useState([]);
+  const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
-  const [loading, setLoading]       = useState(true);
-  const [query, setQuery]           = useState("");
-  const [status, setStatus]         = useState("ALL");
-  const [sort, setSort]             = useState("latest");
-  const [page, setPage]             = useState(1);
+  const [loading, setLoading] = useState(true);
+  const [query, setQuery] = useState("");
+  const [status, setStatus] = useState("ALL");
+  const [sort, setSort] = useState("latest");
+  const [page, setPage] = useState(1);
 
   // Dialog visibility
   const [createOpen, setCreateOpen] = useState(false);
@@ -56,15 +57,16 @@ export default function CustomersPage() {
 
   // Create form
   const [customerForm, setCustomerForm] = useState(emptyCustomer);
+  const [errors, setErrors] = useState({});
   const [duplicateState, setDuplicateState] = useState(null);
 
   // Profile
   const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [profileLoading, setProfileLoading]     = useState(false);
-  const [noteContent, setNoteContent]           = useState("");
+  const [profileLoading, setProfileLoading] = useState(false);
+  const [noteContent, setNoteContent] = useState("");
 
   // Import
-  const [importFile, setImportFile]           = useState(null);
+  const [importFile, setImportFile] = useState(null);
   const [importDuplicates, setImportDuplicates] = useState([]);
 
   const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
@@ -105,6 +107,19 @@ export default function CustomersPage() {
     } finally {
       setProfileLoading(false);
     }
+  };
+
+  const handleSubmit = async (ignoreDuplicate) => {
+    const validationErrors = validateCustomer(customerForm);
+
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+
+    setErrors({});
+
+    await submitCustomer(ignoreDuplicate);
   };
 
   // ── Create ─────────────────────────────────────────────────────
@@ -160,8 +175,8 @@ export default function CustomersPage() {
   // ── Quick actions ──────────────────────────────────────────────
   const quickAction = (type) => {
     if (!selectedCustomer) return;
-    if (type === "call"  && selectedCustomer.phone) window.location.href = `tel:${selectedCustomer.phone}`;
-    else if (type === "sms"   && selectedCustomer.phone) window.location.href = `sms:${selectedCustomer.phone}`;
+    if (type === "call" && selectedCustomer.phone) window.location.href = `tel:${selectedCustomer.phone}`;
+    else if (type === "sms" && selectedCustomer.phone) window.location.href = `sms:${selectedCustomer.phone}`;
     else if (type === "email" && selectedCustomer.email) window.location.href = `mailto:${selectedCustomer.email}`;
     else if (type === "book") window.location.href = `/business/calendar?customerId=${selectedCustomer.id}`;
     else toast.info("This action is ready for the next integration.");
@@ -169,7 +184,10 @@ export default function CustomersPage() {
 
   // ── Import / Export ───────────────────────────────────────────
   const importCustomers = async (ignoreDuplicates = false) => {
-    if (!importFile) { toast.error("Choose a CSV file first."); return; }
+    if (!importFile) {
+      toast.error("Choose a CSV file first.");
+      return;
+    }
     try {
       const formData = new FormData();
       formData.append("file", importFile);
@@ -194,63 +212,32 @@ export default function CustomersPage() {
   return (
     <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
-
-        <CustomerPageHeader
-          onImport={() => setImportOpen(true)}
-          onExport={exportCustomers}
-          onAdd={() => setCreateOpen(true)}
-        />
+        <CustomerPageHeader onImport={() => setImportOpen(true)} onExport={exportCustomers} onAdd={() => setCreateOpen(true)} />
 
         <CustomerSummaryCards stats={stats} />
 
-        <CustomerTable
-          customers={customers}
-          loading={loading}
-          query={query}
-          setQuery={setQuery}
-          status={status}
-          setStatus={setStatus}
-          sort={sort}
-          setSort={setSort}
-          pagination={pagination}
-          page={page}
-          setPage={setPage}
-          onRowClick={loadProfile}
-        />
-
+        <CustomerTable customers={customers} loading={loading} query={query} setQuery={setQuery} status={status} setStatus={setStatus} sort={sort} setSort={setSort} pagination={pagination} page={page} setPage={setPage} onRowClick={loadProfile} />
       </div>
 
       <CustomerCreateDialog
         open={createOpen}
-        onOpenChange={(open) => { setCreateOpen(open); if (!open) resetCreate(); }}
+        onOpenChange={(open) => {
+          setCreateOpen(open);
+          if (!open) resetCreate();
+        }}
         form={customerForm}
         onChange={handleFormChange}
         setForm={setCustomerForm}
-        onSubmit={submitCustomer}
+        onSubmit={handleSubmit}
         onCancel={() => setCreateOpen(false)}
         saving={savingCustomer}
         duplicateState={duplicateState}
+        errors={errors}
       />
 
-      <CustomerImportDialog
-        open={importOpen}
-        onOpenChange={setImportOpen}
-        onFileChange={setImportFile}
-        onImport={importCustomers}
-        onCancel={() => setImportOpen(false)}
-        duplicates={importDuplicates}
-      />
+      <CustomerImportDialog open={importOpen} onOpenChange={setImportOpen} onFileChange={setImportFile} onImport={importCustomers} onCancel={() => setImportOpen(false)} duplicates={importDuplicates} />
 
-      <CustomerProfileDialog
-        open={profileOpen}
-        onOpenChange={setProfileOpen}
-        loading={profileLoading}
-        customer={selectedCustomer}
-        noteContent={noteContent}
-        setNoteContent={setNoteContent}
-        addNote={addNote}
-        quickAction={quickAction}
-      />
+      <CustomerProfileDialog open={profileOpen} onOpenChange={setProfileOpen} loading={profileLoading} customer={selectedCustomer} noteContent={noteContent} setNoteContent={setNoteContent} addNote={addNote} quickAction={quickAction} />
     </div>
   );
 }

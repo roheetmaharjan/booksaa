@@ -19,6 +19,8 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import NewAppointment from "@/components/common/NewAppointment";
+import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
+import { useMutation } from "@/hooks/useMutation";
 
 // ─── RBC localizer ────────────────────────────────────────────────────────────
 
@@ -98,6 +100,25 @@ function getEmptyBooking(startDate, serviceDuration = DEFAULT_DURATION) {
   };
 }
 
+const emptyCustomerForm = {
+  fullName: "",
+  phone: "",
+  email: "",
+  gender: "",
+  dateOfBirth: "",
+  address: "",
+  profilePhoto: "",
+  notes: "",
+  status: "ACTIVE",
+  tags: "",
+  preferredStaffName: "",
+  preferredServiceName: "",
+  loyaltyPoints: 0,
+  earnedPoints: 0,
+  redeemedPoints: 0,
+  membershipLevel: "",
+};
+
 // ─── custom event component ───────────────────────────────────────────────────
 
 function EventComponent({ event }) {
@@ -129,6 +150,39 @@ export default function BookingsPage() {
 
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
+
+  // ── Customer create (from New Appointment dialog) ──────────────────────────
+  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
+  const [customerForm, setCustomerForm] = useState(emptyCustomerForm);
+  const [duplicateState, setDuplicateState] = useState(null);
+  const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
+
+  const handleCustomerFormChange = (e) => {
+    const { name, value } = e.target;
+    setCustomerForm((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const resetCustomerForm = () => {
+    setCustomerForm(emptyCustomerForm);
+    setDuplicateState(null);
+  };
+
+  const submitCustomer = async (ignoreDuplicate = false) => {
+    try {
+      await createCustomer({ ...customerForm, ignoreDuplicate });
+      toast.success("Customer created.");
+      setCustomerCreateOpen(false);
+      resetCustomerForm();
+    } catch (error) {
+      if (error.message === "Possible duplicate customer.") {
+        setDuplicateState({ message: error.message });
+        toast.error("Possible duplicate customer.");
+        return;
+      }
+      toast.error(error.message || "Unable to create customer.");
+    }
+  };
+  // ──────────────────────────────────────────────────────────────────────────
 
   // derived
   const locationId = searchParams.get("locationId");
@@ -412,18 +466,14 @@ export default function BookingsPage() {
             <PopoverTrigger asChild>
               <Button variant="outline" role="combobox" className="w-[250px] justify-between">
                 {selectedProfessionals.length === 0 ? "All Staff" : `${selectedProfessionals.length} selected`}
-
                 <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
               </Button>
             </PopoverTrigger>
-
             <PopoverContent className="w-[220px] p-0">
               <Command>
                 <CommandInput placeholder="Search staff..." />
-
                 <CommandList>
                   <CommandEmpty>No staff found.</CommandEmpty>
-
                   <CommandGroup>
                     <CommandItem
                       value="all"
@@ -435,19 +485,16 @@ export default function BookingsPage() {
                       <Check className={cn("mr-2 h-4 w-4", selectedProfessionals.length === 0 ? "opacity-100" : "opacity-0")} />
                       All Staff
                     </CommandItem>
-
                     {professionals.map((professional) => (
                       <CommandItem
                         key={professional.id}
                         value={professional.name}
                         onSelect={() => {
                           const id = String(professional.id);
-
                           setSelectedProfessionals((prev) => (prev.includes(id) ? prev.filter((p) => p !== id) : [...prev, id]));
                         }}
                       >
                         <Check className={cn("mr-2 h-4 w-4", selectedProfessionals.includes(String(professional.id)) ? "opacity-100" : "opacity-0")} />
-
                         {professional.name}
                       </CommandItem>
                     ))}
@@ -462,12 +509,10 @@ export default function BookingsPage() {
         <div className="min-h-0 flex-1 overflow-auto rbc-host">
           <Calendar
             localizer={localizer}
-            // events={rbcEvents}
             view={currentView}
             date={currentDate}
             onView={setCurrentView}
             onNavigate={setCurrentDate}
-            // resources={showResources ? resources : undefined}
             resourceIdAccessor="id"
             resourceTitleAccessor="title"
             components={{
@@ -505,7 +550,7 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* Booking dialog */}
+      {/* New Appointment dialog */}
       <NewAppointment
         open={dialogOpen}
         onOpenChange={setDialogOpen}
@@ -518,159 +563,62 @@ export default function BookingsPage() {
         services={services}
         selectedService={selectedService}
         paymentLabel={paymentLabel}
+        onNewCustomer={() => setCustomerCreateOpen(true)}
+      />
+
+      {/* Customer Create dialog — opened from inside New Appointment */}
+      <CustomerCreateDialog
+        open={customerCreateOpen}
+        onOpenChange={(open) => {
+          setCustomerCreateOpen(open);
+          if (!open) resetCustomerForm();
+        }}
+        form={customerForm}
+        onChange={handleCustomerFormChange}
+        setForm={setCustomerForm}
+        onSubmit={submitCustomer}
+        onCancel={() => setCustomerCreateOpen(false)}
+        saving={savingCustomer}
+        duplicateState={duplicateState}
       />
 
       {/* RBC styles */}
       <style>{`
-        /* Base overrides */
         .rbc-host .rbc-calendar { font-family: inherit; }
         .rbc-host .rbc-toolbar { display: none; }
-
-        /* Header */
-        .rbc-host .rbc-time-header {
-          border-bottom: 1px solid #e2e8f0;
-        }
-        .rbc-host .rbc-header {
-          background: #f8fafc;
-          border-color: #e2e8f0;
-          padding: 0;
-        }
-        .rbc-host .rbc-header + .rbc-header {
-          border-left: 1px solid #e2e8f0;
-        }
-
-        /* Resource header cells */
-        .rbc-host .rbc-resource-header {
-          background: #f8fafc;
-          border-right: 1px solid #e2e8f0;
-        }
-
-        /* Time gutter */
-        .rbc-host .rbc-time-gutter .rbc-timeslot-group {
-          border-color: #e2e8f0;
-        }
-        .rbc-host .rbc-time-slot {
-          font-size: 10px;
-          color: #94a3b8;
-          font-weight: 500;
-        }
-        .rbc-host .rbc-label {
-          padding: 0 8px;
-          font-size: 10px;
-          color: #94a3b8;
-        }
-
-        /* Slot rows */
-        .rbc-host .rbc-timeslot-group {
-          border-color: #e2e8f0;
-          min-height: 48px;
-        }
-        .rbc-host .rbc-time-content {
-          border-top: 1px solid #e2e8f0;
-        }
-        .rbc-host .rbc-day-slot .rbc-time-slot {
-          border-color: #f1f5f9;
-        }
-        .rbc-host .rbc-time-column {
-          border-color: #e2e8f0;
-        }
-
-        /* Past slots */
-        .rbc-host .rbc-past-slot {
-          background: #f8fafc;
-        }
-
-        /* Current time indicator */
-        .rbc-host .rbc-current-time-indicator {
-          background-color: #ef4444;
-          height: 2px;
-        }
-        .rbc-host .rbc-current-time-indicator::before {
-          background-color: #ef4444;
-        }
-
-        /* Selection highlight */
-        .rbc-host .rbc-slot-selection {
-          background: rgba(37,99,235,0.07);
-          border: 1px solid rgba(37,99,235,0.2);
-          border-radius: 6px;
-          color: #2563eb;
-          font-size: 11px;
-        }
-
-        /* Events */
-        .rbc-host .rbc-event {
-          border-radius: 6px !important;
-          border: none !important;
-          padding: 0 !important;
-          opacity: 0.93;
-        }
+        .rbc-host .rbc-time-header { border-bottom: 1px solid #e2e8f0; }
+        .rbc-host .rbc-header { background: #f8fafc; border-color: #e2e8f0; padding: 0; }
+        .rbc-host .rbc-header + .rbc-header { border-left: 1px solid #e2e8f0; }
+        .rbc-host .rbc-resource-header { background: #f8fafc; border-right: 1px solid #e2e8f0; }
+        .rbc-host .rbc-time-gutter .rbc-timeslot-group { border-color: #e2e8f0; }
+        .rbc-host .rbc-time-slot { font-size: 10px; color: #94a3b8; font-weight: 500; }
+        .rbc-host .rbc-label { padding: 0 8px; font-size: 10px; color: #94a3b8; }
+        .rbc-host .rbc-timeslot-group { border-color: #e2e8f0; min-height: 48px; }
+        .rbc-host .rbc-time-content { border-top: 1px solid #e2e8f0; }
+        .rbc-host .rbc-day-slot .rbc-time-slot { border-color: #f1f5f9; }
+        .rbc-host .rbc-time-column { border-color: #e2e8f0; }
+        .rbc-host .rbc-past-slot { background: #f8fafc; }
+        .rbc-host .rbc-current-time-indicator { background-color: #ef4444; height: 2px; }
+        .rbc-host .rbc-current-time-indicator::before { background-color: #ef4444; }
+        .rbc-host .rbc-slot-selection { background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.2); border-radius: 6px; color: #2563eb; font-size: 11px; }
+        .rbc-host .rbc-event { border-radius: 6px !important; border: none !important; padding: 0 !important; opacity: 0.93; }
         .rbc-host .rbc-event:hover { opacity: 1; }
         .rbc-host .rbc-event:focus { outline: 2px solid #2563eb; outline-offset: 1px; }
         .rbc-host .rbc-event.rbc-selected { opacity: 1; box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(37,99,235,0.4); }
-
         .rbc-custom-event { height: 100%; }
-        .rbc-ev-title {
-          font-size: 11px;
-          font-weight: 600;
-          color: #fff;
-          line-height: 1.3;
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-        .rbc-ev-sub {
-          font-size: 10px;
-          color: rgba(255,255,255,0.75);
-          overflow: hidden;
-          white-space: nowrap;
-          text-overflow: ellipsis;
-        }
-        .rbc-ev-time {
-          font-size: 10px;
-          color: rgba(255,255,255,0.6);
-        }
-
-        /* Month view */
-        .rbc-host .rbc-month-view {
-          border-color: #e2e8f0;
-        }
-        .rbc-host .rbc-month-row {
-          border-color: #e2e8f0;
-        }
-        .rbc-host .rbc-day-bg + .rbc-day-bg {
-          border-color: #e2e8f0;
-        }
-        .rbc-host .rbc-off-range-bg {
-          background: #f8fafc;
-        }
-        .rbc-host .rbc-today {
-          background: #f0f9ff;
-        }
-        .rbc-host .rbc-date-cell {
-          font-size: 12px;
-          font-weight: 600;
-          color: #475569;
-          padding: 4px 6px;
-          text-align: right;
-        }
-        .rbc-host .rbc-date-cell a {
-          color: inherit;
-        }
-
-        /* Agenda view */
-        .rbc-host .rbc-agenda-view table {
-          border-color: #e2e8f0;
-          font-size: 13px;
-        }
-        .rbc-host .rbc-agenda-date-cell,
-        .rbc-host .rbc-agenda-time-cell {
-          font-size: 12px;
-          color: #64748b;
-        }
-        .rbc-row-content{
-          display: none;
-        }
+        .rbc-ev-title { font-size: 11px; font-weight: 600; color: #fff; line-height: 1.3; overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .rbc-ev-sub { font-size: 10px; color: rgba(255,255,255,0.75); overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+        .rbc-ev-time { font-size: 10px; color: rgba(255,255,255,0.6); }
+        .rbc-host .rbc-month-view { border-color: #e2e8f0; }
+        .rbc-host .rbc-month-row { border-color: #e2e8f0; }
+        .rbc-host .rbc-day-bg + .rbc-day-bg { border-color: #e2e8f0; }
+        .rbc-host .rbc-off-range-bg { background: #f8fafc; }
+        .rbc-host .rbc-today { background: #f0f9ff; }
+        .rbc-host .rbc-date-cell { font-size: 12px; font-weight: 600; color: #475569; padding: 4px 6px; text-align: right; }
+        .rbc-host .rbc-date-cell a { color: inherit; }
+        .rbc-host .rbc-agenda-view table { border-color: #e2e8f0; font-size: 13px; }
+        .rbc-host .rbc-agenda-date-cell, .rbc-host .rbc-agenda-time-cell { font-size: 12px; color: #64748b; }
+        .rbc-row-content { display: none; }
       `}</style>
     </div>
   );

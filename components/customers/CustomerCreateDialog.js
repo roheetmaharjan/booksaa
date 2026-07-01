@@ -12,6 +12,7 @@ export function CustomerCreateDialog({
   onCancel,
   saving,
   duplicateState,
+  errors,
 }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -26,7 +27,7 @@ export function CustomerCreateDialog({
           </div>
         )}
 
-        <CustomerForm form={form} onChange={onChange} setForm={setForm} />
+        <CustomerForm form={form} onChange={onChange} setForm={setForm} errors={errors} />
 
         <DialogFooter className="gap-2">
           <Button type="button" variant="outline" onClick={onCancel}>

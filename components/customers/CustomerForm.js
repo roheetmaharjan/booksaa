@@ -4,20 +4,23 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PhoneNumberInput } from "@/components/common/PhoneNumber";
 
-export function CustomerForm({ form, onChange, setForm }) {
+export function CustomerForm({ form, onChange, setForm, errors }) {
   return (
     <div className="grid grid-cols-12 gap-3">
       <div className="col-span-12 md:col-span-6">
         <Label>Full Name</Label>
         <Input name="fullName" value={form.fullName} onChange={onChange} />
+        {errors.fullName && <p className="text-xs text-red-500">{errors.fullName}</p>}
       </div>
       <div className="col-span-12 md:col-span-6">
         <Label htmlFor="phone">Phone</Label>
         <PhoneNumberInput value={form.phone} onChange={(value) => setForm((prev) => ({ ...prev, phone: value || "" }))} />
+        {errors.phone && <p className="text-xs text-red-500">{errors.phone}</p>}
       </div>
       <div className="col-span-12 md:col-span-6">
         <Label>Email</Label>
         <Input name="email" type="email" value={form.email} onChange={onChange} />
+        {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
       </div>
       <div className="col-span-12 md:col-span-3">
         <Label>Gender</Label>
@@ -41,6 +44,7 @@ export function CustomerForm({ form, onChange, setForm }) {
             <SelectItem value="PREFER_NOT_TO_SAY">Prefer not to say</SelectItem>
           </SelectContent>
         </Select>
+        {errors.gender && <p className="text-xs text-red-500">{errors.gender}</p>}
       </div>
       <div className="col-span-12 md:col-span-3">
         <Label>Status</Label>
@@ -54,6 +58,7 @@ export function CustomerForm({ form, onChange, setForm }) {
             <SelectItem value="BLOCKED">Blocked</SelectItem>
           </SelectContent>
         </Select>
+        {errors.status && <p className="text-xs text-red-500">{errors.status}</p>}
       </div>
       <div className="col-span-12 md:col-span-3">
         <Label>Date of Birth</Label>
