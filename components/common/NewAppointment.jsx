@@ -12,10 +12,10 @@ import { Textarea } from "@/components/ui/textarea";
 import ProfessionalAvatar from "@/components/common/ProfessionalAvatar";
 import { format, startOfDay } from "date-fns";
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
-import { Clock,ChevronsUpDown,Check } from "lucide-react";
+import { Clock, ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem } from "@/components/ui/command";
-import { CommandList } from "cmdk";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
 
 function toDateString(date) {
   return format(date, "yyyy-MM-dd");
@@ -84,10 +84,21 @@ export default function NewAppointment({
   services,
   selectedService,
   paymentLabel,
-  onNewCustomer, // FIX: receive callback from parent instead of managing dead local state
+  onNewCustomer, // optional: if parent still wants to handle this itself, it overrides the built-in dialog below
 }) {
   const [customers, setCustomers] = useState([]);
   const [customerOpen, setCustomerOpen] = useState(false);
+
+  // NEW: compulsory customer validation
+  const [customerError, setCustomerError] = useState("");
+
+  // NEW: self-contained "add new customer" dialog state, mirroring the customer
+  // list page's CustomerCreateDialog usage
+  const [newCustomerOpen, setNewCustomerOpen] = useState(false);
+  const [customerForm, setCustomerForm] = useState({ fullName: "", phone: "", email: "" });
+  const [customerErrors, setCustomerErrors] = useState({});
+  const [duplicateState, setDuplicateState] = useState(null);
+  const [savingCustomer, setSavingCustomer] = useState(false);
 
   // FIX: wrapped in useCallback so the effect dep is stable
   const loadCustomers = useCallback(async () => {
@@ -104,14 +115,104 @@ export default function NewAppointment({
     loadCustomers();
   }, [loadCustomers]);
 
+  const resetCreate = useCallback(() => {
+    setCustomerForm({ fullName: "", phone: "", email: "" });
+    setCustomerErrors({});
+    setDuplicateState(null);
+  }, []);
+
+  // TODO: confirm this matches your real handleFormChange signature —
+  // assumed a standard input event: onChange={(e) => handleFormChange(e)}
+  const handleCustomerFormChange = useCallback((e) => {
+    const { name, value } = e.target;
+    setCustomerForm((prev) => ({ ...prev, [name]: value }));
+    setCustomerErrors((prev) => ({ ...prev, [name]: undefined }));
+  }, []);
+
+  // TODO: confirm this matches your real handleSubmit — assumed it POSTs to
+  // /api/customers, returns the created customer, and the dialog expects
+  // saving/errors/duplicateState to be managed here.
+  const handleCustomerSubmit = useCallback(
+    async (e) => {
+      e?.preventDefault?.();
+      setSavingCustomer(true);
+      setCustomerErrors({});
+      setDuplicateState(null);
+      try {
+        const res = await fetch("/api/customers", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(customerForm),
+        });
+        const data = await res.json();
+
+        if (!res.ok) {
+          if (data.duplicate) {
+            setDuplicateState(data.duplicate);
+          } else {
+            setCustomerErrors(data.errors || { fullName: data.message || "Failed to create customer" });
+          }
+          return;
+        }
+
+        const created = data.customer;
+        await loadCustomers();
+
+        // auto-select the newly created customer in the booking form
+        setBookingForm((prev) => ({
+          ...prev,
+          customerId: created.id,
+          customerName: created.fullName,
+          customerPhone: created.phone,
+          customerEmail: created.email,
+        }));
+        setCustomerError("");
+
+        setNewCustomerOpen(false);
+        resetCreate();
+      } catch {
+        setCustomerErrors({ fullName: "Something went wrong. Please try again." });
+      } finally {
+        setSavingCustomer(false);
+      }
+    },
+    [customerForm, loadCustomers, resetCreate, setBookingForm],
+  );
+
+  const handleNewCustomerClick = useCallback(() => {
+    if (onNewCustomer) {
+      onNewCustomer();
+      return;
+    }
+    resetCreate();
+    setNewCustomerOpen(true);
+  }, [onNewCustomer, resetCreate]);
+
+  // NEW: gate the real submit handler behind compulsory customer validation
+  const handleSubmitWithValidation = useCallback(
+    (e) => {
+      if (!bookingForm.customerId) {
+        e.preventDefault();
+        setCustomerError("Please select a customer before confirming the booking.");
+        return;
+      }
+      setCustomerError("");
+      handleCreateBooking(e);
+    },
+    [bookingForm.customerId, handleCreateBooking],
+  );
+
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="p-0 sm:max-w-[700px]">
+    <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
+      <DialogContent
+        className="p-0 sm:max-w-[700px]"
+        onInteractOutside={(e) => e.preventDefault()}
+      >
         <DialogHeader className="border-b border-slate-100 px-6 py-4">
           <DialogTitle className="font-semibold text-slate-900">New appointment</DialogTitle>
         </DialogHeader>
 
-        <form onSubmit={handleCreateBooking}>
+        <form onSubmit={handleSubmitWithValidation}>
           <div className="no-scrollbar max-h-[50vh] overflow-y-auto px-3">
             <section>
               <div className="flex flex-row items-end gap-2.5">
@@ -120,14 +221,14 @@ export default function NewAppointment({
 
                   <Popover open={customerOpen} onOpenChange={setCustomerOpen}>
                     <PopoverTrigger asChild>
-                      <Button variant="outline" role="combobox" aria-expanded={customerOpen} className="w-full justify-between font-normal">
+                      <Button type="button" variant="outline" role="combobox" aria-expanded={customerOpen} className="w-full justify-between font-normal">
                         {bookingForm.customerId ? customers.find((c) => c.id === bookingForm.customerId)?.fullName : "Select customer"}
 
                         <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                       </Button>
                     </PopoverTrigger>
 
-                    <PopoverContent className="w-full p-0">
+                    <PopoverContent className="p-0" align="start" sideOffset={4} style={{ width: "var(--radix-popover-trigger-width)" }} onOpenAutoFocus={(e) => e.preventDefault()}>
                       <Command>
                         <CommandInput placeholder="Search customer..." />
                         <CommandList>
@@ -136,7 +237,8 @@ export default function NewAppointment({
                             {customers.map((customer) => (
                               <CommandItem
                                 key={customer.id}
-                                value={`${customer.fullName} ${customer.phone} ${customer.email}`}
+                                value={customer.fullName}
+                                keywords={[customer.phone, customer.email, customer.fullName]}
                                 onSelect={() => {
                                   setBookingForm((prev) => ({
                                     ...prev,
@@ -145,6 +247,7 @@ export default function NewAppointment({
                                     customerPhone: customer.phone,
                                     customerEmail: customer.email,
                                   }));
+                                  setCustomerError("");
 
                                   setCustomerOpen(false);
                                 }}
@@ -162,8 +265,9 @@ export default function NewAppointment({
                       </Command>
                     </PopoverContent>
                   </Popover>
+                  {customerError && <p className="mt-1 text-xs text-red-500">{customerError}</p>}
                 </div>
-                <Button type="button" onClick={onNewCustomer}>
+                <Button type="button" onClick={handleNewCustomerClick}>
                   + New Customer
                 </Button>
               </div>
@@ -242,6 +346,24 @@ export default function NewAppointment({
           </DialogFooter>
         </form>
       </DialogContent>
+
+      {!onNewCustomer && (
+        <CustomerCreateDialog
+          open={newCustomerOpen}
+          onOpenChange={(o) => {
+            setNewCustomerOpen(o);
+            if (!o) resetCreate();
+          }}
+          form={customerForm}
+          onChange={handleCustomerFormChange}
+          setForm={setCustomerForm}
+          onSubmit={handleCustomerSubmit}
+          onCancel={() => setNewCustomerOpen(false)}
+          saving={savingCustomer}
+          duplicateState={duplicateState}
+          errors={customerErrors}
+        />
+      )}
     </Dialog>
   );
 }
