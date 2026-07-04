@@ -10,16 +10,69 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import ProfessionalAvatar from "@/components/common/ProfessionalAvatar";
-import { format, startOfDay } from "date-fns";
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
 import { Clock, ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
+import { format, startOfDay, addMinutes, isAfter, isSameDay } from "date-fns";
+import { toast } from "sonner";
+
+// ─── constants ──────────────────────────────────────────────────────────────
+
+const DEFAULT_DURATION = 30;
+
+// ─── helpers (self-contained — no longer supplied by the parent page) ───────
 
 function toDateString(date) {
   return format(date, "yyyy-MM-dd");
 }
+
+function toTimeString(date) {
+  return format(date, "HH:mm");
+}
+
+function combineDateAndTime(dateStr, timeStr) {
+  return new Date(`${dateStr}T${timeStr}`);
+}
+
+function isBookableSlot(date) {
+  return isAfter(date, new Date());
+}
+
+function getNextBookableDate(base = new Date()) {
+  const next = new Date(base);
+  if (!isAfter(next, new Date())) next.setTime(addMinutes(new Date(), 5).getTime());
+  const rounded = Math.ceil(next.getMinutes() / 15) * 15;
+  next.setMinutes(rounded, 0, 0);
+  return next;
+}
+
+function getEmptyBooking(startDate, serviceDuration = DEFAULT_DURATION) {
+  const start = getNextBookableDate(startDate || new Date());
+  const end = addMinutes(start, serviceDuration);
+  return {
+    customerName: "",
+    customerEmail: "",
+    customerPhone: "",
+    customerId: "",
+    serviceId: "",
+    professionalId: "",
+    date: toDateString(start),
+    startTime: toTimeString(start),
+    endTime: toTimeString(end),
+    notes: "",
+  };
+}
+
+function paymentLabel(service) {
+  if (!service || service.prepaymentType === "pay_later") return "Pay later";
+  if (service.prepaymentType === "full") return "Full payment";
+  const value = Number(service.depositValue || 0);
+  return service.depositType === "fixed" ? `$${value.toFixed(2)} deposit` : `${value}% deposit`;
+}
+
+// ─── sub-components ───────────────────────────────────────────────────────────
 
 // Date Picker Field
 function DatePickerField({ value, onChange, minDate }) {
@@ -40,7 +93,7 @@ function DatePickerField({ value, onChange, minDate }) {
           onSelect={(day) => {
             if (day) {
               onChange(toDateString(day));
-              setCalendarOpen(false); 
+              setCalendarOpen(false);
             }
           }}
           disabled={(day) => (minDate ? startOfDay(day) < startOfDay(minDate) : false)}
@@ -52,7 +105,7 @@ function DatePickerField({ value, onChange, minDate }) {
 }
 
 // Service Card
-function ServiceCard({ service, selected, onSelect, paymentLabel }) {
+function ServiceCard({ service, selected, onSelect }) {
   return (
     <button type="button" onClick={() => onSelect(service.id)} className={cn("group relative flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150", selected ? "border-slate-200 bg-slate-200 text-white" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
       <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color || "#2563eb" }} />
@@ -72,27 +125,32 @@ function ServiceCard({ service, selected, onSelect, paymentLabel }) {
   );
 }
 
+// ─── main component ───────────────────────────────────────────────────────────
+
+/**
+ * Fully self-contained "new appointment" dialog. The parent only needs to control
+ * `open`/`onOpenChange`, tell it where a new booking should start (`initialStart`,
+ * `initialProfessionalId`), and supply the lists of `professionals`/`services`.
+ * Everything else — form state, validation, scheduling math, and the actual booking
+ * submission — lives in here, so this component can be dropped into any page.
+ */
 export default function NewAppointment({
   open,
   onOpenChange,
-  handleCreateBooking,
-  bookingForm,
-  setBookingForm,
-  minStartTime,
-  handleStartTimeChange,
-  professionals,
-  services,
-  selectedService,
-  paymentLabel,
+  onBookingSuccess,
+  initialStart,
+  initialProfessionalId,
+  professionals = [],
+  services = [],
   onNewCustomer,
 }) {
+  const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
+
   const [customers, setCustomers] = useState([]);
   const [customerOpen, setCustomerOpen] = useState(false);
-
-  // NEW: compulsory customer validation
   const [customerError, setCustomerError] = useState("");
 
-  // NEW: self-contained "add new customer" dialog state, mirroring the customer
+  // self-contained "add new customer" dialog state, mirroring the customer
   // list page's CustomerCreateDialog usage
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [customerForm, setCustomerForm] = useState({ fullName: "", phone: "", email: "" });
@@ -100,13 +158,34 @@ export default function NewAppointment({
   const [duplicateState, setDuplicateState] = useState(null);
   const [savingCustomer, setSavingCustomer] = useState(false);
 
+  // initialize/reset the booking form whenever the dialog is opened for a new slot
+  useEffect(() => {
+    if (!open) return;
+    const duration = services[0]?.duration || DEFAULT_DURATION;
+    const startDate = initialStart || getNextBookableDate();
+    const endDate = addMinutes(startDate, duration);
+    setBookingForm({
+      ...getEmptyBooking(startDate, duration),
+      professionalId: initialProfessionalId || professionals[0]?.id || "",
+      serviceId: services[0]?.id || "",
+      date: toDateString(startDate),
+      startTime: toTimeString(startDate),
+      endTime: toTimeString(endDate),
+    });
+    setCustomerError("");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [open, initialStart, initialProfessionalId]);
+
+  const selectedService = services.find((s) => s.id === bookingForm.serviceId) || null;
+
+  const minStartTime = isSameDay(combineDateAndTime(bookingForm.date, "00:00"), new Date()) ? toTimeString(getNextBookableDate()) : undefined;
+
   const loadCustomers = useCallback(async () => {
     try {
       const res = await fetch("/api/customers");
       const data = await res.json();
-      setCustomers(data.customers || []); 
-    } catch {
-    }
+      setCustomers(data.customers || []);
+    } catch {}
   }, []);
 
   useEffect(() => {
@@ -114,7 +193,6 @@ export default function NewAppointment({
   }, [loadCustomers]);
 
   const resetCreate = useCallback(() => {
-    console.log("customerForm:", customerForm);
     setCustomerForm({ fullName: "", phone: "", email: "" });
     setCustomerErrors({});
     setDuplicateState(null);
@@ -170,7 +248,7 @@ export default function NewAppointment({
         setSavingCustomer(false);
       }
     },
-    [customerForm, loadCustomers, resetCreate, setBookingForm],
+    [customerForm, loadCustomers, resetCreate],
   );
 
   const handleNewCustomerClick = useCallback(() => {
@@ -182,7 +260,48 @@ export default function NewAppointment({
     setNewCustomerOpen(true);
   }, [onNewCustomer, resetCreate]);
 
-  // NEW: gate the real submit handler behind compulsory customer validation
+  // create booking
+  const handleCreateBooking = useCallback(
+    async (e) => {
+      e.preventDefault();
+      const scheduledAt = combineDateAndTime(bookingForm.date, bookingForm.startTime);
+      const scheduledEnd = combineDateAndTime(bookingForm.date, bookingForm.endTime);
+
+      if (!isAfter(scheduledAt, new Date())) {
+        toast.error("Appointments can only be booked for a future date and time.");
+        return;
+      }
+      if (!isAfter(scheduledEnd, scheduledAt)) {
+        toast.error("End time must be after start time.");
+        return;
+      }
+
+      try {
+        const res = await fetch("/api/bookings", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...bookingForm,
+            scheduledAt: scheduledAt.toISOString(),
+            scheduledEnd: scheduledEnd.toISOString(),
+          }),
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          toast.error(data.error || "Unable to book appointment");
+          return;
+        }
+        toast.success("Appointment booked");
+        onBookingSuccess?.();
+      } catch (err) {
+        console.error(err);
+        toast.error("Unable to book appointment");
+      }
+    },
+    [bookingForm, onBookingSuccess],
+  );
+
+  // gate the real submit handler behind compulsory customer validation
   const handleSubmitWithValidation = useCallback(
     (e) => {
       if (!bookingForm.customerId) {
@@ -196,12 +315,30 @@ export default function NewAppointment({
     [bookingForm.customerId, handleCreateBooking],
   );
 
+  // recalc end time when the selected service changes
+  useEffect(() => {
+    if (!selectedService) return;
+    const start = combineDateAndTime(bookingForm.date, bookingForm.startTime);
+    setBookingForm((p) => ({
+      ...p,
+      endTime: toTimeString(addMinutes(start, selectedService.duration || DEFAULT_DURATION)),
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookingForm.serviceId]);
+
+  const handleStartTimeChange = (newTime) => {
+    const duration = selectedService?.duration || DEFAULT_DURATION;
+    const start = combineDateAndTime(bookingForm.date, newTime);
+    setBookingForm((p) => ({
+      ...p,
+      startTime: newTime,
+      endTime: toTimeString(addMinutes(start, duration)),
+    }));
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent
-        className="p-0 sm:max-w-[900px] w-full"
-        onInteractOutside={(e) => e.preventDefault()}
-      >
+      <DialogContent className="p-0 sm:max-w-[900px] w-full" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader className="border-b border-slate-100 px-6 py-4">
           <DialogTitle className="font-semibold text-slate-900">New appointment</DialogTitle>
         </DialogHeader>
@@ -324,7 +461,7 @@ export default function NewAppointment({
                 ) : (
                   <div className="flex flex-col gap-2 overflow-y-auto">
                     {services.map((svc) => (
-                      <ServiceCard key={svc.id} service={svc} selected={bookingForm.serviceId === svc.id} paymentLabel={paymentLabel} onSelect={(id) => setBookingForm((p) => ({ ...p, serviceId: id }))} />
+                      <ServiceCard key={svc.id} service={svc} selected={bookingForm.serviceId === svc.id} onSelect={(id) => setBookingForm((p) => ({ ...p, serviceId: id }))} />
                     ))}
                   </div>
                 )}

@@ -1,6 +1,7 @@
 "use client";
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useMutation } from "@/hooks/useMutation";
 import { validateCustomer } from "@/lib/validations/customer";
@@ -11,6 +12,7 @@ import { CustomerTable } from "@/components/customers/CustomerTable";
 import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
 import { CustomerImportDialog } from "@/components/customers/CustomerImportDialog";
 import { CustomerProfileDialog } from "@/components/customers/CustomerProfileDialog";
+import NewAppointment from "@/components/common/NewAppointment";
 
 const emptyCustomer = {
   fullName: "",
@@ -40,7 +42,21 @@ function encodeQuery(params) {
 }
 
 export default function CustomersPage() {
-  // List state
+  const searchParams = useSearchParams();
+  const [vendor, setVendor] = useState(null);
+
+  const locationId = searchParams.get("locationId");
+  const locations = vendor?.locations || [];
+  const effectiveLocationId =
+    locationId ||
+    vendor?.selectedLocationId ||
+    vendor?.defaultLocationId ||
+    locations[0]?.id ||
+    "";
+  const professionals = vendor?.professionals || [];
+  const services = vendor?.services || [];
+
+  // ── List state ──────────────────────────────────────────────────
   const [customers, setCustomers] = useState([]);
   const [stats, setStats] = useState({});
   const [pagination, setPagination] = useState({ page: 1, pageSize: 10, total: 0, totalPages: 1 });
@@ -50,28 +66,79 @@ export default function CustomersPage() {
   const [sort, setSort] = useState("latest");
   const [page, setPage] = useState(1);
 
-  // Dialog visibility
+  // ── Dialog visibility ───────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+  const [dialogOpen, setDialogOpen] = useState(false);
+  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
 
-  // Create form
+  // ── Create form ─────────────────────────────────────────────────
   const [customerForm, setCustomerForm] = useState(emptyCustomer);
   const [errors, setErrors] = useState({});
   const [duplicateState, setDuplicateState] = useState(null);
+  const [bookingStart, setBookingStart] = useState(null);
+  const [bookingProfessionalId, setBookingProfessionalId] = useState("");
 
-  // Profile
+  // ── Profile ─────────────────────────────────────────────────────
   const [selectedCustomer, setSelectedCustomer] = useState(null);
   const [profileLoading, setProfileLoading] = useState(false);
   const [noteContent, setNoteContent] = useState("");
 
-  // Import
+  // ── Import ──────────────────────────────────────────────────────
   const [importFile, setImportFile] = useState(null);
   const [importDuplicates, setImportDuplicates] = useState([]);
 
+  // ── Other ───────────────────────────────────────────────────────
+  const [openProfessional, setOpenProfessional] = useState(false);
+
   const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
 
-  // ── Data fetching ──────────────────────────────────────────────
+  const resources = useMemo(
+    () =>
+      professionals.map((p) => ({
+        id: p.id,
+        title: p.name,
+        roleName: p.role?.name || "",
+      })),
+    [professionals],
+  );
+
+  // ── Data fetching ───────────────────────────────────────────────
+  useEffect(() => {
+    let active = true;
+    async function loadVendor() {
+      try {
+        setLoading(true);
+        const currentRes = await fetch("/api/businesses/current", { cache: "no-store" });
+        const currentData = await currentRes.json();
+        if (!currentRes.ok || !currentData.vendor) {
+          toast.error("Failed to load business");
+          return;
+        }
+        const url = effectiveLocationId
+          ? `/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}`
+          : `/api/businesses/${currentData.vendor.id}`;
+        const vendorRes = await fetch(url, { cache: "no-store" });
+        const vendorData = await vendorRes.json();
+        if (!vendorRes.ok) {
+          toast.error("Failed to load booking calendar");
+          return;
+        }
+        if (active) setVendor(vendorData);
+      } catch (err) {
+        console.error(err);
+        toast.error("Unable to load booking calendar");
+      } finally {
+        if (active) setLoading(false);
+      }
+    }
+    loadVendor();
+    return () => {
+      active = false;
+    };
+  }, [effectiveLocationId]);
+
   const loadCustomers = useCallback(async () => {
     setLoading(true);
     try {
@@ -109,20 +176,7 @@ export default function CustomersPage() {
     }
   };
 
-  const handleSubmit = async (ignoreDuplicate) => {
-    const validationErrors = validateCustomer(customerForm);
-
-    if (Object.keys(validationErrors).length > 0) {
-      setErrors(validationErrors);
-      return;
-    }
-
-    setErrors({});
-
-    await submitCustomer(ignoreDuplicate);
-  };
-
-  // ── Create ─────────────────────────────────────────────────────
+  // ── Create ──────────────────────────────────────────────────────
   const handleFormChange = (e) => {
     const { name, value } = e.target;
     setCustomerForm((prev) => ({ ...prev, [name]: value }));
@@ -150,7 +204,17 @@ export default function CustomersPage() {
     }
   };
 
-  // ── Notes ──────────────────────────────────────────────────────
+  const handleSubmit = async (ignoreDuplicate) => {
+    const validationErrors = validateCustomer(customerForm);
+    if (Object.keys(validationErrors).length > 0) {
+      setErrors(validationErrors);
+      return;
+    }
+    setErrors({});
+    await submitCustomer(ignoreDuplicate);
+  };
+
+  // ── Notes ───────────────────────────────────────────────────────
   const addNote = async () => {
     if (!selectedCustomer || !noteContent.trim()) {
       toast.error("Write a note first.");
@@ -172,7 +236,7 @@ export default function CustomersPage() {
     }
   };
 
-  // ── Quick actions ──────────────────────────────────────────────
+  // ── Quick actions ────────────────────────────────────────────────
   const quickAction = (type) => {
     if (!selectedCustomer) return;
     if (type === "call" && selectedCustomer.phone) window.location.href = `tel:${selectedCustomer.phone}`;
@@ -182,7 +246,12 @@ export default function CustomersPage() {
     else toast.info("This action is ready for the next integration.");
   };
 
-  // ── Import / Export ───────────────────────────────────────────
+  const handleBookingSuccess = () => {
+    setDialogOpen(false);
+    loadCustomers();
+  };
+
+  // ── Import / Export ─────────────────────────────────────────────
   const importCustomers = async (ignoreDuplicates = false) => {
     if (!importFile) {
       toast.error("Choose a CSV file first.");
@@ -208,7 +277,7 @@ export default function CustomersPage() {
     window.location.href = `/api/customers/export?format=${format}`;
   };
 
-  // ── Render ────────────────────────────────────────────────────
+  // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
       <div className="mx-auto flex max-w-7xl flex-col gap-5">
@@ -216,7 +285,20 @@ export default function CustomersPage() {
 
         <CustomerSummaryCards stats={stats} />
 
-        <CustomerTable customers={customers} loading={loading} query={query} setQuery={setQuery} status={status} setStatus={setStatus} sort={sort} setSort={setSort} pagination={pagination} page={page} setPage={setPage} onRowClick={loadProfile} />
+        <CustomerTable
+          customers={customers}
+          loading={loading}
+          query={query}
+          setQuery={setQuery}
+          status={status}
+          setStatus={setStatus}
+          sort={sort}
+          setSort={setSort}
+          pagination={pagination}
+          page={page}
+          setPage={setPage}
+          onRowClick={loadProfile}
+        />
       </div>
 
       <CustomerCreateDialog
@@ -235,9 +317,36 @@ export default function CustomersPage() {
         errors={errors}
       />
 
-      <CustomerImportDialog open={importOpen} onOpenChange={setImportOpen} onFileChange={setImportFile} onImport={importCustomers} onCancel={() => setImportOpen(false)} duplicates={importDuplicates} />
+      <NewAppointment
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+        onBookingSuccess={handleBookingSuccess}
+        initialStart={bookingStart}
+        initialProfessionalId={bookingProfessionalId}
+        professionals={professionals}
+        services={services}
+        onNewCustomer={() => setCustomerCreateOpen(true)}
+      />
 
-      <CustomerProfileDialog open={profileOpen} onOpenChange={setProfileOpen} loading={profileLoading} customer={selectedCustomer} noteContent={noteContent} setNoteContent={setNoteContent} addNote={addNote} quickAction={quickAction} />
+      <CustomerImportDialog
+        open={importOpen}
+        onOpenChange={setImportOpen}
+        onFileChange={setImportFile}
+        onImport={importCustomers}
+        onCancel={() => setImportOpen(false)}
+        duplicates={importDuplicates}
+      />
+
+      <CustomerProfileDialog
+        open={profileOpen}
+        onOpenChange={setProfileOpen}
+        loading={profileLoading}
+        customer={selectedCustomer}
+        noteContent={noteContent}
+        setNoteContent={setNoteContent}
+        addNote={addNote}
+        quickAction={quickAction}
+      />
     </div>
   );
 }
