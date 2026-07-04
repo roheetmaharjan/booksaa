@@ -40,7 +40,7 @@ function DatePickerField({ value, onChange, minDate }) {
           onSelect={(day) => {
             if (day) {
               onChange(toDateString(day));
-              setCalendarOpen(false); // FIX: was setOpen(false)
+              setCalendarOpen(false); 
             }
           }}
           disabled={(day) => (minDate ? startOfDay(day) < startOfDay(minDate) : false)}
@@ -84,7 +84,7 @@ export default function NewAppointment({
   services,
   selectedService,
   paymentLabel,
-  onNewCustomer, // optional: if parent still wants to handle this itself, it overrides the built-in dialog below
+  onNewCustomer,
 }) {
   const [customers, setCustomers] = useState([]);
   const [customerOpen, setCustomerOpen] = useState(false);
@@ -100,14 +100,12 @@ export default function NewAppointment({
   const [duplicateState, setDuplicateState] = useState(null);
   const [savingCustomer, setSavingCustomer] = useState(false);
 
-  // FIX: wrapped in useCallback so the effect dep is stable
   const loadCustomers = useCallback(async () => {
     try {
       const res = await fetch("/api/customers");
       const data = await res.json();
-      setCustomers(data.customers || []); // FIX: was data (raw), API returns { customers: [] }
+      setCustomers(data.customers || []); 
     } catch {
-      // fail silently — customer list will just be empty
     }
   }, []);
 
@@ -116,22 +114,18 @@ export default function NewAppointment({
   }, [loadCustomers]);
 
   const resetCreate = useCallback(() => {
+    console.log("customerForm:", customerForm);
     setCustomerForm({ fullName: "", phone: "", email: "" });
     setCustomerErrors({});
     setDuplicateState(null);
   }, []);
 
-  // TODO: confirm this matches your real handleFormChange signature —
-  // assumed a standard input event: onChange={(e) => handleFormChange(e)}
   const handleCustomerFormChange = useCallback((e) => {
     const { name, value } = e.target;
     setCustomerForm((prev) => ({ ...prev, [name]: value }));
     setCustomerErrors((prev) => ({ ...prev, [name]: undefined }));
   }, []);
 
-  // TODO: confirm this matches your real handleSubmit — assumed it POSTs to
-  // /api/customers, returns the created customer, and the dialog expects
-  // saving/errors/duplicateState to be managed here.
   const handleCustomerSubmit = useCallback(
     async (e) => {
       e?.preventDefault?.();
@@ -205,7 +199,7 @@ export default function NewAppointment({
   return (
     <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
       <DialogContent
-        className="p-0 sm:max-w-[700px]"
+        className="p-0 sm:max-w-[900px] w-full"
         onInteractOutside={(e) => e.preventDefault()}
       >
         <DialogHeader className="border-b border-slate-100 px-6 py-4">
@@ -213,7 +207,7 @@ export default function NewAppointment({
         </DialogHeader>
 
         <form onSubmit={handleSubmitWithValidation}>
-          <div className="no-scrollbar max-h-[50vh] overflow-y-auto px-3">
+          <div className="no-scrollbar max-h-[80vh] overflow-y-auto px-3">
             <section>
               <div className="flex flex-row items-end gap-2.5">
                 <div className="flex-1">
@@ -321,7 +315,7 @@ export default function NewAppointment({
               </div>
 
               {/* Right: service picker */}
-              <div className="flex flex-col">
+              <div className="flex flex-col pl-3">
                 <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Service</p>
                 {services.length === 0 ? (
                   <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-200 p-6 text-center">
