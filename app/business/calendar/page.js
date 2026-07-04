@@ -2,11 +2,11 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { addDays, addMinutes, format, isAfter, isSameDay, parseISO, startOfDay } from "date-fns";
+import { addDays, addMinutes, format, isAfter, parseISO, startOfDay } from "date-fns";
 import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format as fnsFormat, parse, startOfWeek, getDay } from "date-fns";
 import enUS from "date-fns/locale/en-US";
-import { ChevronLeft, ChevronRight, Clock, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
 import { toast } from "sonner";
 
 import Loading from "@/components/common/Loading";
@@ -44,6 +44,8 @@ const VIEW_OPTIONS = [
 ];
 
 // ─── helpers ──────────────────────────────────────────────────────────────────
+// (only calendar/booking-list concerns live here now — form/scheduling helpers
+// moved into NewAppointment, which owns the booking form end-to-end)
 
 function isPastDay(date) {
   return startOfDay(date) < startOfDay(new Date());
@@ -61,43 +63,8 @@ function getNextBookableDate(base = new Date()) {
   return next;
 }
 
-function toDateString(date) {
-  return format(date, "yyyy-MM-dd");
-}
-
-function toTimeString(date) {
-  return format(date, "HH:mm");
-}
-
-function combineDateAndTime(dateStr, timeStr) {
-  return new Date(`${dateStr}T${timeStr}`);
-}
-
-function paymentLabel(service) {
-  if (!service || service.prepaymentType === "pay_later") return "Pay later";
-  if (service.prepaymentType === "full") return "Full payment";
-  const value = Number(service.depositValue || 0);
-  return service.depositType === "fixed" ? `$${value.toFixed(2)} deposit` : `${value}% deposit`;
-}
-
 function appointmentTitle(booking) {
   return booking.customerName || [booking.user?.firstname, booking.user?.lastname].filter(Boolean).join(" ") || "Appointment";
-}
-
-function getEmptyBooking(startDate, serviceDuration = DEFAULT_DURATION) {
-  const start = getNextBookableDate(startDate || new Date());
-  const end = addMinutes(start, serviceDuration);
-  return {
-    customerName: "",
-    customerEmail: "",
-    customerPhone: "",
-    serviceId: "",
-    professionalId: "",
-    date: toDateString(start),
-    startTime: toTimeString(start),
-    endTime: toTimeString(end),
-    notes: "",
-  };
 }
 
 const emptyCustomerForm = {
@@ -148,8 +115,11 @@ export default function BookingsPage() {
   const [currentDate, setCurrentDate] = useState(new Date());
   const [calendarTitle, setCalendarTitle] = useState("");
 
+  // ── New appointment dialog: the page only remembers WHERE a new booking
+  // should start; NewAppointment owns the actual form/scheduling state.
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
+  const [bookingStart, setBookingStart] = useState(null);
+  const [bookingProfessionalId, setBookingProfessionalId] = useState("");
 
   // ── Customer create (from New Appointment dialog) ──────────────────────────
   const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
@@ -190,10 +160,6 @@ export default function BookingsPage() {
   const effectiveLocationId = locationId || vendor?.selectedLocationId || vendor?.defaultLocationId || locations[0]?.id || "";
   const professionals = vendor?.professionals || [];
   const services = vendor?.services || [];
-
-  const selectedService = services.find((s) => s.id === bookingForm.serviceId) || null;
-
-  const minStartTime = isSameDay(combineDateAndTime(bookingForm.date, "00:00"), new Date()) ? toTimeString(getNextBookableDate()) : undefined;
 
   const [openProfessional, setOpenProfessional] = useState(false);
   // RBC resources — one per professional
@@ -273,84 +239,25 @@ export default function BookingsPage() {
     loadBookings();
   }, [loadBookings]);
 
-  // open dialog
+  // open dialog — just records where the booking should start; NewAppointment
+  // builds the actual form state from these two values when it opens.
   const openBookingDialog = useCallback(
     (startDate, professionalId = null) => {
       if (!isBookableSlot(startDate)) {
         toast.error("Please choose a future date and time.");
         return;
       }
-      const duration = services[0]?.duration || DEFAULT_DURATION;
-      const endDate = addMinutes(startDate, duration);
-      setBookingForm({
-        ...getEmptyBooking(startDate, duration),
-        professionalId: professionalId || professionals[0]?.id || "",
-        serviceId: services[0]?.id || "",
-        date: toDateString(startDate),
-        startTime: toTimeString(startDate),
-        endTime: toTimeString(endDate),
-      });
+      setBookingStart(startDate);
+      setBookingProfessionalId(professionalId || professionals[0]?.id || "");
       setDialogOpen(true);
     },
-    [professionals, services],
+    [professionals],
   );
 
-  // recalc end when service changes
-  useEffect(() => {
-    if (!selectedService) return;
-    const start = combineDateAndTime(bookingForm.date, bookingForm.startTime);
-    setBookingForm((p) => ({
-      ...p,
-      endTime: toTimeString(addMinutes(start, selectedService.duration || DEFAULT_DURATION)),
-    }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [bookingForm.serviceId]);
-
-  const handleStartTimeChange = (newTime) => {
-    const duration = selectedService?.duration || DEFAULT_DURATION;
-    const start = combineDateAndTime(bookingForm.date, newTime);
-    setBookingForm((p) => ({
-      ...p,
-      startTime: newTime,
-      endTime: toTimeString(addMinutes(start, duration)),
-    }));
-  };
-
-  // submit
-  const handleCreateBooking = async (e) => {
-    e.preventDefault();
-    const scheduledAt = combineDateAndTime(bookingForm.date, bookingForm.startTime);
-    const scheduledEnd = combineDateAndTime(bookingForm.date, bookingForm.endTime);
-    if (!isAfter(scheduledAt, new Date())) {
-      toast.error("Appointments can only be booked for a future date and time.");
-      return;
-    }
-    if (!isAfter(scheduledEnd, scheduledAt)) {
-      toast.error("End time must be after start time.");
-      return;
-    }
-    try {
-      const res = await fetch("/api/bookings", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          ...bookingForm,
-          scheduledAt: scheduledAt.toISOString(),
-          scheduledEnd: scheduledEnd.toISOString(),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) {
-        toast.error(data.error || "Unable to book appointment");
-        return;
-      }
-      toast.success("Appointment booked");
-      setDialogOpen(false);
-      loadBookings();
-    } catch (err) {
-      console.error(err);
-      toast.error("Unable to book appointment");
-    }
+  // called by NewAppointment after a booking is successfully created
+  const handleBookingSuccess = () => {
+    setDialogOpen(false);
+    loadBookings();
   };
 
   const handleLocationChange = (nextLocationId) => {
@@ -550,19 +457,15 @@ export default function BookingsPage() {
         </div>
       </div>
 
-      {/* New Appointment dialog */}
+      {/* New Appointment dialog — fully self-contained, just told where/when */}
       <NewAppointment
         open={dialogOpen}
         onOpenChange={setDialogOpen}
-        handleCreateBooking={handleCreateBooking}
-        bookingForm={bookingForm}
-        setBookingForm={setBookingForm}
-        minStartTime={minStartTime}
-        handleStartTimeChange={handleStartTimeChange}
+        onBookingSuccess={handleBookingSuccess}
+        initialStart={bookingStart}
+        initialProfessionalId={bookingProfessionalId}
         professionals={professionals}
         services={services}
-        selectedService={selectedService}
-        paymentLabel={paymentLabel}
         onNewCustomer={() => setCustomerCreateOpen(true)}
       />
 
@@ -580,6 +483,7 @@ export default function BookingsPage() {
         onCancel={() => setCustomerCreateOpen(false)}
         saving={savingCustomer}
         duplicateState={duplicateState}
+        errors={{}}
       />
 
       {/* RBC styles */}

@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Textarea } from "@/components/ui/textarea";
 import { PhoneNumberInput } from "@/components/common/PhoneNumber";
 
-export function CustomerForm({ form, onChange, setForm, errors }) {
+export function CustomerForm({ form={}, onChange, setForm, errors={} }) {
   return (
     <div className="grid grid-cols-12 gap-3">
       <div className="col-span-12 md:col-span-6">
