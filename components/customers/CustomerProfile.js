@@ -36,11 +36,11 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
   const [bookingProfessionalId, setBookingProfessionalId] = useState("");
   const [vendor, setVendor] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
 
   // called by NewAppointment after a booking is successfully created
   const handleBookingSuccess = () => {
     setDialogOpen(false);
-    loadBookings();
   };
 
   // derived
@@ -137,7 +137,17 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
           <CalendarPlus className="size-4" />
           Book Appointment
         </Button>
-        <NewAppointment open={dialogOpen} onOpenChange={setDialogOpen} onBookingSuccess={handleBookingSuccess} initialStart={bookingStart} initialProfessionalId={bookingProfessionalId} professionals={professionals} services={services} onNewCustomer={() => setCustomerCreateOpen(true)} />
+        <NewAppointment
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+          onBookingSuccess={handleBookingSuccess}
+          initialStart={bookingStart}
+          initialProfessionalId={bookingProfessionalId}
+          initialCustomer={customer}
+          professionals={professionals}
+          services={services}
+          // onNewCustomer={() => setCustomerCreateOpen(true)}
+        />
         <Button type="button" size="sm" variant="outline" onClick={() => quickAction("call")}>
           <Phone className="size-4" />
           Call

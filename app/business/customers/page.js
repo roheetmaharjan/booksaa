@@ -72,7 +72,6 @@ export default function CustomersPage() {
   const [importOpen, setImportOpen] = useState(false);
   // const [profileOpen, setProfileOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
 
   // ── Create form ─────────────────────────────────────────────────
   const [customerForm, setCustomerForm] = useState(emptyCustomer);
@@ -90,8 +89,6 @@ export default function CustomersPage() {
   const [importFile, setImportFile] = useState(null);
   const [importDuplicates, setImportDuplicates] = useState([]);
 
-  // ── Other ───────────────────────────────────────────────────────
-  const [openProfessional, setOpenProfessional] = useState(false);
 
   const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
 
