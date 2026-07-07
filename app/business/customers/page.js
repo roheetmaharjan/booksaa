@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams,useRouter } from "next/navigation";
 import { toast } from "sonner";
 import { useMutation } from "@/hooks/useMutation";
 import { validateCustomer } from "@/lib/validations/customer";
@@ -43,6 +43,7 @@ function encodeQuery(params) {
 
 export default function CustomersPage() {
   const searchParams = useSearchParams();
+  const router = useRouter();
   const [vendor, setVendor] = useState(null);
 
   const locationId = searchParams.get("locationId");
@@ -69,9 +70,8 @@ export default function CustomersPage() {
   // ── Dialog visibility ───────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false);
   const [importOpen, setImportOpen] = useState(false);
-  const [profileOpen, setProfileOpen] = useState(false);
+  // const [profileOpen, setProfileOpen] = useState(false);
   const [dialogOpen, setDialogOpen] = useState(false);
-  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
 
   // ── Create form ─────────────────────────────────────────────────
   const [customerForm, setCustomerForm] = useState(emptyCustomer);
@@ -81,16 +81,14 @@ export default function CustomersPage() {
   const [bookingProfessionalId, setBookingProfessionalId] = useState("");
 
   // ── Profile ─────────────────────────────────────────────────────
-  const [selectedCustomer, setSelectedCustomer] = useState(null);
-  const [profileLoading, setProfileLoading] = useState(false);
-  const [noteContent, setNoteContent] = useState("");
+  // const [selectedCustomer, setSelectedCustomer] = useState(null);
+  // const [profileLoading, setProfileLoading] = useState(false);
+  // const [noteContent, setNoteContent] = useState("");
 
   // ── Import ──────────────────────────────────────────────────────
   const [importFile, setImportFile] = useState(null);
   const [importDuplicates, setImportDuplicates] = useState([]);
 
-  // ── Other ───────────────────────────────────────────────────────
-  const [openProfessional, setOpenProfessional] = useState(false);
 
   const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
 
@@ -175,6 +173,9 @@ export default function CustomersPage() {
       setProfileLoading(false);
     }
   };
+  const openCustomer = (id) => {
+    router.push(`/business/customers/${id}`)
+  }
 
   // ── Create ──────────────────────────────────────────────────────
   const handleFormChange = (e) => {
@@ -280,7 +281,7 @@ export default function CustomersPage() {
   // ── Render ───────────────────────────────────────────────────────
   return (
     <div className="min-h-screen px-4 py-5 sm:px-6 lg:px-8">
-      <div className="mx-auto flex max-w-7xl flex-col gap-5">
+      <div className="container flex-col gap-5 flex">
         <CustomerPageHeader onImport={() => setImportOpen(true)} onExport={exportCustomers} onAdd={() => setCreateOpen(true)} />
 
         <CustomerSummaryCards stats={stats} />
@@ -297,7 +298,7 @@ export default function CustomersPage() {
           pagination={pagination}
           page={page}
           setPage={setPage}
-          onRowClick={loadProfile}
+          onRowClick={openCustomer}
         />
       </div>
 
@@ -337,7 +338,7 @@ export default function CustomersPage() {
         duplicates={importDuplicates}
       />
 
-      <CustomerProfileDialog
+      {/* <CustomerProfileDialog
         open={profileOpen}
         onOpenChange={setProfileOpen}
         loading={profileLoading}
@@ -346,7 +347,7 @@ export default function CustomersPage() {
         setNoteContent={setNoteContent}
         addNote={addNote}
         quickAction={quickAction}
-      />
+      /> */}
     </div>
   );
 }

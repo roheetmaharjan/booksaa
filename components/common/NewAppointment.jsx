@@ -134,16 +134,7 @@ function ServiceCard({ service, selected, onSelect }) {
  * Everything else — form state, validation, scheduling math, and the actual booking
  * submission — lives in here, so this component can be dropped into any page.
  */
-export default function NewAppointment({
-  open,
-  onOpenChange,
-  onBookingSuccess,
-  initialStart,
-  initialProfessionalId,
-  professionals = [],
-  services = [],
-  onNewCustomer,
-}) {
+export default function NewAppointment({ open, onOpenChange, onBookingSuccess, initialStart, initialProfessionalId, professionals = [], services = [], onNewCustomer, initialCustomer }) {
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
 
   const [customers, setCustomers] = useState([]);
@@ -161,20 +152,28 @@ export default function NewAppointment({
   // initialize/reset the booking form whenever the dialog is opened for a new slot
   useEffect(() => {
     if (!open) return;
+
     const duration = services[0]?.duration || DEFAULT_DURATION;
     const startDate = initialStart || getNextBookableDate();
     const endDate = addMinutes(startDate, duration);
+
     setBookingForm({
       ...getEmptyBooking(startDate, duration),
+
+      customerId: initialCustomer?.id || "",
+      customerName: initialCustomer?.fullName || "",
+      customerPhone: initialCustomer?.phone || "",
+      customerEmail: initialCustomer?.email || "",
+
       professionalId: initialProfessionalId || professionals[0]?.id || "",
       serviceId: services[0]?.id || "",
       date: toDateString(startDate),
       startTime: toTimeString(startDate),
       endTime: toTimeString(endDate),
     });
+
     setCustomerError("");
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [open, initialStart, initialProfessionalId]);
+  }, [open, initialStart, initialProfessionalId, initialCustomer, professionals, services]);
 
   const selectedService = services.find((s) => s.id === bookingForm.serviceId) || null;
 
