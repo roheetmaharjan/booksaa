@@ -63,6 +63,7 @@ export async function POST(req) {
     const created = await tx.vendors.create({
       data: {
         name,
+        slug: slugify(name),
         categoryId,
         planId,
         trialEndsAt,

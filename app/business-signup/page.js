@@ -388,6 +388,10 @@ export default function BusinessSignupPage() {
                           <Field label="Business name" id="name" error={errors.name}>
                             <Input id="name" name="name" value={form.name} onChange={handleChange} />
                           </Field>
+                          <Field label="Slug" id="slug">
+                            <Input id="slug" value={slugPreview} readOnly />
+                            <p className="text-sm text-slate-500 mt-1">This slug is generated from your business name.</p>
+                          </Field>
                           <Field label="Category" id="categoryId" error={errors.categoryId}>
                             <Select value={form.categoryId} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
                               <SelectTrigger id="categoryId">

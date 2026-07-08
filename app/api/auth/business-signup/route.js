@@ -9,6 +9,7 @@ import {
   getSessionCookieOptions,
 } from "@/lib/auth";
 import { createVendorSubscription } from "@/lib/subscriptions";
+import { slugify } from "@/utils/slugify";
 
 function isPresent(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
@@ -330,6 +331,7 @@ export async function POST(req) {
       vendor: {
         id: result.vendor.id,
         name: result.vendor.name,
+        slug: result.vendor.slug,
         status: result.vendor.status,
         trialEndsAt: result.vendor.trialEndsAt,
         subscriptionId: result.subscription.id,

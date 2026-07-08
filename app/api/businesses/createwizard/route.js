@@ -3,6 +3,7 @@ import { sendInviteEmail } from "@/lib/sendInviteEmail";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { createVendorSubscription } from "@/lib/subscriptions";
+import { slugify } from "@/utils/slugify";
 
 export async function POST(req) {
   const body = await req.json();
@@ -103,6 +104,7 @@ export async function POST(req) {
     const created = await tx.vendors.create({
       data: {
         name,
+        slug: slugify(name),
         categoryId,
         planId,
         trialEndsAt,

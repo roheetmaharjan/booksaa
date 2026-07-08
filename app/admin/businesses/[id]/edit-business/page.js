@@ -3,13 +3,14 @@ import { UsersLayout } from "@/app/admin/layout";
 import Loading from "@/components/common/Loading";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { validateForm } from "@/utils/formValidator";
+import { slugify } from "@/utils/slugify";
 import { Badge } from "@/components/ui/badge";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Select, SelectTrigger, SelectValue, SelectGroup, SelectContent, SelectItem } from "@/components/ui/select";
@@ -74,6 +75,8 @@ export default function EditVendor() {
 
   const selectedPlan = plans.find((p) => p.id === form?.planId) || null;
 
+  const slugPreview = useMemo(() => slugify(form?.name || ""), [form?.name]);
+ 
   // Derived limits — fall back to plan if subscription column is empty
   const locationLimit = Number(form?.subscriptionLocationLimit) || Number(selectedPlan?.location) || 1;
   const professionalLimit = Number(form?.subscriptionProfessionalLimit) || Number(selectedPlan?.professional) || 1;

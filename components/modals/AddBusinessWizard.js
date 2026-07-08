@@ -17,8 +17,9 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { validateForm } from "@/utils/formValidator";
+import { slugify } from "@/utils/slugify";
 import { toast } from "sonner";
 import BusinessLocation from "@/components/common/BusinessLocation";
 
@@ -42,12 +43,15 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
   const [maxDistance, setMaxDistance] = useState("");
 
   const [categories, setCategories] = useState([]);
+  const [slugPreview, setSlugPreview] = useState("");
   const [plans, setPlans] = useState([]);
   const [formErrors, setFormErrors] = useState({});
   const [addloading, setAddLoading] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
   const [step, setStep] = useState(1);
   const totalSteps = 3;
+
+  const slugPreview = useMemo(() => slugify(form.name || ""), [form.name]);
 
   const validationRules = {
     firstname: { required: true, message: "First name is required" },
@@ -447,7 +451,12 @@ export default function AddBusinessWizard({ open, setAddOpen }) {
                               </p>
                             )}
                           </div>
-
+                          <div>
+                            <Label htmlFor="slug">Slug</Label>
+                            <Input id="slug" value={slugPreview} readOnly />
+                            <p className="text-sm text-slate-500 mt-1">This slug is generated from your business name.</p>
+                          </div>
+ 
                           <div>
                             <Label htmlFor="categoryId">
                               Category <span className="astrick">*</span>
