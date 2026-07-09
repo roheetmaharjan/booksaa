@@ -16,7 +16,12 @@ export default function UpgradeButton({
 
   const handleUpgrade = () => {
     setIsLoading(true);
-    router.push('/business/upgrade');
+    const slug = vendor?.slug;
+    if (slug) {
+      router.push(`/${slug}/upgrade`);
+    } else {
+      setIsLoading(false);
+    }
   };
 
   return (

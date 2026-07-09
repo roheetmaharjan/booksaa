@@ -36,7 +36,6 @@ export async function middleware(request) {
   if (pathname === '/auth/login') {
     const url = request.nextUrl.clone();
     if (session.role === 'ADMIN') url.pathname = '/admin';
-    else if (session.role === 'VENDOR') url.pathname = '/business';
     else if (session.role === 'CUSTOMER') url.pathname = '/customer';
     return NextResponse.redirect(url);
   }
@@ -46,10 +45,6 @@ export async function middleware(request) {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
   if (pathname.startsWith('/admin') && session.role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/auth/login', request.url));
-  }
-
-  if (pathname.startsWith('/business') && session.role !== 'VENDOR') {
     return NextResponse.redirect(new URL('/auth/login', request.url));
   }
 
@@ -64,8 +59,6 @@ export const config = {
   matcher: [
     '/admin',
     '/admin/:path*',
-    '/business',
-    '/business/:path*',
     '/customer',
     '/customer/:path*',
     '/api',
