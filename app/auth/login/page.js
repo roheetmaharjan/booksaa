@@ -98,7 +98,7 @@ export default function LoginPage() {
                 <p className="text-red-600 text-sm mb-4">{error}</p>
               )}
               <button
-                className="button flex items-center gap-2 justify-center text-[#062B3D] bg-primary hover:bg-primary-100 text-neutral h-12 rounded-md px-5 py-2 w-full"
+                className="button flex items-center gap-2 justify-center text-white bg-primary hover:bg-primary-100 text-neutral h-12 rounded-md px-5 py-2 w-full"
                 type="submit"
                 disabled={loading}
               >

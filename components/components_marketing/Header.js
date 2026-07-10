@@ -74,14 +74,14 @@ const Header = () => {
                   <>
                     {pathUrl !== "/" ? (
                       <>
-                        <Link href="/auth/login" className="px-7 py-3 text-base font-medium text-dark hover:opacity-70 text-white">
+                        <Link href="#" className="px-7 py-3 text-base font-medium text-dark hover:opacity-70 text-white">
                           Log In
                         </Link>
                         <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>
                       </>
                     ) : (
                       <>
-                        <Link href="/auth/login" className="text-white px-7 py-3 text-base font-medium hover:opacity-70">
+                        <Link href="#" className="text-white px-7 py-3 text-base font-medium hover:opacity-70">
                           Log In
                         </Link>
                         <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>

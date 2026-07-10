@@ -21,43 +21,44 @@ model Users {
   status    UserStatus
   joinedAt  DateTime   @default(now())
   roleId    String
-  bookings  Bookings[]
   role      Role       @relation(fields: [roleId], references: [id])
   vendors   Vendors?
+  bookings  Bookings[]
 }
 
 model Vendors {
-  id                    String                       @id @default(uuid())
-  name                  String
-  description           String?
-  image                 String?
-  phone                 String?
-  cancellation_policy   String?
-  categoryId            String
-  planId                String
-  status                AccountStatus                @default(ACTIVE)
-  joinedAt              DateTime                     @default(now())
-  trialEndsAt           DateTime?
-  userId                String                       @unique
-  photos                String?
-  isComplete            Boolean                      @default(false)
-  defaultLocationId     String?                      @unique
-  autoRenewEnabled      Boolean                      @default(true)
-  lastPaymentAttemptAt  DateTime?
-  stripeCustomerId      String?                      @unique
+  id                  String         @id @default(uuid())
+  name                String
+  locations           Location[]     @relation("VendorLocations")
+  defaultLocationId   String?        @unique
+  defaultLocation     Location?      @relation("VendorDefaultLocation", fields: [defaultLocationId], references: [id])
+  services            Service[]
+  description         String?
+  image               String?
+  phone               String?
+  photos              String?
+  cancellation_policy String?
+  categoryId          String
+  category            Category       @relation(fields: [categoryId], references: [id])
+  planId              String
+  plan                Plans          @relation(fields: [planId], references: [id])
+  status              AccountStatus  @default(ACTIVE)
+  joinedAt            DateTime       @default(now())
+  trialEndsAt         DateTime?
+  businessHours       BusinessHour[]
+  userId              String         @unique
+  user                Users          @relation(fields: [userId], references: [id])
+  isComplete          Boolean        @default(false)
+  professionals       Professional[]
+  subscriptions       VendorSubscription[]
+
+  stripeCustomerId    String?        @unique
   subscriptionExpiresAt DateTime?
-  businessHours         BusinessHour[]
-  customers             Customer[]
-  locations             Location[]                   @relation("VendorLocations")
-  professionals         Professional[]
-  services              Service[]
-  paymentHistory        SubscriptionPaymentHistory[]
-  paymentMethods        VendorPaymentMethod[]
-  subscriptions         VendorSubscription[]
-  category              Category                     @relation(fields: [categoryId], references: [id])
-  defaultLocation       Location?                    @relation("VendorDefaultLocation", fields: [defaultLocationId], references: [id])
-  plan                  Plans                        @relation(fields: [planId], references: [id])
-  user                  Users                        @relation(fields: [userId], references: [id])
+  autoRenewEnabled    Boolean        @default(true)
+  lastPaymentAttemptAt DateTime?
+
+  paymentMethods      VendorPaymentMethod[]
+  paymentHistory      SubscriptionPaymentHistory[]
 }
 
 model Category {
@@ -68,19 +69,19 @@ model Category {
 }
 
 model Plans {
-  id                     String               @id @default(uuid())
-  name                   String               @unique
-  price                  Float
-  duration               Int
-  billing_cycle          String
-  createdAt              DateTime             @default(now())
-  trial_period           Int
-  professional           Int                  @default(1)
-  location               Int                  @default(1)
-  extraLocationPrice     Float                @default(0)
-  extraProfessionalPrice Float                @default(0)
-  subscriptions          VendorSubscription[]
-  vendors                Vendors[]
+  id            String    @id @default(uuid())
+  name          String    @unique
+  price         Float
+  duration      Int
+  trial_period  Int
+  billing_cycle String
+  createdAt     DateTime  @default(now())
+  professional  Int       @default(1)
+  extraProfessionalPrice Float @default(0)
+  vendors       Vendors[]
+  location      Int       @default(1)
+  extraLocationPrice Float @default(0)
+  subscriptions VendorSubscription[]
 }
 
 model Role {
@@ -90,35 +91,15 @@ model Role {
 }
 
 model Bookings {
-  id                 String        @id @default(cuid())
-  date               DateTime
-  createdAt          DateTime      @default(now())
-  status             BookingStatus @default(PENDING)
-  userId             String
-  scheduledAt        DateTime
-  serviceId          String
-  customerEmail      String?
-  customerId         String?
-  customerName       String?
-  customerPhone      String?
-  endTime            String?
-  locationId         String?
-  notes              String?
-  paymentAmount      Float         @default(0)
-  paymentRequirement String        @default("pay_later")
-  professionalId     String?
-  scheduledEnd       DateTime?
-  startTime          String?
-  customer           Customer?     @relation(fields: [customerId], references: [id])
-  location           Location?     @relation(fields: [locationId], references: [id])
-  professional       Professional? @relation(fields: [professionalId], references: [id])
-  service            Service       @relation(fields: [serviceId], references: [id])
-  user               Users         @relation(fields: [userId], references: [id])
-
-  @@index([customerId])
-  @@index([professionalId])
-  @@index([locationId])
-  @@index([scheduledAt])
+  id          String        @id @default(cuid())
+  date        DateTime
+  createdAt   DateTime      @default(now())
+  status      BookingStatus @default(PENDING)
+  scheduledAt DateTime
+  userId      String
+  user        Users         @relation(fields: [userId], references: [id])
+  serviceId   String
+  service     Service       @relation(fields: [serviceId], references: [id])
 }
 
 model Invitation {
@@ -130,146 +111,64 @@ model Invitation {
 }
 
 model Location {
-  id                String         @id @default(cuid())
-  address           String
-  vendorId          String
-  latitude          Float?
-  longitude         Float?
-  createdAt         DateTime       @default(now())
-  offerAtBusiness   Boolean        @default(false)
-  offerAtClient     Boolean        @default(false)
-  isActive          Boolean        @default(true)
-  maxTravelDistance Float          @default(5.0)
-  travelFee         Float          @default(0.0)
-  updatedAt         DateTime       @updatedAt
-  name              String?
-  phone             String?
-  photos            String?
-  isDefault         Boolean        @default(false)
-  bookings          Bookings[]
-  businessHours     BusinessHour[]
-  vendor            Vendors        @relation("VendorLocations", fields: [vendorId], references: [id])
-  professionals     Professional[]
-  services          Service[]
-  defaultFor        Vendors?       @relation("VendorDefaultLocation")
+  id       String  @id @default(cuid())
+  name     String?
+  phone    String?
+  photos   String?
+  vendorId String
+  vendor   Vendors @relation("VendorLocations", fields: [vendorId], references: [id])
+  defaultFor Vendors? @relation("VendorDefaultLocation")
+
+  address   String
+  latitude  Float?
+  longitude Float?
+
+  offerAtClient   Boolean @default(false)
+  offerAtBusiness Boolean @default(false)
+
+  travelFee         Float @default(0.0)
+  maxTravelDistance Float @default(5.0)
+
+  isActive  Boolean   @default(true)
+  isDefault Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  services  Service[]
+  professionals Professional[]
+  businessHours BusinessHour[]
 
   @@index([vendorId])
 }
 
 model Service {
-  id             String     @id @default(cuid())
-  name           String
-  description    String?
-  vendorId       String
-  price          Float
-  duration       Int
-  locationId     String
-  color          String     @default("#2563eb")
-  depositType    String?
-  depositValue   Float?
-  prepaymentType String     @default("pay_later")
-  booking        Bookings[]
-  location       Location   @relation(fields: [locationId], references: [id])
-  vendor         Vendors    @relation(fields: [vendorId], references: [id])
+  id          String     @id @default(cuid())
+  name        String
+  description String?
+  vendorId    String
+  vendor      Vendors    @relation(fields: [vendorId], references: [id])
+  locationId  String
+  location    Location   @relation(fields: [locationId], references: [id])
+  price       Float
+  duration    Int
+  booking     Bookings[]
 
   @@unique([name, vendorId, locationId])
 }
 
 model Professional {
-  id         String             @id @default(uuid())
-  name       String
-  email      String?            @unique
-  phone      String?
-  vendorId   String
-  createdAt  DateTime           @default(now())
-  updatedAt  DateTime           @updatedAt
-  roleId     String
-  status     ProfessionalStatus @default(INACTIVE)
+  id        String             @id @default(uuid())
+  name      String
+  email     String?            @unique
+  phone     String?
+  vendorId  String
+  vendor    Vendors            @relation(fields: [vendorId], references: [id])
   locationId String?
-  bookings   Bookings[]
-  location   Location?          @relation(fields: [locationId], references: [id])
-  role       ProfessionalRole   @relation(fields: [roleId], references: [id])
-  vendor     Vendors            @relation(fields: [vendorId], references: [id])
-}
-
-model Customer {
-  id                   String                  @id @default(cuid())
-  customerCode         String                  @unique
-  vendorId             String
-  fullName             String
-  phone                String?
-  email                String?
-  gender               String?
-  dateOfBirth          DateTime?
-  address              String?
-  profilePhoto         String?
-  notes                String?
-  status               CustomerStatus          @default(ACTIVE)
-  tags                 String[]                @default([])
-  preferredStaffId     String?
-  preferredStaffName   String?
-  preferredServiceId   String?
-  preferredServiceName String?
-  loyaltyPoints        Int                     @default(0)
-  earnedPoints         Int                     @default(0)
-  redeemedPoints       Int                     @default(0)
-  membershipLevel      String?
-  dateJoined           DateTime                @default(now())
-  createdAt            DateTime                @default(now())
-  updatedAt            DateTime                @updatedAt
-  bookings             Bookings[]
-  vendor               Vendors                 @relation(fields: [vendorId], references: [id], onDelete: Cascade)
-  communications       CustomerCommunication[]
-  invoices             CustomerInvoice[]
-  noteEntries          CustomerNote[]
-
-  @@index([vendorId])
-  @@index([status])
-  @@index([phone])
-  @@index([email])
-}
-
-model CustomerNote {
-  id          String   @id @default(cuid())
-  customerId  String
-  content     String
-  staffName   String?
-  editHistory Json?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  customer    Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@index([customerId])
-}
-
-model CustomerInvoice {
-  id                 String   @id @default(cuid())
-  customerId         String
-  invoiceNumber      String
-  purchasedServices  String?
-  productsPurchased  String?
-  totalAmount        Float    @default(0)
-  paidAmount         Float    @default(0)
-  paymentMethod      String?
-  outstandingBalance Float    @default(0)
-  createdAt          DateTime @default(now())
-  customer           Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@unique([customerId, invoiceNumber])
-  @@index([customerId])
-}
-
-model CustomerCommunication {
-  id         String   @id @default(cuid())
-  customerId String
-  type       String
-  subject    String?
-  message    String?
-  staffName  String?
-  createdAt  DateTime @default(now())
-  customer   Customer @relation(fields: [customerId], references: [id], onDelete: Cascade)
-
-  @@index([customerId])
+  location  Location?          @relation(fields: [locationId], references: [id])
+  createdAt DateTime           @default(now())
+  updatedAt DateTime           @updatedAt
+  roleId    String
+  role      ProfessionalRole   @relation(fields: [roleId], references: [id])
+  status    ProfessionalStatus @default(INACTIVE)
 }
 
 model ProfessionalRole {
@@ -279,90 +178,101 @@ model ProfessionalRole {
 }
 
 model BusinessHour {
-  id         String    @id @default(cuid())
-  vendorId   String
-  day        String
-  isOpen     Boolean   @default(false)
-  openTime   String?
-  closeTime  String?
-  createdAt  DateTime  @default(now())
-  updatedAt  DateTime  @updatedAt
+  id        String   @id @default(cuid())
+  vendorId  String
+  vendor    Vendors  @relation(fields: [vendorId], references: [id])
   locationId String?
-  location   Location? @relation(fields: [locationId], references: [id])
-  vendor     Vendors   @relation(fields: [vendorId], references: [id])
+  location  Location? @relation(fields: [locationId], references: [id])
+  day       String
+  isOpen    Boolean  @default(false)
+  openTime  String?
+  closeTime String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@unique([locationId, day])
   @@index([vendorId])
 }
 
 model VendorSubscription {
-  id             String                       @id @default(cuid())
-  vendorId       String
-  planId         String
-  status         String                       @default("ACTIVE")
-  createdAt      DateTime                     @default(now())
-  entitlements   SubscriptionEntitlement[]
+  id        String @id @default(cuid())
+
+  vendorId  String
+  vendor    Vendors @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  planId    String
+  plan      Plans @relation(fields: [planId], references: [id])
+
+  status    String @default("ACTIVE")
+
+  createdAt DateTime @default(now())
+
+  entitlements SubscriptionEntitlement[]
   paymentHistory SubscriptionPaymentHistory[]
-  plan           Plans                        @relation(fields: [planId], references: [id])
-  vendor         Vendors                      @relation(fields: [vendorId], references: [id], onDelete: Cascade)
 
   @@index([vendorId, createdAt])
 }
 
 model SubscriptionEntitlement {
-  id             String             @id @default(cuid())
+  id             String @id @default(cuid())
+
   subscriptionId String
-  type           String
-  quantity       Int
-  source         String
-  price          Decimal?           @db.Decimal(10, 2)
-  createdAt      DateTime           @default(now())
   subscription   VendorSubscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  type           String  // "LOCATION" | "PROFESSIONAL"
+
+  quantity       Int
+
+  source         String  // "PLAN" | "ADDON"
+
+  price          Decimal? @db.Decimal(10,2)
+
+  createdAt      DateTime @default(now())
 
   @@index([subscriptionId, type])
 }
 
 model StripeAccount {
-  id                   String   @id @default(cuid())
-  stripeSecretKey      String   @unique
-  stripePublishableKey String   @unique
-  live                 Boolean  @default(false)
-  setupComplete        Boolean  @default(false)
-  createdAt            DateTime @default(now())
-  updatedAt            DateTime @updatedAt
+  id                  String   @id @default(cuid())
+  stripeSecretKey     String   @unique
+  stripePublishableKey String  @unique
+  live                Boolean  @default(false)
+  setupComplete       Boolean  @default(false)
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
 }
 
 model VendorPaymentMethod {
-  id                    String   @id @default(cuid())
-  vendorId              String
-  stripePaymentMethodId String   @unique
-  isDefault             Boolean  @default(false)
-  last4Digits           String?
-  brand                 String?
-  expiryMonth           Int?
-  expiryYear            Int?
-  createdAt             DateTime @default(now())
-  vendor                Vendors  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  id                  String   @id @default(cuid())
+  vendorId            String
+  vendor              Vendors  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  stripePaymentMethodId String @unique
+  isDefault           Boolean  @default(false)
+  last4Digits         String?
+  brand               String?
+  expiryMonth         Int?
+  expiryYear          Int?
+  createdAt           DateTime @default(now())
 
   @@index([vendorId])
 }
 
 model SubscriptionPaymentHistory {
-  id                    String              @id @default(cuid())
+  id                    String   @id @default(cuid())
   vendorId              String
+  vendor                Vendors  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
   subscriptionId        String?
-  type                  String
+  subscription          VendorSubscription? @relation(fields: [subscriptionId], references: [id], onDelete: SetNull)
+  type                  String   // "INITIAL" | "RENEWAL" | "ADDON"
   amount                Float
-  currency              String              @default("USD")
+  currency              String   @default("USD")
   stripePaymentIntentId String?
-  status                String
+  status                String   // "SUCCEEDED" | "FAILED" | "PENDING"
   chargedAt             DateTime?
   nextRetryAt           DateTime?
   failureMessage        String?
-  createdAt             DateTime            @default(now())
-  updatedAt             DateTime            @updatedAt
-  subscription          VendorSubscription? @relation(fields: [subscriptionId], references: [id])
-  vendor                Vendors             @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
 
   @@index([vendorId])
   @@index([chargedAt])
@@ -393,10 +303,4 @@ enum ProfessionalStatus {
   ACTIVE
   INACTIVE
   PENDING
-}
-
-enum CustomerStatus {
-  ACTIVE
-  INACTIVE
-  BLOCKED
 }

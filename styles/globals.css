@@ -25,7 +25,7 @@ body {
     --popover: 0 0% 100%;
     --popover-foreground: 0 0% 3.9%;
     --primary: 0 0% 9%;
-    --primary-foreground: 199.64deg 82.09% 13.14%;
+    --primary-foreground: 0 0% 98%;
     --secondary: 0 0% 96.1%;
     --secondary-foreground: 0 0% 9%;
     --muted: 0 0% 96.1%;
@@ -42,13 +42,13 @@ body {
     --chart-3: 197 37% 24%;
     --chart-4: 43 74% 66%;
     --chart-5: 27 87% 67%;
-    --radius: 0.5rem;
-    --sidebar-background: 199.64deg 82.09% 13.14%;
-    --sidebar-foreground: 0, 0%, 100%;
+    --radius: 0.3rem;
+    --sidebar-background: 0 0% 98%;
+    --sidebar-foreground: 240 5.3% 26.1%;
     --sidebar-primary: 240 5.9% 10%;
     --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 199.64deg 82.09% 12%;
-    --sidebar-accent-foreground: 0, 0%, 100%;
+    --sidebar-accent: 240 4.8% 95.9%;
+    --sidebar-accent-foreground: 240 5.9% 10%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
@@ -60,7 +60,7 @@ body {
     --popover: 0 0% 3.9%;
     --popover-foreground: 0 0% 98%;
     --primary: 0 0% 98%;
-    --primary-foreground: 199.64deg 82.09% 13.14%;
+    --primary-foreground: 0 0% 9%;
     --secondary: 0 0% 14.9%;
     --secondary-foreground: 0 0% 98%;
     --muted: 0 0% 14.9%;
@@ -77,23 +77,19 @@ body {
     --chart-3: 30 80% 55%;
     --chart-4: 280 65% 60%;
     --chart-5: 340 75% 55%;
-    --radius: 0.5rem;
-    --sidebar-background: 199.64deg 82.09% 13.14%;
-    --sidebar-foreground: 0, 0%, 100%;
+    --sidebar-background: 240 5.9% 10%;
+    --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
     --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 199.64deg 82.09% 12%;
-    --sidebar-accent-foreground: 0, 0%, 100%;
+    --sidebar-accent: 240 3.7% 15.9%;
+    --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
   }
 }
-  @layer components{
+@layer components {
   .section-heading {
     @apply text-center text-4xl font-bold mb-4;
-  }
-  .card{
-    @apply bg-white overflow-hidden
   }
 
   .card {
@@ -117,8 +113,8 @@ body {
   .page-header {
     @apply py-4 border-b;
   }
-  .page-body{
-    @apply !mt-0 !border-none !rounded-none
+  .page-body {
+    @apply !mt-0 !border-none !rounded-none;
   }
   .page-title {
     @apply text-xl font-bold tracking-tight;
@@ -171,17 +167,6 @@ body {
   .card-item-value {
     @apply flex-1 font-normal text-base text-gray-900;
   }
-  .content-area{
-    height: calc(100vh - 24px) !important;
-    @apply mr-3 mt-3
-  }
-  .content-area-header{
-    @apply flex shrink-0 items-center justify-between border-b border-slate-200 bg-white px-6 py-4 sticky top-0 z-10
-  }
-  .content-area-body{
-    height: calc(100vh - 24px) !important;
-    @apply flex min-h-0 flex-1;
-  }
 }
 .astrick {
   @apply text-red-400;
@@ -206,48 +191,4 @@ body {
   body {
     @apply bg-background text-foreground;
   }
-}
-.phone-input {
-  display: flex;
-  align-items: center;
-  width: 100%;
-  height: 2.5rem;
-  border: 1px solid hsl(var(--border));
-  border-radius: calc(var(--radius));
-  background: hsl(var(--background));
-  transition: border-color .2s, box-shadow .2s;
-}
-
-.phone-input:focus-within {
-  border-color: hsl(var(--ring));
-  box-shadow: 0 0 0 2px hsl(var(--ring) / 0.2);
-}
-
-.phone-input .PhoneInputCountry {
-  padding-left: 0.75rem;
-  padding-right: 0.5rem;
-}
-
-.phone-input .PhoneInputCountrySelect {
-  border: none;
-  background: transparent;
-  cursor: pointer;
-}
-
-.phone-input .PhoneInputInput {
-  flex: 1;
-  height: 100%;
-  border: none;
-  outline: none;
-  background: transparent;
-  padding: 0 0.75rem;
-  font-size: 0.875rem;
-}
-
-.phone-input .PhoneInputInput::placeholder {
-  color: hsl(var(--muted-foreground));
-}
-
-.phone-input .PhoneInputInput:disabled {
-  cursor: not-allowed;
 }

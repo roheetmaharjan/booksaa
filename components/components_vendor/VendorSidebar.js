@@ -133,7 +133,7 @@ export function VendorSidebar({ startTransition }) {
             {locations.length > 1 ? (
               <Popover open={locationOpen} onOpenChange={setLocationOpen}>
                 <PopoverTrigger asChild>
-                  <SidebarMenuButton size="lg" tooltip={business?.name || "Business"} className="h-12">
+                  <SidebarMenuButton size="lg" tooltip={business?.name || "Business"} className="h-12 hover:bg-slate-50">
                     <BusinessIdentity business={business} selectedLocation={selectedLocation} businessInitial={businessInitial} />
                     <ChevronDown className="ml-auto size-4 text-slate-400 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
@@ -176,7 +176,7 @@ export function VendorSidebar({ startTransition }) {
         </SidebarMenu>
       </SidebarHeader>
 
-      <SidebarContent className="py-3">
+      <SidebarContent className="px-2 py-3">
         <SidebarGroup>
           <SidebarGroupLabel>Workspace</SidebarGroupLabel>
           <SidebarGroupContent>
@@ -205,12 +205,12 @@ export function VendorSidebar({ startTransition }) {
           <SidebarMenuItem>
             <Popover open={profileOpen} onOpenChange={setProfileOpen}>
               <PopoverTrigger asChild>
-                <SidebarMenuButton tooltip="Owner profile" className="h-11 justify-start">
+                <SidebarMenuButton tooltip="Owner profile" className="h-11 justify-start text-slate-700 hover:bg-slate-50 hover:text-slate-950">
                   <OwnerAvatar owner={owner} ownerName={ownerName} ownerInitial={ownerInitial} />
                   <span className="min-w-0 flex-1 truncate">{ownerName}</span>
                 </SidebarMenuButton>
               </PopoverTrigger>
-              <PopoverContent align="start" side="right" className="w-80 overflow-hidden rounded-lg border-slate-200 bg-white p-0 shadow-lg">
+              <PopoverContent align="start" side="right" className="w-80 overflow-hidden rounded-lg border-slate-200 bg-white p-0 text-slate-950 shadow-lg">
                 <div className="flex items-center gap-3 border-b border-slate-200 p-4">
                   <OwnerAvatar owner={owner} ownerName={ownerName} ownerInitial={ownerInitial} size="lg" />
                   <div className="min-w-0 flex-1">
@@ -280,7 +280,7 @@ function BusinessIdentity({ business, selectedLocation, businessInitial }) {
         )}
       </span>
       <span className="flex min-w-0 flex-col leading-tight">
-        <span className="truncate font-semibold">{business?.name || "Business"}</span>
+        <span className="truncate font-semibold text-slate-950">{business?.name || "Business"}</span>
         <span className="truncate text-xs text-slate-500">{selectedLocation?.name || selectedLocation?.address || "Vendor panel"}</span>
       </span>
     </>
@@ -290,7 +290,7 @@ function BusinessIdentity({ business, selectedLocation, businessInitial }) {
 function VendorSidebarItem({ item, isActive, onNavigate }) {
   return (
     <SidebarMenuItem>
-      <SidebarMenuButton tooltip={item.title} isActive={isActive} onClick={onNavigate} className="h-10 px-3 data-[active=true]:bg-primary data-[active=true]:text-[#062B3D]">
+      <SidebarMenuButton tooltip={item.title} isActive={isActive} onClick={onNavigate} className="h-10 text-slate-600 data-[active=true]:bg-primary data-[active=true]:text-white">
         <item.icon />
         <span>{item.title}</span>
       </SidebarMenuButton>
