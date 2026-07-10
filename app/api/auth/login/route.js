@@ -5,6 +5,7 @@ import {
   createSessionToken,
   getSessionCookieOptions,
 } from "@/lib/auth";
+import { prisma } from "@/lib/prisma";
 
 export async function POST(request) {
   try {
@@ -19,7 +20,22 @@ export async function POST(request) {
     }
 
     const token = await createSessionToken(sessionUser);
-    const response = NextResponse.json({ user: sessionUser });
+    const vendor = sessionUser.role === "VENDOR"
+      ? await prisma.vendors.findUnique({
+          where: { userId: sessionUser.id },
+          select: { slug: true },
+        })
+      : null;
+
+    const redirectTo = sessionUser.role === "ADMIN"
+      ? "/admin"
+      : sessionUser.role === "VENDOR"
+        ? (vendor?.slug ? `/${vendor.slug}` : "/auth/login")
+        : sessionUser.role === "CUSTOMER"
+          ? "/customer"
+          : "/auth/login";
+
+    const response = NextResponse.json({ user: sessionUser, redirectTo });
     response.cookies.set(AUTH_COOKIE_NAME, token, getSessionCookieOptions());
     return response;
   } catch (error) {

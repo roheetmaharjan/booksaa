@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
+import { slugifyText } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -105,6 +106,7 @@ export default function BusinessSignupPage() {
   }, [searchParams]);
 
   const selectedPlan = useMemo(() => plans.find((p) => p.id === form.planId), [plans, form.planId]);
+  const businessSlugPreview = form.name ? slugifyText(form.name) : "";
 
   // const subscriptionEstimate = useMemo(() => {
   //   if (!selectedPlan) return null;
@@ -254,8 +256,8 @@ export default function BusinessSignupPage() {
       if (!res.ok) throw new Error(data.error || "Unable to create business account.");
 
       toast.success("Your trial is active. Welcome to Booksaa.");
-      const vendorId = data.vendor?.id;
-      const redirectUrl = vendorId ? `/business?setup=step4&vendorId=${encodeURIComponent(vendorId)}` : "/business";
+      const vendorSlug = data.vendor?.slug;
+      const redirectUrl = vendorSlug ? `/${vendorSlug}?setup=step4` : "/auth/login";
 
       await router.push(redirectUrl);
       if (typeof window !== "undefined") window.location.href = redirectUrl;
@@ -387,6 +389,11 @@ export default function BusinessSignupPage() {
                         <div className="grid gap-4">
                           <Field label="Business name" id="name" error={errors.name}>
                             <Input id="name" name="name" value={form.name} onChange={handleChange} />
+                            {businessSlugPreview ? (
+                              <p className="text-sm text-slate-500">Slug preview: {businessSlugPreview}</p>
+                            ) : (
+                              <p className="text-sm text-slate-400">Slug will be generated automatically.</p>
+                            )}
                           </Field>
                           <Field label="Category" id="categoryId" error={errors.categoryId}>
                             <Select value={form.categoryId} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>

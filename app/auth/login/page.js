@@ -31,17 +31,26 @@ export default function LoginPage() {
       setError("Invalid credentials. Please try again.");
       setLoading(false);
     } else if (result?.ok) {
-      // Fetch updated session
-      const res = await fetch("/api/auth/session");
-      const session = await res.json();
-      const role = session?.user?.role;
+      try {
+        const response = await fetch("/api/auth/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify({ identifier, password }),
+        });
+        const payload = await response.json().catch(() => ({}));
+        const target = redirectUrl && redirectUrl.startsWith("/")
+          ? redirectUrl
+          : payload?.redirectTo || "/auth/login";
 
-      // Redirect based on role
-      if (redirectUrl && redirectUrl.startsWith("/")) {
-        router.replace(redirectUrl);
-      } else if (role === "ADMIN") router.replace("/admin");
-      else if (role === "VENDOR") router.replace("/business");
-      else router.replace("/customer");
+        if (typeof window !== "undefined") {
+          window.location.assign(target);
+        } else {
+          router.replace(target);
+        }
+      } catch {
+        router.replace("/auth/login");
+      }
     }
   };
 

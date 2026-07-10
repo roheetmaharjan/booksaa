@@ -9,20 +9,6 @@ import { signOut } from "@/lib/auth-client";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
-const primaryItems = [
-  { title: "Dashboard", url: "/business", icon: Home },
-  { title: "Calendar", url: "/business/calendar", icon: CalendarClock },
-  { title: "Services", url: "/business/services", icon: Scissors },
-  { title: "Professionals", url: "/business/professionals", icon: Users },
-  { title: "Customers", url: "/business/customers", icon: Contact },
-  { title: "Reports", url: "/business/reports", icon: BarChart3 },
-];
-
-const secondaryItems = [
-  { title: "Settings", url: "/business/settings", icon: Settings },
-  { title: "Support", url: "/business/support", icon: HelpCircle },
-];
-
 export function VendorSidebar({ startTransition }) {
   const pathname = usePathname();
   const router = useRouter();
@@ -30,6 +16,26 @@ export function VendorSidebar({ startTransition }) {
   const [business, setBusiness] = useState(null);
   const [locationOpen, setLocationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
+
+  const businessBasePath = business?.slug ? `/${business.slug}` : "";
+  const primaryItems = useMemo(
+    () => [
+      { title: "Dashboard", url: businessBasePath, icon: Home },
+      { title: "Calendar", url: `${businessBasePath}/calendar`, icon: CalendarClock },
+      { title: "Services", url: `${businessBasePath}/services`, icon: Scissors },
+      { title: "Professionals", url: `${businessBasePath}/professionals`, icon: Users },
+      { title: "Customers", url: `${businessBasePath}/customers`, icon: Contact },
+      { title: "Reports", url: `${businessBasePath}/reports`, icon: BarChart3 },
+    ],
+    [businessBasePath]
+  );
+  const secondaryItems = useMemo(
+    () => [
+      { title: "Settings", url: `${businessBasePath}/settings`, icon: Settings },
+      { title: "Support", url: `${businessBasePath}/support`, icon: HelpCircle },
+    ],
+    [businessBasePath]
+  );
 
   const locations = business?.locations || [];
   const owner = business?.owner || {};
@@ -84,7 +90,7 @@ export function VendorSidebar({ startTransition }) {
   const handleLocationChange = (locationId) => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("locationId", locationId);
-    const href = `${pathname || "/business"}?${params.toString()}`;
+    const href = `${pathname || businessBasePath}?${params.toString()}`;
 
     if (startTransition) {
       startTransition(() => router.push(href));
@@ -115,14 +121,14 @@ export function VendorSidebar({ startTransition }) {
   const openBillingUsage = () => {
     const params = new URLSearchParams(searchParams.toString());
     if (selectedLocationId) params.set("locationId", selectedLocationId);
-    navigateTo(`/business?${params.toString()}#usage-billing`);
+    navigateTo(`${businessBasePath}?${params.toString()}#usage-billing`);
   };
 
   const openGetStarted = () => {
     const params = new URLSearchParams(searchParams.toString());
     params.set("setup", "step4");
     if (selectedLocationId) params.set("locationId", selectedLocationId);
-    navigateTo(`/business?${params.toString()}`);
+    navigateTo(`${businessBasePath}?${params.toString()}`);
   };
 
   return (
@@ -167,7 +173,7 @@ export function VendorSidebar({ startTransition }) {
               </Popover>
             ) : (
               <SidebarMenuButton asChild size="lg" tooltip={business?.name || "Business"} className="h-12 hover:bg-transparent">
-                <button onClick={handleNav(withSelectedLocation("/business"))} type="button">
+                <button onClick={handleNav(withSelectedLocation(businessBasePath))} type="button">
                   <BusinessIdentity business={business} selectedLocation={selectedLocation} businessInitial={businessInitial} />
                 </button>
               </SidebarMenuButton>
@@ -220,9 +226,9 @@ export function VendorSidebar({ startTransition }) {
                 </div>
 
                 <div className="grid gap-1 p-2">
-                  <ProfileMenuButton icon={UserCircleIcon} label="My Profile" onClick={() => navigateTo(withSelectedLocation("/business/my-profile"))} />
-                  <ProfileMenuButton icon={CreditCardIcon} label="Billing & Usage" onClick={() => navigateTo(withSelectedLocation("/business/billing-usage"))} />
-                  <ProfileMenuButton icon={BellIcon} label="Notifications" onClick={() => navigateTo(withSelectedLocation("/business/notifications"))} />
+                  <ProfileMenuButton icon={UserCircleIcon} label="My Profile" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/my-profile`))} />
+                  <ProfileMenuButton icon={CreditCardIcon} label="Billing & Usage" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/billing-usage`))} />
+                  <ProfileMenuButton icon={BellIcon} label="Notifications" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/notifications`))} />
                   <ProfileMenuButton icon={RocketLaunchIcon} label="Get Started" onClick={openGetStarted} />
                 </div>
 

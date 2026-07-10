@@ -25,6 +25,7 @@ export async function GET() {
       select: {
         id: true,
         name: true,
+        slug: true,
         image: true,
         autoRenewEnabled: true,
         lastPaymentAttemptAt: true,
@@ -151,6 +152,7 @@ export async function GET() {
       vendor: {
         id: vendor.id,
         name: vendor.name,
+        slug: vendor.slug,
         image: vendor.image,
 
         defaultLocationId: defaultLocation?.id || null,
