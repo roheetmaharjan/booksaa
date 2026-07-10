@@ -7,7 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { validateForm } from "@/utils/formValidator";
-import { toast } from "sonner"
+import { toast } from "sonner";
+import { slugifyText } from "@/lib/utils";
 
 const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
@@ -28,6 +29,7 @@ export default function AddVendor({ open, setAddOpen }) {
   const [categories, setCategories] = useState([]);
   const [plans, setPlans] = useState([]);
   const [formErrors, setFormErrors] = useState({});
+  const slugPreview = form.name ? slugifyText(form.name) : "";
   const [addloading, setAddLoading] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
 
@@ -235,6 +237,11 @@ export default function AddVendor({ open, setAddOpen }) {
                 value={form.name}
                 onChange={handleChange}
               />
+              {slugPreview ? (
+                <p className="mt-2 text-sm text-slate-500">Slug: {slugPreview}</p>
+              ) : (
+                <p className="mt-2 text-sm text-slate-400">Slug will be generated from the business name.</p>
+              )}
               {formErrors && formErrors.name && (
                 <p className="text-sm text-red-500">{formErrors.name}</p>
               )}

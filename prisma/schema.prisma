@@ -29,6 +29,7 @@ model Users {
 model Vendors {
   id                    String                       @id @default(uuid())
   name                  String
+  slug                  String?
   description           String?
   image                 String?
   phone                 String?

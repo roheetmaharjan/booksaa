@@ -3,6 +3,7 @@ import { sendInviteEmail } from "@/lib/sendInviteEmail";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { createVendorSubscription } from "@/lib/subscriptions";
+import { slugifyText } from "@/lib/utils";
 
 export async function POST(req) {
   const body = await req.json();
@@ -31,6 +32,7 @@ export async function POST(req) {
     isActive,
   } = body;
   const normalizedEmail = email?.trim().toLowerCase();
+  const slug = slugifyText(name);
   if (
     (
       !firstname ||
@@ -103,6 +105,7 @@ export async function POST(req) {
     const created = await tx.vendors.create({
       data: {
         name,
+        slug,
         categoryId,
         planId,
         trialEndsAt,
