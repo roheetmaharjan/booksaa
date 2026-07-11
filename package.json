@@ -8,7 +8,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "postinstall": "prisma migrate dev",
+    "postinstall": "prisma generate",
     "seed": "node ./prisma/seedAll.js"
   },
   "dependencies": {
