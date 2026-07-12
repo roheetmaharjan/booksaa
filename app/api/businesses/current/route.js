@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
+import { getSubscriptionState } from "@/lib/subscription-state";
 
 export async function GET() {
   try {
@@ -55,6 +56,7 @@ export async function GET() {
           },
           select: {
             status: true,
+            expiryDate: true,
             createdAt: true,
             entitlements: {
               select: {
@@ -128,6 +130,13 @@ export async function GET() {
 
     const latestSubscription = vendor.subscriptions?.[0];
 
+    const expiryDate =
+      latestSubscription?.expiryDate ??
+      vendor.subscriptionExpiresAt;
+
+    const subscriptionState =
+      getSubscriptionState(expiryDate);
+
     const subscription = calculateBusinessSubscription({
       plan: vendor.plan,
       locations: vendor.locations,
@@ -136,7 +145,9 @@ export async function GET() {
       locationLimit,
       subscriptionStatus:    latestSubscription?.status ?? null,
       trialEndsAt:           vendor.trialEndsAt,
-      subscriptionExpiresAt: vendor.subscriptionExpiresAt,
+      subscriptionExpiresAt:
+      latestSubscription?.expiryDate ??
+      vendor.subscriptionExpiresAt,
       subscriptionCreatedAt: latestSubscription?.createdAt,
     });
 
@@ -171,8 +182,10 @@ export async function GET() {
           extraLocationPrice: vendor.plan.extraLocationPrice,
           extraProfessionalPrice: vendor.plan.extraProfessionalPrice,
         },
-
-        subscription,
+        subscription: {
+          ...subscription,
+          ...subscriptionState,
+        },
         subscriptionExpiresAt: vendor.subscriptionExpiresAt,
         trialEndsAt: vendor.trialEndsAt,
         subscriptionStatus: vendor.subscriptions?.[0]?.status ?? null,

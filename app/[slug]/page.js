@@ -99,8 +99,15 @@ export default function VendorPage() {
   const hasReachedLocationLimit = Boolean(vendorId) && locationLimit > 0 && !canAddLocation;
 
   // Expiry date from calculateBusinessSubscription
-  const expiryDate = subscription?.expiryDate ? new Date(subscription.expiryDate).toLocaleDateString() : vendor?.trialEndsAt ? new Date(vendor.trialEndsAt).toLocaleDateString() : "—";
+  const expiryDate = subscription?.expiryDate ?? vendor?.trialEndsAt;
 
+  const formattedExpiryDate = expiryDate
+    ? new Date(expiryDate).toLocaleDateString("en-US", {
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      })
+    : "—";
   const selectedLocation = locations.find((l) => l.id === vendor?.defaultLocationId) ?? locations[0] ?? null;
 
   // ─── Helpers ──────────────────────────────────────────────────────────────
@@ -168,10 +175,10 @@ export default function VendorPage() {
 
               {/* Metrics */}
               <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <DashboardMetric icon={BriefcaseBusiness} label="Services" value={serviceCount} detail="Bookable offerings in the selected location" tone="blue" />
-                <DashboardMetric icon={Users} label="Professionals" value={`${actualProfessionals}/${professionalLimit}`} detail="Team usage against your plan" tone="emerald" />
-                <DashboardMetric icon={MapPin} label="Locations" value={`${activeLocationCount}/${locationLimit}`} detail={selectedLocation?.name ?? selectedLocation?.address ?? "No location"} tone="amber" />
-                <DashboardMetric icon={CalendarClock} label={subscription?.subscriptionStatus === "TRIAL_ACTIVE" ? "Trial ends" : "Renews"} value={expiryDate} detail={vendor?.subscriptionStatus ?? subscription?.subscriptionStatus ?? "—"} />
+                <DashboardMetric icon={BriefcaseBusiness} label="Services" value={serviceCount} tone="blue" />
+                <DashboardMetric icon={Users} label="Professionals" value={`${actualProfessionals}/${professionalLimit}`} tone="emerald" />
+                <DashboardMetric icon={MapPin} label="Locations" value={`${activeLocationCount}/${locationLimit}`} tone="amber" />
+                <DashboardMetric icon={CalendarClock} label={subscription?.subscriptionStatus === "TRIAL_ACTIVE" ? "Trial ends" : "Expires"} value={formattedExpiryDate} detail={vendor?.subscriptionStatus ?? subscription?.subscriptionStatus ?? "—"} />
               </section>
             </>
           ) : (
