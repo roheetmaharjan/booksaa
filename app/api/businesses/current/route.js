@@ -93,6 +93,12 @@ export async function GET() {
             id: true,
           },
         },
+        services:{
+          select:{
+            id: true,
+            name:true
+          }
+        },
 
         user: {
           select: {
@@ -171,6 +177,7 @@ export async function GET() {
         locations: vendor.locations,
 
         owner: vendor.user,
+        serviceCount: vendor?.services?.length ?? 0,
 
         plan: {
           id: vendor.plan.id,

@@ -337,17 +337,6 @@ export default function CustomersPage() {
         onCancel={() => setImportOpen(false)}
         duplicates={importDuplicates}
       />
-
-      {/* <CustomerProfileDialog
-        open={profileOpen}
-        onOpenChange={setProfileOpen}
-        loading={profileLoading}
-        customer={selectedCustomer}
-        noteContent={noteContent}
-        setNoteContent={setNoteContent}
-        addNote={addNote}
-        quickAction={quickAction}
-      /> */}
     </div>
   );
 }
