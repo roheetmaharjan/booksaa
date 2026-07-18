@@ -41,7 +41,6 @@ export function CustomerTable({
   return (
     <Card>
       <CardHeader className="gap-3">
-        <CardTitle className="text-lg">Customer List</CardTitle>
         <div className="grid grid-cols-12 gap-2">
           <div className="relative col-span-12 lg:col-span-6">
             <Search className="absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />

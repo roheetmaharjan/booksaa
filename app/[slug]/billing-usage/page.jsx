@@ -5,11 +5,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
-import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import UpgradeButton from "@/components/business/UpgradeButton";
 import { api } from "@/utils/api";
 import { AlertTriangle, CreditCard, MapPin, Users } from "lucide-react";
+import { useRouter } from "next/navigation";
 
 export default function BillingUsagePage() {
   const [data, setData] = useState(null); // raw API response { vendorId, vendor }
@@ -17,7 +17,37 @@ export default function BillingUsagePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState(null);
   const [autoRenewEnabled, setAutoRenewEnabled] = useState(true);
-  const [showWarning, setShowWarning] = useState(false);
+  const [business, setBusiness] = useState(null);
+  const businessBasePath = business?.slug ? `/${business.slug}` : "";
+
+  const router = useRouter();
+
+  useEffect(() => {
+    let isActive = true;
+
+    const fetchBusiness = async () => {
+      try {
+        const res = await fetch("/api/businesses/current", {
+          cache: "no-store",
+        });
+        const data = await res.json();
+
+        if (res.ok && isActive) {
+          setBusiness(data.vendor || null);
+        }
+      } catch {
+        if (isActive) {
+          setBusiness(null);
+        }
+      }
+    };
+
+    fetchBusiness();
+
+    return () => {
+      isActive = false;
+    };
+  }, []);
 
   useEffect(() => {
     loadBillingData();
@@ -35,11 +65,6 @@ export default function BillingUsagePage() {
       // vendor lives inside fullData.vendor
       const vendor = fullData?.vendor;
       setAutoRenewEnabled(vendor?.autoRenewEnabled !== false);
-
-      if (vendor?.subscription?.expiryDate) {
-        const daysUntilExpiry = Math.ceil((new Date(vendor.subscription.expiryDate) - new Date()) / (1000 * 60 * 60 * 24));
-        setShowWarning(daysUntilExpiry <= 7);
-      }
     } catch (err) {
       console.error(err);
       setError(err.message);
@@ -47,6 +72,12 @@ export default function BillingUsagePage() {
       setIsLoading(false);
     }
   };
+
+  useEffect(() => {
+    if (data?.vendor?.subscription?.isExpired) {
+      router.replace(`${businessBasePath}/subscription-expired`);
+    }
+  }, [data, router]);
 
   const handleToggleAutoRenewal = async () => {
     try {
@@ -92,8 +123,14 @@ export default function BillingUsagePage() {
   // ─── Destructure from correct paths ──────────────────────────────────────────
   const vendor = data.vendor;
   const plan = vendor.plan;
-  const subscription = vendor.subscription; // from calculateBusinessSubscription
-  const expiryDate = vendor.subscription?.expiryDate ? new Date(vendor.subscription.expiryDate) : null;
+
+  const subscription = vendor.subscription;
+
+  const showWarning = subscription?.isExpiringSoon ?? false;
+  const isExpired = subscription?.isExpired ?? false;
+  const daysUntilExpiry = subscription?.daysRemaining ?? null;
+
+  const expiryDate = subscription?.expiryDate ? new Date(subscription.expiryDate) : null;
 
   const subscriptionStatus = vendor.subscription?.subscriptionStatus ?? null;
 
@@ -104,7 +141,6 @@ export default function BillingUsagePage() {
   // Actual usage
   const actualProfessionals = subscription?.actualProfessionalCount ?? 0;
   const actualLocations = subscription?.actualLocationCount ?? 0;
-
 
   // Pricing breakdown
   const basePrice = subscription?.basePrice ?? plan?.price ?? 0;
@@ -120,7 +156,6 @@ export default function BillingUsagePage() {
         </div>
       </div>
       <div className="page-container">
-
         {error && (
           <Alert variant="destructive">
             <AlertDescription>{error}</AlertDescription>
@@ -151,7 +186,7 @@ export default function BillingUsagePage() {
                         {subscriptionStatus?.replace("_", " ")}
                       </Badge>
                     )}
-                    <UpgradeButton vendor={vendor} showWarning={showWarning} />
+                    {showWarning && <UpgradeButton vendor={vendor} showWarning={showWarning} />}
                   </div>
                 </div>
               </CardHeader>
@@ -186,7 +221,7 @@ export default function BillingUsagePage() {
                   <p>{locationLimit} Location</p>
                   <p>{professionalLimit} Professionals</p>
                 </div>
-                <hr/>
+                <hr />
 
                 {/* Usage: locations */}
                 <div className="space-y-2">
@@ -233,9 +268,7 @@ export default function BillingUsagePage() {
             {/* ── Payment Methods ──────────────────────────────────────────────────── */}
             <Card className="card">
               <CardHeader>
-                <CardTitle className="card-title">
-                  Payment Methods
-                </CardTitle>
+                <CardTitle className="card-title">Payment Methods</CardTitle>
                 <CardDescription>Manage your saved payment methods</CardDescription>
               </CardHeader>
               <CardContent className="space-y-4 h-full">
@@ -251,13 +284,12 @@ export default function BillingUsagePage() {
                         <div className="flex items-center gap-3">
                           <CreditCard className="text-gray-400 h-5 w-5" />
                           <div>
-                            <p className="font-semibold">
-                              xxx-xxxx-xxxx-{method.last4Digits}
-                            </p>
+                            <p className="font-semibold">xxx-xxxx-xxxx-{method.last4Digits}</p>
                             <div className="flex flex-row gap-2 mt-1">
                               <p className="text-sm text-gray-600">
                                 Expires: {method.expiryMonth}/{method.expiryYear}
-                              </p> <span className="text-gray-300">|</span> 
+                              </p>{" "}
+                              <span className="text-gray-300">|</span>
                               <p className="text-sm text-gray-600">Type: {method.brand || "Card"}</p>
                             </div>
                           </div>
@@ -283,16 +315,10 @@ export default function BillingUsagePage() {
               <CardContent>
                 <div className="flex items-center justify-between pt-5">
                   <div>
-                    <CardTitle className="card-title mb-2">
-                      Automatic Renewal
-                    </CardTitle>
+                    <CardTitle className="card-title mb-2">Automatic Renewal</CardTitle>
                     <p className="text-sm text-gray-600 mt-1">{autoRenewEnabled ? "Your subscription will automatically renew on the expiry date" : "Auto-renewal is disabled. Your subscription will not renew automatically."}</p>
                   </div>
-                  <Switch
-                    id="auto-renew"
-                    checked={autoRenewEnabled}
-                    onCheckedChange={handleToggleAutoRenewal}
-                  />
+                  <Switch id="auto-renew" checked={autoRenewEnabled} onCheckedChange={handleToggleAutoRenewal} />
                 </div>
 
                 {!autoRenewEnabled && (
@@ -317,6 +343,6 @@ export default function BillingUsagePage() {
           </CardContent>
         </Card>
       </div>
-      </div>
+    </div>
   );
 }

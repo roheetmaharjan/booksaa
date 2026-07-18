@@ -302,6 +302,7 @@ model VendorSubscription {
   planId         String
   status         String                       @default("ACTIVE")
   createdAt      DateTime                     @default(now())
+  expiryDate     DateTime?
   entitlements   SubscriptionEntitlement[]
   paymentHistory SubscriptionPaymentHistory[]
   plan           Plans                        @relation(fields: [planId], references: [id])

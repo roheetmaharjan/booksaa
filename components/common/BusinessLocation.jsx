@@ -9,7 +9,7 @@ import { Alert, AlertTitle } from "@/components/ui/alert";
 import { validateForm } from "@/utils/formValidator";
 import { useMutation } from "@/hooks/useMutation";
 import { useFormState } from "@/hooks/useFormState";
-import { PriceField } from "../common/PriceField";
+import { PriceField } from "./PriceField";
 import { WarningDiamondIcon } from "@phosphor-icons/react";
 import dynamic from "next/dynamic";
 

@@ -118,7 +118,7 @@ body {
     @apply py-4 border-b;
   }
   .page-body{
-    @apply !mt-0 !border-none !rounded-none
+    @apply !mt-0 !border-none !rounded-none p-5
   }
   .page-title {
     @apply text-xl font-bold tracking-tight;
