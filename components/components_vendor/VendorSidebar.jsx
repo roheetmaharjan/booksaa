@@ -3,7 +3,7 @@
 import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users,Contact  } from "lucide-react";
+import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users,Contact,ScanLine  } from "lucide-react";
 import { BellIcon, CreditCardIcon, RocketLaunchIcon, SignOutIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { signOut } from "@/lib/auth-client";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar";
@@ -21,6 +21,7 @@ export function VendorSidebar({ startTransition }) {
   const primaryItems = useMemo(
     () => [
       { title: "Dashboard", url: businessBasePath, icon: Home },
+      { title: "Checkout", url: `${businessBasePath}/checkout`, icon: ScanLine },
       { title: "Calendar", url: `${businessBasePath}/calendar`, icon: CalendarClock },
       { title: "Services", url: `${businessBasePath}/services`, icon: Scissors },
       { title: "Professionals", url: `${businessBasePath}/professionals`, icon: Users },

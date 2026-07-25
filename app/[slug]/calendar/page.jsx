@@ -6,7 +6,7 @@ import { addDays, addMinutes, format, isAfter, parseISO, startOfDay } from "date
 import { Calendar, dateFnsLocalizer, Views } from "react-big-calendar";
 import { format as fnsFormat, parse, startOfWeek, getDay } from "date-fns";
 import enUS from "date-fns/locale/en-US";
-import { ChevronLeft, ChevronRight, Plus } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, CreditCard, X } from "lucide-react";
 import { toast } from "sonner";
 
 import Loading from "@/components/common/Loading";
@@ -120,6 +120,8 @@ export default function BookingsPage() {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [bookingStart, setBookingStart] = useState(null);
   const [bookingProfessionalId, setBookingProfessionalId] = useState("");
+  const [selectedBooking, setSelectedBooking] = useState(null);
+  const [bookingDetailsOpen, setBookingDetailsOpen] = useState(false);
 
   // ── Customer create (from New Appointment dialog) ──────────────────────────
   const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
@@ -156,6 +158,7 @@ export default function BookingsPage() {
 
   // derived
   const locationId = searchParams.get("locationId");
+  const currentSlug = pathname?.split("/").filter(Boolean)[0] || "";
   const locations = vendor?.locations || [];
   const effectiveLocationId = locationId || vendor?.selectedLocationId || vendor?.defaultLocationId || locations[0]?.id || "";
   const professionals = vendor?.professionals || [];
@@ -326,6 +329,12 @@ export default function BookingsPage() {
   const filteredEvents = selectedProfessionals.length === 0 ? rbcEvents : rbcEvents.filter((event) => selectedProfessionals.includes(String(event.resourceId)));
 
   const filteredResources = selectedProfessionals.length === 0 ? resources : resources.filter((resource) => selectedProfessionals.includes(String(resource.id)));
+  const openBookingCheckout = (booking) => {
+    if (!booking?.id) return;
+    setBookingDetailsOpen(false);
+    router.push(`/${currentSlug}/checkout?bookingId=${booking.id}`);
+  };
+
   if (loading) return <Loading />;
 
   return (
@@ -438,6 +447,10 @@ export default function BookingsPage() {
               }
               openBookingDialog(slotInfo.start, slotInfo.resourceId || professionals[0]?.id);
             }}
+            onSelectEvent={(event) => {
+              setSelectedBooking(event.resource || null);
+              setBookingDetailsOpen(true);
+            }}
             onRangeChange={(range) => {
               const start = Array.isArray(range) ? range[0] : range.start;
               const end = Array.isArray(range) ? range[range.length - 1] : range.end;
@@ -456,6 +469,46 @@ export default function BookingsPage() {
           />
         </div>
       </div>
+
+      {bookingDetailsOpen && selectedBooking && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/40 px-4" onClick={() => setBookingDetailsOpen(false)}>
+          <div className="w-full max-w-md rounded-xl border border-slate-200 bg-white p-5 shadow-xl" onClick={(e) => e.stopPropagation()}>
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <h3 className="text-base font-semibold text-slate-900">Booking details</h3>
+                <p className="text-sm text-slate-500">{selectedBooking.customerName || "Customer"}</p>
+              </div>
+              <button type="button" onClick={() => setBookingDetailsOpen(false)} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
+                <X className="h-4 w-4" />
+              </button>
+            </div>
+
+            <div className="mt-4 space-y-3 text-sm text-slate-600">
+              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+                <p className="font-medium text-slate-800">{selectedBooking.service?.name || "Service"}</p>
+                <p className="mt-1">{selectedBooking.professional?.name || "Staff"}</p>
+                <p className="mt-1 text-xs text-slate-500">
+                  {selectedBooking.scheduledAt ? format(new Date(selectedBooking.scheduledAt), "EEE, MMM d • h:mm a") : ""}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
+                <span>Payment status</span>
+                <span className="font-medium text-slate-800">{selectedBooking.paymentStatus || "UNPAID"}</span>
+              </div>
+            </div>
+
+            <div className="mt-5 flex gap-2">
+              <Button variant="outline" className="flex-1" onClick={() => setBookingDetailsOpen(false)}>
+                Close
+              </Button>
+              <Button className="flex-1" onClick={() => openBookingCheckout(selectedBooking)}>
+                <CreditCard className="mr-2 h-4 w-4" /> Checkout
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* New Appointment dialog — fully self-contained, just told where/when */}
       <NewAppointment
