@@ -25,6 +25,9 @@ const AddLocation = dynamic(() => import("@/components/modals/AddLocation"), {
 const BusinessHours = dynamic(() => import("@/components/common/BusinessHour"), {
   ssr: false,
 });
+const AddProfessionalAddon = dynamic(() => import("@/components/modals/AddProfessionalAddon"), {
+  ssr: false,
+});
 export default function VendorPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -64,18 +67,18 @@ export default function VendorPage() {
   };
 
   useEffect(() => {
-  fetchVendorData();
+    fetchVendorData();
 
-  if (searchParams.get("setup") === "step4") {
-    setShowSetupModal(true);
+    if (searchParams.get("setup") === "step4") {
+      setShowSetupModal(true);
 
-    const params = new URLSearchParams(searchParams);
-    params.delete("setup");
+      const params = new URLSearchParams(searchParams);
+      params.delete("setup");
 
-    router.replace(`/dashboard?${params.toString()}`, { scroll: false });
-  }
-}, [searchParams, router]);
-  
+      router.replace(`/dashboard?${params.toString()}`, { scroll: false });
+    }
+  }, [searchParams, router]);
+
   // ─── Fetch professional roles ─────────────────────────────────────────────
   useEffect(() => {
     const fetchRoles = async () => {

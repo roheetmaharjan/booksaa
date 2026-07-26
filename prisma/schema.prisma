@@ -206,7 +206,7 @@ model Professional {
 
 model Customer {
   id                   String                  @id @default(cuid())
-  customerCode         String                  @unique
+  customerCode         String                  
   vendorId             String
   fullName             String
   phone                String?
@@ -234,7 +234,7 @@ model Customer {
   communications       CustomerCommunication[]
   invoices             CustomerInvoice[]
   noteEntries          CustomerNote[]
-
+  @@unique([vendorId, customerCode])
   @@index([vendorId])
   @@index([status])
   @@index([phone])
