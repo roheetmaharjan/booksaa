@@ -6,7 +6,7 @@ import Loading from "@/components/common/Loading";
 import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
@@ -18,7 +18,6 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
   const [vendor, setVendorDetail] = useState(null);
   const [openAlert, setAlertOpen] = useState(false);
   const [loading, setLoading] = useState(true);
-  const pathname = usePathname();
 
   const { data: fetchedLocations } = useFetch(vendorId ? `/api/businesses/${vendorId}/locations` : null);
   const [locations, setLocations] = useState([]);
@@ -45,6 +44,8 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
         toast.error(err.message);
       });
   }, [vendorId, locationId]);
+
+  const pathname = usePathname();
 
   if (loading) return <Loading />;
   if (!vendor) return <p>No vendor found.</p>;

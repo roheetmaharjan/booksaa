@@ -16,7 +16,7 @@ import { useMutation } from "@/hooks/useMutation";
 import { validateForm } from "@/utils/formValidator";
 import { CameraIcon, InfoIcon, PenIcon } from "@phosphor-icons/react";
 import { MapPin, Plus } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
 
@@ -60,6 +60,7 @@ function getLocationLabel(location) {
 export default function BusinessProfilePage() {
   const searchParams = useSearchParams();
   const selectedLocationFromSidebar = searchParams.get("locationId") || "";
+  const router = useRouter();
 
   const [vendorId, setVendorId] = useState(null);
   const [form, setForm] = useState(initialForm);

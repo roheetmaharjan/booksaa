@@ -61,6 +61,8 @@ export function VendorSidebar({ startTransition }) {
 
         if (res.ok && isActive) {
           setBusiness(data.vendor || null);
+        } else {
+          if (isActive) setBusiness(null);
         }
       } catch {
         if (isActive) {

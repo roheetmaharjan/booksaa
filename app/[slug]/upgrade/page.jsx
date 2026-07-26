@@ -36,7 +36,7 @@ export default function UpgradePage() {
       const response = await api.get("/api/businesses/current");
       setData(response);
     } catch (err) {
-      setError("Failed to load business information");
+      setError(err.message || "Failed to load business information");
     } finally {
       setIsLoading(false);
     }

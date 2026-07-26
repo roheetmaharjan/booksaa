@@ -75,6 +75,7 @@ export default function VendorPage() {
     router.replace(`/dashboard?${params.toString()}`, { scroll: false });
   }
 }, [searchParams, router]);
+  
   // ─── Fetch professional roles ─────────────────────────────────────────────
   useEffect(() => {
     const fetchRoles = async () => {

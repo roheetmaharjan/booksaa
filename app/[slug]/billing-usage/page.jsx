@@ -22,25 +22,27 @@ export default function BillingUsagePage() {
 
   const router = useRouter();
 
-  useEffect(() => {
-    let isActive = true;
+    useEffect(() => {
+      let isActive = true;
 
-    const fetchBusiness = async () => {
-      try {
-        const res = await fetch("/api/businesses/current", {
-          cache: "no-store",
-        });
-        const data = await res.json();
+      const fetchBusiness = async () => {
+        try {
+          const res = await fetch("/api/businesses/current", {
+            cache: "no-store",
+          });
+          const data = await res.json();
 
-        if (res.ok && isActive) {
-          setBusiness(data.vendor || null);
+          if (res.ok && isActive) {
+            setBusiness(data.vendor || null);
+          } else {
+            if (isActive) setBusiness(null);
+          }
+        } catch {
+          if (isActive) {
+            setBusiness(null);
+          }
         }
-      } catch {
-        if (isActive) {
-          setBusiness(null);
-        }
-      }
-    };
+      };
 
     fetchBusiness();
 
@@ -56,7 +58,6 @@ export default function BillingUsagePage() {
   const loadBillingData = async () => {
     try {
       setIsLoading(true);
-
       const [fullData, methods] = await Promise.all([api.get("/api/businesses/current"), api.get("/api/businesses/payment-methods/list")]);
 
       setData(fullData);

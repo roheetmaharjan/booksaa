@@ -110,19 +110,6 @@ function CardTitle({ icon: Icon, children, tone = "slate" }) {
   );
 }
 
-function Badge({ children, className }) {
-  return (
-    <span
-      className={cx(
-        "inline-flex items-center gap-1 rounded-full px-2.5 py-0.5 text-xs font-medium",
-        className
-      )}
-    >
-      {children}
-    </span>
-  );
-}
-
 function Button({
   children,
   variant = "default",
@@ -1068,9 +1055,6 @@ export default function CheckoutPage() {
           <h1 className="text-xl font-bold text-slate-900">Checkout</h1>
           <p className="text-sm text-slate-500">Booksaa · Front desk</p>
         </div>
-        <Badge className="bg-white border border-slate-200 text-slate-500">
-          <Receipt className="w-3.5 h-3.5" /> Register #2
-        </Badge>
       </div>
 
       <CheckoutLayout

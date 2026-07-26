@@ -323,6 +323,11 @@ export default function BookingsPage() {
     return {};
   };
 
+  // Scroll To current time
+  const scrollToTime = new Date();
+  scrollToTime.setSeconds(0);
+  scrollToTime.setMilliseconds(0);
+
   // show resources only in day/week view
   const showResources = currentView === Views.DAY || currentView === Views.WEEK;
   const [selectedProfessionals, setSelectedProfessionals] = useState([]);
@@ -429,12 +434,13 @@ export default function BookingsPage() {
             date={currentDate}
             onView={setCurrentView}
             onNavigate={setCurrentDate}
-            resourceIdAccessor="id"
+            resourceIdAccessor="id" 
             resourceTitleAccessor="title"
             components={{
               event: EventComponent,
               resourceHeader: ({ resource }) => <ResourceHeader resource={resource} professionals={professionals} />,
             }}
+            scrollToTime={scrollToTime}
             eventPropGetter={eventStyleGetter}
             slotPropGetter={slotPropGetter}
             events={filteredEvents}
@@ -550,7 +556,7 @@ export default function BookingsPage() {
         .rbc-host .rbc-time-gutter .rbc-timeslot-group { border-color: #e2e8f0; }
         .rbc-host .rbc-time-slot { font-size: 10px; color: #94a3b8; font-weight: 500; }
         .rbc-host .rbc-label { padding: 0 8px; font-size: 10px; color: #94a3b8; }
-        .rbc-host .rbc-timeslot-group { border-color: #e2e8f0; min-height: 48px; }
+        .rbc-host .rbc-timeslot-group { border-color: #e2e8f0; min-height: 100px; }
         .rbc-host .rbc-time-content { border-top: 1px solid #e2e8f0; }
         .rbc-host .rbc-day-slot .rbc-time-slot { border-color: #f1f5f9; }
         .rbc-host .rbc-time-column { border-color: #e2e8f0; }
@@ -558,7 +564,7 @@ export default function BookingsPage() {
         .rbc-host .rbc-current-time-indicator { background-color: #ef4444; height: 2px; }
         .rbc-host .rbc-current-time-indicator::before { background-color: #ef4444; }
         .rbc-host .rbc-slot-selection { background: rgba(37,99,235,0.07); border: 1px solid rgba(37,99,235,0.2); border-radius: 6px; color: #2563eb; font-size: 11px; }
-        .rbc-host .rbc-event { border-radius: 6px !important; border: none !important; padding: 0 !important; opacity: 0.93; }
+        .rbc-host .rbc-event { border-radius: 6px !important; border: none !important; padding: 0 !important; opacity: 0.93; width: 100% !important; left: 0 !important  }
         .rbc-host .rbc-event:hover { opacity: 1; }
         .rbc-host .rbc-event:focus { outline: 2px solid #2563eb; outline-offset: 1px; }
         .rbc-host .rbc-event.rbc-selected { opacity: 1; box-shadow: 0 0 0 2px #fff, 0 0 0 4px rgba(37,99,235,0.4); }
@@ -576,6 +582,15 @@ export default function BookingsPage() {
         .rbc-host .rbc-agenda-view table { border-color: #e2e8f0; font-size: 13px; }
         .rbc-host .rbc-agenda-date-cell, .rbc-host .rbc-agenda-time-cell { font-size: 12px; color: #64748b; }
         .rbc-row-content { display: none; }
+        .rbc-past-slot {
+          background: repeating-linear-gradient(
+            -45deg,
+            #f8fafc,
+            #f8fafc 8px,
+            #eef2f7 8px,
+            #eef2f7 16px
+          );
+        }
       `}</style>
     </div>
   );
