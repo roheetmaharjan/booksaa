@@ -116,11 +116,10 @@ function ServiceCard({ service, selected, onSelect }) {
   return (
     <button type="button" onClick={() => onSelect(service.id)} className={cn("group relative flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150", selected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
       <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color || "#2563eb" }} />
-      <span className="min-w-0 flex-1">
-        <span className={cn("block truncate text-sm font-medium", selected ? "text-white" : "text-slate-700")}>{service.name}</span>
+      <span className="min-w-0 flex-1 flex justify-between pr-5">
+        <span className={cn("block truncate text-sm font-medium", selected ? "text-white" : "text-slate-700")}>{service.name} |  {paymentLabel(service)}</span>
         <span className={cn("mt-0.5 flex items-center gap-1.5 text-xs", selected ? "text-slate-200" : "text-slate-500")}>
-          <Clock className="h-3 w-3" />
-          {service.duration} min · {paymentLabel(service)}
+          <Clock className="h-3 w-3" /> {service.duration} min
         </span>
       </span>
       {selected && (
@@ -134,13 +133,6 @@ function ServiceCard({ service, selected, onSelect }) {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-/**
- * Fully self-contained "new appointment" dialog. The parent only needs to control
- * `open`/`onOpenChange`, tell it where a new booking should start (`initialStart`,
- * `initialProfessionalId`), and supply the lists of `professionals`/`services`.
- * Everything else — form state, validation, scheduling math, and the actual booking
- * submission — lives in here, so this component can be dropped into any page.
- */
 export default function NewAppointment({ open, onOpenChange, onBookingSuccess, initialStart, initialProfessionalId, professionals = [], services = [], onNewCustomer, initialCustomer }) {
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
   const [depositReviewOpen, setDepositReviewOpen] = useState(false);
@@ -373,13 +365,13 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-      <DialogContent className="p-0 sm:max-w-[900px] w-full" onInteractOutside={(e) => e.preventDefault()}>
+      <DialogContent className="p-0 sm:max-w-[1100px] w-full" onInteractOutside={(e) => e.preventDefault()}>
         <DialogHeader className="border-b border-slate-100 px-6 py-4">
           <DialogTitle className="font-semibold text-slate-900">New appointment</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmitWithValidation}>
-          <div className="no-scrollbar max-h-[80vh] overflow-y-auto px-3">
+          <div className="no-scrollbar min-h-[80vh] overflow-y-auto px-3">
             <section>
               <div className="flex flex-row items-end gap-2.5">
                 <div className="flex-1">
@@ -543,23 +535,22 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
     )}
 
     <Dialog open={depositReviewOpen} onOpenChange={setDepositReviewOpen}>
-      <DialogContent className="sm:max-w-[620px]">
+      <DialogContent className="sm:max-w-[920px]">
         <DialogHeader>
           <DialogTitle>Deposit collection</DialogTitle>
           <DialogDescription>Review the appointment summary and choose how the deposit should be handled before confirming.</DialogDescription>
         </DialogHeader>
 
-        <div className="grid gap-4 md:grid-cols-[1.15fr_0.85fr]">
-          <div className="rounded-2xl border border-slate-200 bg-slate-50/70 p-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Appointment summary</p>
+        <div className="grid gap-4 md:grid-cols-[1.15fr_0.85fr] max-h-[500px] overflow-y-auto">
+          <div className="rounded-md border border-slate-200 bg-slate-50/70 p-4">
+            <p className="text-[12px] font-semibold uppercase text-slate-900">Appointment summary</p>
             <div className="mt-3 space-y-2 text-sm text-slate-700">
               <div className="flex items-center justify-between"><span>Customer</span><span className="font-medium text-slate-900">{bookingForm.customerName || "Customer"}</span></div>
               <div className="flex items-center justify-between"><span>Staff</span><span className="font-medium text-slate-900">{professionals.find((professional) => professional.id === bookingForm.professionalId)?.name || "Unassigned"}</span></div>
               <div className="flex items-center justify-between"><span>Services</span><span className="font-medium text-slate-900">{selectedServices.map((service) => service.name).join(", ") || "No services selected"}</span></div>
               <div className="flex items-center justify-between"><span>Time</span><span className="font-medium text-slate-900">{format(new Date(`${bookingForm.date}T${bookingForm.startTime}`), "EEE, MMM d · h:mm a")}</span></div>
             </div>
-
-            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-3 text-sm">
+            <div className="mt-4 text-sm pt-4 border-t">
               <div className="flex items-center justify-between py-1"><span className="text-slate-500">Subtotal</span><span>{formatCurrency(bookingTotals.subtotal)}</span></div>
               <div className="flex items-center justify-between py-1"><span className="text-slate-500">Taxes</span><span>{formatCurrency(bookingTotals.taxAmount)}</span></div>
               <div className="flex items-center justify-between py-1"><span className="text-slate-500">Total</span><span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.total)}</span></div>
@@ -569,8 +560,8 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
           </div>
 
           <div className="space-y-2">
-            <div className="rounded-2xl border border-slate-200 p-3">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">Payment method</p>
+            <div className="rounded-md border border-slate-200 p-4">
+              <p className="text-[11px] font-semibold uppercase text-slate-900">Payment method</p>
               <div className="mt-3 space-y-2">
                 {[
                   { id: "card", label: "Card", description: "Collect the deposit securely", icon: CreditCard },
@@ -606,17 +597,11 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                 })}
               </div>
             </div>
-
-            <div className="flex items-start gap-2 rounded-xl border border-amber-200 bg-amber-50 p-3 text-sm text-amber-700">
-              <AlertCircle className="mt-0.5 h-4 w-4 shrink-0" />
-              <span>Deposit collection is handled as a separate payment state from the appointment lifecycle, keeping the booking confirmed while the payment remains pending or paid.</span>
-            </div>
           </div>
         </div>
 
         <DialogFooter className="gap-2 sm:justify-between">
-          <span className="text-sm text-slate-500">Primary action confirms the booking and updates the payment state.</span>
-          <div className="flex gap-2">
+          <div className="flex gap-2 ml-auto">
             <Button type="button" variant="ghost" onClick={() => setDepositReviewOpen(false)} className="h-9">Back</Button>
             <Button type="button" onClick={() => handleCreateBooking(getPaymentOptionForMethod(selectedPaymentMethod))} disabled={submittingBooking} className="h-9">
               {submittingBooking ? "Confirming…" : "Confirm booking"}

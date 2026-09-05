@@ -2,6 +2,7 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { createCustomerCode, findCustomerDuplicates, getCurrentVendorOrThrow, normalizeEmail, normalizePhone } from "@/lib/customer-crm";
 import { sendPaymentLinkEmail, sendBookingConfirmationEmail } from "@/lib/sendBookingEmails";
+import { BookingStatus } from "@/constants/enums";
 
 // Helper to calculate deposit required for a service
 function getDepositRequired(service) {
@@ -37,7 +38,7 @@ export async function GET(req) {
         paymentLinkExpiresAt: { lt: now },
       },
       data: {
-        status: "PAYMENT_EXPIRED",
+        status: BookingStatus.PAYMENT_EXPIRED,
       },
     });
 
@@ -228,7 +229,7 @@ export async function POST(req) {
       if (anyPrepaidBanned) {
         return Response.json({ error: "One or more selected services do not permit Payment at Business." }, { status: 400 });
       }
-      targetBookingStatus = "PENDING_PAYMENT";
+      targetBookingStatus = BookingStatus.PENDING_PAYMENT;
       targetPaymentStatus = "UNPAID";
       paidAmount = 0;
       remainingBalance = totalAmount;

@@ -9,6 +9,10 @@ export const BookingStatus = {
   CANCELED: "CANCELED",
   PAYMENT_EXPIRED: "PAYMENT_EXPIRED",
 };
+export const BOOKING_TYPES = {
+  ONLINE: "ONLINE",
+  WALK_IN: "WALK_IN",
+};
 export const BOOKING_STATUS = Object.values(BookingStatus);
 
 export const PaymentStatus = {

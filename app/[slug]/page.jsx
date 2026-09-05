@@ -4,9 +4,9 @@ import { useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { BriefcaseBusiness, CalendarClock, Clock3, MapPin, Plus, Sparkles, Users } from "lucide-react";
 import { toast } from "sonner";
-import { ActionTile, DashboardMetric, SetupCard } from "@/components/components_vendor/VendorDashboardCards";
+import { DashboardMetric, SetupCard } from "@/components/components_vendor/VendorDashboardCards";
 import { Button } from "@/components/ui/button";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+// import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import dynamic from "next/dynamic";
@@ -174,27 +174,6 @@ export default function VendorPage() {
             <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-sm text-red-700">{error}</div>
           ) : vendor ? (
             <>
-              {/* Limit warning */}
-              {(hasReachedProfessionalLimit || hasReachedLocationLimit) && (
-                <Alert className="border-amber-200 bg-amber-50 text-amber-900">
-                  <AlertTitle className="text-lg font-bold">Subscription limit reached</AlertTitle>
-                  <AlertDescription className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <span>
-                      {hasReachedProfessionalLimit && `You have used all ${professionalLimit} professional slot${professionalLimit !== 1 ? "s" : ""}. `}
-                      {hasReachedLocationLimit && `You have used all ${locationLimit} location slot${locationLimit !== 1 ? "s" : ""}. `}
-                      Add an add-on or review Usage & Billing to increase your limits.
-                    </span>
-                    <span className="flex flex-wrap gap-2">
-                      <Button size="sm" onClick={() => openAddon(hasReachedLocationLimit ? "location" : "professional")}>
-                        Add add-on
-                      </Button>
-                      <Button size="sm" variant="outline" onClick={scrollToBilling}>
-                        Usage & Billing
-                      </Button>
-                    </span>
-                  </AlertDescription>
-                </Alert>
-              )}
 
               {/* Metrics */}
               <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
