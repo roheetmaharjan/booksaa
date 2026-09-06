@@ -7,7 +7,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { BoardTopBar } from "@/components/checkout/BoardTopBar";
 import { AppointmentCard } from "@/components/checkout/AppointmentCard";
 import { AppointmentDetail } from "@/components/checkout/AppointmentDetail";
-import { CheckoutDialog } from "@/components/checkout/CheckoutDialog";
+import { Drawer, DrawerContent, DrawerTitle } from "@/components/ui/drawer";
 import { useFetch } from "@/hooks/useFetch";
 import { filterDueBookings } from "@/lib/checkout-utils";
 import { currency, STAGES } from "@/lib/appointments";
@@ -28,7 +28,14 @@ function toAppointment(booking) {
   const paid = Number(booking.paidAmount || 0);
   return {
     id: booking.id,
-    stage: booking.status === "COMPLETED" ? "completed" : "confirmed",
+    customerKey: booking.customerId || booking.customer?.id || (booking.customerName || booking.customerPhone ? `${booking.customerName || ""}:${booking.customerPhone || ""}`.toLowerCase() : booking.id),
+    stage: {
+      PENDING: "unconfirmed",
+      PENDING_PAYMENT: "unconfirmed",
+      CHECKED_IN: "arrived",
+      IN_SERVICE: "in_service",
+      COMPLETED: "completed",
+    }[booking.status] || "confirmed",
     client: booking.customerName || booking.customer?.fullName || "Customer",
     phone: booking.customerPhone || booking.customer?.phone || "",
     start: displayTime(start),
@@ -39,35 +46,62 @@ function toAppointment(booking) {
     bookedOn: booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : "",
     tags: [],
     note: booking.notes || "",
-    services: service ? [{ id: service.id, name: service.name, staff: booking.professional?.name || "Unassigned", price: Number(service.price || booking.paymentAmount || 0), duration: service.duration || 30 }] : [],
+    services: service ? [{ id: service.id, bookingId: booking.id, name: service.name, staff: booking.professional?.name || "Unassigned", price: Number(service.price || booking.paymentAmount || 0), duration: service.duration || 30, start: displayTime(start), end: displayTime(end) }] : [],
     paid: paid > 0 || booking.paymentStatus === "PAID" ? { total: paid, method: booking.paymentMethod || "Card", tip: 0 } : null,
   };
+}
+
+function groupByCustomer(appointments) {
+  const groups = new Map();
+  for (const appointment of appointments) {
+    const key = appointment.customerKey || appointment.id;
+    const group = groups.get(key);
+    if (!group) {
+      groups.set(key, { ...appointment, bookingIds: [appointment.id] });
+      continue;
+    }
+
+    group.services.push(...appointment.services);
+    group.bookingIds.push(appointment.id);
+    group.avgVisit += appointment.avgVisit;
+    const groupPaidTotal = Number(group.paid?.total || 0) + Number(appointment.paid?.total || 0);
+    group.paid = groupPaidTotal > 0 ? { total: groupPaidTotal, method: group.paid?.method || appointment.paid?.method || "Card", tip: 0 } : null;
+    // Keep the most active service's stage and the earliest scheduled time on the card.
+    const stageOrder = ["arrived", "in_service", "unconfirmed", "confirmed", "completed"];
+    if (stageOrder.indexOf(appointment.stage) < stageOrder.indexOf(group.stage)) group.stage = appointment.stage;
+  }
+  return [...groups.values()];
 }
 
 export default function CheckoutPage() {
   const params = useSearchParams();
   const bookingId = params.get("bookingId");
+  const locationId = params.get("locationId");
   const [query, setQuery] = useState("");
   const [staff, setStaff] = useState("ALL");
   const [selectedId, setSelectedId] = useState(bookingId);
-  const [checkoutOpen, setCheckoutOpen] = useState(false);
   const [list, setList] = useState([]);
   const url = useMemo(() => {
     const start = new Date();
-    start.setDate(start.getDate() - 1);
-    const end = new Date();
-    end.setDate(end.getDate() + 1);
-    return `/api/bookings?start=${encodeURIComponent(start.toISOString())}&end=${encodeURIComponent(end.toISOString())}`;
-  }, []);
+    start.setHours(0, 0, 0, 0);
+    // The bookings API treats `end` as the start of its exclusive end day.
+    const end = new Date(start);
+    const requestParams = new URLSearchParams({
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
+    if (locationId) requestParams.set("locationId", locationId);
+    return `/api/bookings?${requestParams.toString()}`;
+  }, [locationId]);
   const { data, loading, error, refetch } = useFetch(url);
 
   useEffect(() => {
-    const appointments = filterDueBookings(data?.bookings || [])
+    const appointments = groupByCustomer(filterDueBookings(data?.bookings || [])
       .map(toAppointment)
-      .filter(Boolean);
+      .filter(Boolean));
     setList(appointments);
-    if (bookingId && appointments.some((item) => item.id === bookingId)) setSelectedId(bookingId);
-    else if (!selectedId || !appointments.some((item) => item.id === selectedId)) setSelectedId(appointments[0]?.id || null);
+    if (bookingId && appointments.some((item) => item.bookingIds.includes(bookingId))) setSelectedId(appointments.find((item) => item.bookingIds.includes(bookingId)).id);
+    else if (selectedId && !appointments.some((item) => item.id === selectedId)) setSelectedId(null);
   }, [data, bookingId]);
 
   const filtered = list.filter((item) => item.client.toLowerCase().includes(query.trim().toLowerCase()) && (staff === "ALL" || item.services.some((service) => service.staff === staff)));
@@ -78,12 +112,11 @@ export default function CheckoutPage() {
     setList((items) => items.map((item) => (item.id === id ? { ...item, stage } : item)));
     toast.success(message);
   };
-  const complete = async (id, total, method) => {
+  const complete = async (id, total, method, _tip, bookingIds = [id]) => {
     try {
-      const response = await fetch(`/api/bookings/${id}/checkout`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: total, paymentMethod: method }) });
+      const response = await fetch(`/api/bookings/${id}/checkout`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: total, paymentMethod: method, bookingIds }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to complete checkout");
-      setCheckoutOpen(false);
       toast.success(`Checked out — ${currency(total)}`);
       await refetch();
     } catch (checkoutError) {
@@ -108,7 +141,7 @@ export default function CheckoutPage() {
           </button>
         )}
       </div>
-      <main className={`flex gap-4 overflow-x-auto board-scroll px-5 py-5 ${selected ? "lg:pr-[440px]" : ""}`}>
+      <main className="flex gap-4 overflow-x-auto board-scroll px-5 py-5">
         {STAGES.map((stage) => {
           const items = filtered.filter((item) => item.stage === stage.id);
           return (
@@ -126,13 +159,13 @@ export default function CheckoutPage() {
           );
         })}
       </main>
-      {selected && (
-        <aside className="fixed bottom-0 right-0 top-0 z-30 w-full max-w-[420px] border-l border-border bg-card shadow-pop">
-          <AppointmentDetail appt={selected} onClose={() => setSelectedId(null)} onConfirm={() => move(selected.id, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected.id, "arrived", `${selected.client} marked as arrived`)} onCheckout={() => setCheckoutOpen(true)} onAddTag={() => toast("Tags are managed from the customer profile")} />
-        </aside>
-      )}
-      <CheckoutDialog appt={selected} open={checkoutOpen} onOpenChange={setCheckoutOpen} onComplete={complete} />
-      <Toaster />
+      <Drawer open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)} direction="right">
+        <DrawerContent className="inset-y-0 right-0 left-auto mt-0 h-full rounded-l-xl w-full max-w-5xl border-y-0 border-r-0 border-l border-border bg-card p-0 shadow-pop">
+          <DrawerTitle className="sr-only">Appointment details for {selected?.client}</DrawerTitle>
+          {selected && <AppointmentDetail key={selected.id} appt={selected} onClose={() => setSelectedId(null)} onConfirm={() => move(selected.id, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected.id, "arrived", `${selected.client} marked as arrived`)} onCheckout={(total, method) => complete(selected.id, total, method, 0, selected.bookingIds)} onAddTag={() => toast("Tags are managed from the customer profile")} />}
+        </DrawerContent>
+      </Drawer>
+      {/* <Toaster /> */}
     </div>
   );
 }

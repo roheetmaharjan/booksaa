@@ -104,7 +104,7 @@ export async function PUT(req, { params }) {
       return NextResponse.json({ error: "Booking ID is required" }, { status: 400 });
     }
 
-    const { amountPaid, paymentMethod } = await req.json();
+    const { amountPaid, paymentMethod, bookingIds } = await req.json();
 
     if (amountPaid === undefined || isNaN(Number(amountPaid)) || Number(amountPaid) < 0) {
       return NextResponse.json({ error: "A valid amount paid is required" }, { status: 400 });
@@ -112,9 +112,12 @@ export async function PUT(req, { params }) {
 
     const normalizedPaymentMethod = normalizePaymentMethod(paymentMethod);
 
-    const booking = await prisma.bookings.findFirst({
+    const requestedIds = [...new Set(Array.isArray(bookingIds) && bookingIds.length ? bookingIds : [id])];
+    if (!requestedIds.includes(id)) requestedIds.unshift(id);
+
+    const bookings = await prisma.bookings.findMany({
       where: {
-        id,
+        id: { in: requestedIds },
         service: { vendorId: vendor.id },
       },
       select: {
@@ -125,33 +128,22 @@ export async function PUT(req, { params }) {
       },
     });
 
-    if (!booking) {
+    if (bookings.length !== requestedIds.length) {
       return NextResponse.json({ error: "Booking not found" }, { status: 404 });
     }
 
     const paidAmount = Number(amountPaid);
-    const newPaidAmount = booking.paidAmount + paidAmount;
-    const newRemainingBalance = Math.max(0, booking.paymentAmount - newPaidAmount);
+    const totalOutstanding = bookings.reduce((sum, booking) => sum + Math.max(0, Number(booking.paymentAmount) - Number(booking.paidAmount)), 0);
+    const updatedBookings = await prisma.$transaction(bookings.map((booking) => {
+      const outstanding = Math.max(0, Number(booking.paymentAmount) - Number(booking.paidAmount));
+      const allocation = totalOutstanding ? Math.min(outstanding, paidAmount * (outstanding / totalOutstanding)) : 0;
+      const newPaidAmount = Number(booking.paidAmount) + allocation;
+      const newRemainingBalance = Math.max(0, Number(booking.paymentAmount) - newPaidAmount);
+      const paymentStatus = newPaidAmount >= Number(booking.paymentAmount) ? "PAID" : newPaidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID";
+      return prisma.bookings.update({ where: { id: booking.id }, data: { status: newRemainingBalance === 0 ? "COMPLETED" : booking.status, paidAmount: newPaidAmount, remainingBalance: newRemainingBalance, paymentStatus, paymentMethod: normalizedPaymentMethod } });
+    }));
 
-    let paymentStatus = "UNPAID";
-    if (newPaidAmount >= booking.paymentAmount) {
-      paymentStatus = "PAID";
-    } else if (newPaidAmount > 0) {
-      paymentStatus = "PARTIALLY_PAID";
-    }
-
-    const updatedBooking = await prisma.bookings.update({
-      where: { id },
-      data: {
-        status: newPaidAmount >= booking.paymentAmount ? "COMPLETED" : booking.status,
-        paidAmount: newPaidAmount,
-        remainingBalance: newRemainingBalance,
-        paymentStatus,
-        paymentMethod: normalizedPaymentMethod,
-      },
-    });
-
-    return NextResponse.json({ success: true, booking: updatedBooking });
+    return NextResponse.json({ success: true, bookings: updatedBookings });
   } catch (error) {
     console.error("Booking checkout error:", error);
     return NextResponse.json(

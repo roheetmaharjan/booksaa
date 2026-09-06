@@ -84,6 +84,7 @@ export async function GET(req) {
       where,
       include: {
         service: true,
+        customer: true,
         professional: {
           include: {
             role: true,

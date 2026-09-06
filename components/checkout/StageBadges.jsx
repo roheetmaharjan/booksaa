@@ -11,7 +11,7 @@ export function StageBadges({ appt }) {
 
       {appt.noShowRisk && <Ban className="size-3.5 text-destructive" aria-label="No-show risk" />}
 
-      {appt.paid && <Gem className="size-3.5 text-primary" aria-label="Paid" />}
+      {appt.paid && <Gem className="size-3.5 text-gray-800" aria-label="Paid" />}
     </div>
   );
 }

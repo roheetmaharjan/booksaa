@@ -8,6 +8,7 @@ const accentByStage = {
   confirmed: "before:bg-status-confirmed",
   walkin: "before:bg-status-walkin",
   arrived: "before:bg-status-arrived",
+  in_service: "before:bg-status-arrived",
   completed: "before:bg-status-completed",
 };
 
@@ -31,6 +32,7 @@ export function AppointmentCard({ appt, active, onSelect }) {
           )}
 
           <span className="mt-0.5 block truncate text-[15px] font-medium leading-snug">{appt.client}</span>
+          {appt.services.length > 1 && <span className="mt-0.5 block text-[11px] text-muted-foreground">{appt.services.length} services booked</span>}
         </div>
 
         <StageBadges appt={appt} />

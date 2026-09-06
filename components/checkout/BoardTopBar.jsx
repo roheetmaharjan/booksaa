@@ -149,7 +149,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
       <label className="relative min-w-[200px] flex-1 md:max-w-sm">
         <Search className="absolute left-2 top-1/2 size-4 -translate-y-1/2 text-muted-foreground" />
 
-        <input value={query} onChange={(e) => onQuery(e.target.value)} placeholder="Filter clients" className="w-full pl-8 border-b border-border bg-transparent py-1.5 text-sm outline-none placeholder:text-muted-foreground focus:border-primary" />
+        <input value={query} onChange={(e) => onQuery(e.target.value)} placeholder="Search customers" className="w-full pl-8 border-b border-border bg-transparent py-1.5 text-sm outline-none placeholder:text-muted-foreground focus:border-primary" />
       </label>
 
       {/* Actions */}

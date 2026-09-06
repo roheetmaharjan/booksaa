@@ -139,7 +139,7 @@ export function CheckoutDialog({ appt, open, onOpenChange, onComplete }) {
             </dl>
 
             {/* Charge */}
-            <Button className="mt-4 w-full" size="lg" disabled={lines.length === 0} onClick={() => onComplete(appt.id, total, method, tip)}>
+            <Button className="mt-4 w-full" size="lg" disabled={lines.length === 0} onClick={() => onComplete(appt.id, total, method, tip, appt.bookingIds)}>
               Charge {currency(total)}
             </Button>
 
