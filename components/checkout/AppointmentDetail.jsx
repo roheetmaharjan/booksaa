@@ -10,6 +10,7 @@ import { PAYMENT_METHODS } from "@/constants/payment"
 
 export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onCheckout }) {
   const total = appt.services.reduce((s, x) => s + x.price, 0);
+  const paid = appt.paid || { total: 0, method: "Not paid", tip: 0 };
   const [paymentMethod, setPaymentMethod] = useState("CARD");
 
   return (
@@ -109,8 +110,8 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
                 <span className="text-md font-semibold">-</span>
               </div>
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
-                <span className="text-sm text-muted-foreground">Deposit ({appt.paid.method})</span>
-                <span className="text-md font-semibold">{currency(appt.paid.total)}</span>
+                <span className="text-sm text-muted-foreground">Deposit ({paid.method || "Not paid"})</span>
+                <span className="text-md font-semibold">{currency(Number(paid.total || 0))}</span>
               </div>
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <span className="text-sm text-muted-foreground">Tax</span>
@@ -118,7 +119,7 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
               </div>
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <span className="text-sm text-muted-foreground">Tip</span>
-                <span className="text-md font-semibold">{currency(appt.paid.tip)}</span>
+                <span className="text-md font-semibold">{currency(Number(paid.tip || 0))}</span>
               </div>
               <div className="flex items-center justify-between border-b border-border px-5 py-3">
                 <span className="font-display text-lg font-semibold">Amount Due</span>

@@ -5,7 +5,6 @@ import { useSearchParams } from "next/navigation";
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { addMinutes, isAfter, format } from "date-fns";
 import { Button } from "@/components/ui/button";
-// import { staffList } from "@/lib/appointments";
 import NewAppointment from "@/components/common/NewAppointment";
 import {
   Select,
@@ -195,22 +194,6 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
           <ChevronRight className="size-4" />
         </Button>
 
-        {/* Schedule */}
-        {/* <Button variant="outline" size="sm" className="gap-1.5">
-          Schedule
-          <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-muted-foreground">New</span>
-        </Button> */}
-
-        {/* Cancellations */}
-        {/* <Button variant="outline" size="sm">
-          Cancellations
-        </Button> */}
-
-        {/* Waitlist */}
-        {/* <Button variant="outline" size="sm">
-          Waitlist ({waitlist})
-        </Button> */}
-
         {/* New Appointment */}
         <Button onClick={() => openBookingDialog(getNextBookableDate(), professionals[0]?.id)}>
           <Plus className="h-3.5 w-3.5" />
@@ -218,7 +201,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
         </Button>
 
         {/* New Appointment Dialog */}
-        <NewAppointment open={dialogOpen} onOpenChange={setDialogOpen} onBookingSuccess={handleBookingSuccess} initialStart={bookingStart} initialProfessionalId={bookingProfessionalId} professionals={professionals} services={services} onNewCustomer={() => setCustomerCreateOpen(true)} />
+        <NewAppointment open={dialogOpen} onOpenChange={setDialogOpen} onBookingSuccess={handleBookingSuccess} initialStart={bookingStart} initialProfessionalId={bookingProfessionalId} professionals={professionals} services={services} onNewCustomer={() => setCustomerCreateOpen(true)}  />
       </div>
     </header>
   );

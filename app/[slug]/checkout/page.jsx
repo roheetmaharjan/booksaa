@@ -86,13 +86,17 @@ export default function CheckoutPage() {
     start.setHours(0, 0, 0, 0);
     // The bookings API treats `end` as the start of its exclusive end day.
     const end = new Date(start);
+    end.setDate(end.getDate() + 1);
     const requestParams = new URLSearchParams({
       start: start.toISOString(),
       end: end.toISOString(),
     });
-    if (locationId) requestParams.set("locationId", locationId);
+    if (locationId) {
+      requestParams.set("locationId", locationId);
+    }
     return `/api/bookings?${requestParams.toString()}`;
   }, [locationId]);
+  
   const { data, loading, error, refetch } = useFetch(url);
 
   useEffect(() => {
