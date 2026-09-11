@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
+import { toast } from "sonner";
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
 import { addMinutes, isAfter, format } from "date-fns";
 import { Button } from "@/components/ui/button";
@@ -31,7 +32,7 @@ function isBookableSlot(date) {
   return isAfter(date, new Date());
 }
 
-export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOptions }) {
+export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOptions, onBookingSuccess }) {
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
@@ -127,7 +128,8 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
     };
   }, [locationId]);
 
-  const handleBookingSuccess = () => {
+  const handleBookingSuccess = async (bookingResult) => {
+    await onBookingSuccess?.(bookingResult);
     setDialogOpen(false);
   };
 
@@ -201,7 +203,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
         </Button>
 
         {/* New Appointment Dialog */}
-        <NewAppointment open={dialogOpen} onOpenChange={setDialogOpen} onBookingSuccess={handleBookingSuccess} initialStart={bookingStart} initialProfessionalId={bookingProfessionalId} professionals={professionals} services={services} onNewCustomer={() => setCustomerCreateOpen(true)}  />
+        <NewAppointment open={dialogOpen} onOpenChange={setDialogOpen} onBookingSuccess={handleBookingSuccess} initialStart={bookingStart} initialProfessionalId={bookingProfessionalId} professionals={professionals} services={services} />
       </div>
     </header>
   );

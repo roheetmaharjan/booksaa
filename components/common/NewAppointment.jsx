@@ -310,7 +310,9 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
         }
         toast.success("Appointment booked");
         setDepositReviewOpen(false);
-        await onBookingSuccess?.();
+        // Give the parent the newly created booking(s) so pages that display
+        // appointments can refresh and focus the new appointment immediately.
+        await onBookingSuccess?.(data);
         onOpenChange?.(false);
       } catch (err) {
         console.error(err);

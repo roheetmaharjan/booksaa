@@ -128,9 +128,15 @@ export default function CheckoutPage() {
     }
   };
 
+  const handleBookingSuccess = async (bookingResult) => {
+    const createdBookingId = bookingResult?.booking?.id || bookingResult?.bookings?.[0]?.id;
+    await refetch();
+    if (createdBookingId) setSelectedId(createdBookingId);
+  };
+
   return (
     <div className="min-h-screen bg-surface">
-      <BoardTopBar query={query} onQuery={setQuery} staff={staff} onStaff={setStaff} staffOptions={staffOptions} waitlist={0} />
+      <BoardTopBar query={query} onQuery={setQuery} staff={staff} onStaff={setStaff} staffOptions={staffOptions} waitlist={0} onBookingSuccess={handleBookingSuccess} />
       <div className="flex items-center gap-6 border-b border-border bg-surface-raised/60 px-5 py-2 text-sm">
         <span className="text-muted-foreground">
           Checked out today: <strong className="text-foreground">{currency(revenue)}</strong>
