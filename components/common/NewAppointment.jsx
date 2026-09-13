@@ -13,10 +13,10 @@ import { Textarea } from "@/components/ui/textarea";
 import ProfessionalAvatar from "@/components/common/ProfessionalAvatar";
 import { PAYMENT_METHODS, PAYMENT_OPTIONS, getPaymentOptionForMethod } from "@/constants/payment";
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
-import { Clock, ChevronsUpDown, Check } from "lucide-react";
+import { ArrowLeft, Clock, ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
-import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
+import { CustomerCreateFormContent } from "@/components/customers/CustomerCreateDialog";
 import { format, startOfDay, addMinutes, isAfter, isSameDay } from "date-fns";
 import { toast } from "sonner";
 // ─── constants ──────────────────────────────────────────────────────────────
@@ -138,7 +138,7 @@ function ServiceCard({ service, selected, onSelect }) {
 
 // ─── main component ───────────────────────────────────────────────────────────
 
-export default function NewAppointment({ open, onOpenChange, onBookingSuccess, initialStart, initialProfessionalId, professionals = [], services = [], onNewCustomer, initialCustomer }) {
+export default function NewAppointment({ open, onOpenChange, onBookingSuccess, initialStart, initialProfessionalId, professionals = [], services = [], initialCustomer }) {
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
   const [depositReviewOpen, setDepositReviewOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
@@ -149,8 +149,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   const [customerOpen, setCustomerOpen] = useState(false);
   const [customerError, setCustomerError] = useState("");
 
-  // self-contained "add new customer" dialog state, mirroring the customer
-  // list page's CustomerCreateDialog usage
+  // New customer is a second view of this same dialog, never a nested popup.
   const [newCustomerOpen, setNewCustomerOpen] = useState(false);
   const [customerForm, setCustomerForm] = useState({ fullName: "", phone: "", email: "" });
   const [customerErrors, setCustomerErrors] = useState({});
@@ -217,8 +216,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   }, []);
 
   const handleCustomerSubmit = useCallback(
-    async (e) => {
-      e?.preventDefault?.();
+    async (ignoreDuplicate = false) => {
       setSavingCustomer(true);
       setCustomerErrors({});
       setDuplicateState(null);
@@ -226,7 +224,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
         const res = await fetch("/api/customers", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(customerForm),
+          body: JSON.stringify({ ...customerForm, ignoreDuplicate }),
         });
         const data = await res.json();
 
@@ -264,13 +262,9 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   );
 
   const handleNewCustomerClick = useCallback(() => {
-    if (onNewCustomer) {
-      onNewCustomer();
-      return;
-    }
     resetCreate();
     setNewCustomerOpen(true);
-  }, [onNewCustomer, resetCreate]);
+  }, [resetCreate]);
 
   // create booking
   const handleCreateBooking = useCallback(
@@ -383,9 +377,30 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
         <DialogContent className="p-0 sm:max-w-[700px] w-full" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader className="border-b border-slate-100 px-6 py-4">
-            <DialogTitle className="font-semibold text-slate-900">New appointment</DialogTitle>
+            <div className="flex items-center gap-3">
+              {newCustomerOpen && <Button type="button" variant="ghost" size="icon" className="-ml-2 size-8" onClick={() => setNewCustomerOpen(false)} aria-label="Back to appointment"><ArrowLeft className="size-4" /></Button>}
+              <div>
+                <DialogTitle className="font-semibold text-slate-900">{newCustomerOpen ? "Add customer" : "New appointment"}</DialogTitle>
+                {newCustomerOpen && <DialogDescription className="mt-1">Create a customer, then continue booking this appointment.</DialogDescription>}
+              </div>
+            </div>
           </DialogHeader>
 
+          {newCustomerOpen ? (
+            <div className="max-h-[calc(90vh-100px)] overflow-y-auto px-6 py-5">
+              <CustomerCreateFormContent
+                form={customerForm}
+                onChange={handleCustomerFormChange}
+                setForm={setCustomerForm}
+                onSubmit={handleCustomerSubmit}
+                onCancel={() => setNewCustomerOpen(false)}
+                cancelLabel="Back"
+                saving={savingCustomer}
+                duplicateState={duplicateState}
+                errors={customerErrors}
+              />
+            </div>
+          ) : (
           <form onSubmit={handleSubmitWithValidation}>
             <div className="no-scrollbar overflow-y-auto px-3 pb-3">
               <section>
@@ -530,26 +545,9 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
               </Button>
             </DialogFooter>
           </form>
+          )}
         </DialogContent>
       </Dialog>
-
-      {!onNewCustomer && (
-        <CustomerCreateDialog
-          open={newCustomerOpen}
-          onOpenChange={(o) => {
-            setNewCustomerOpen(o);
-            if (!o) resetCreate();
-          }}
-          form={customerForm}
-          onChange={handleCustomerFormChange}
-          setForm={setCustomerForm}
-          onSubmit={handleCustomerSubmit}
-          onCancel={() => setNewCustomerOpen(false)}
-          saving={savingCustomer}
-          duplicateState={duplicateState}
-          errors={customerErrors}
-        />
-      )}
 
       <Dialog open={depositReviewOpen} onOpenChange={setDepositReviewOpen}>
         <DialogContent className="sm:max-w-[920px]">

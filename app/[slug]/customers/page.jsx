@@ -326,7 +326,6 @@ export default function CustomersPage() {
         initialProfessionalId={bookingProfessionalId}
         professionals={professionals}
         services={services}
-        onNewCustomer={() => setCustomerCreateOpen(true)}
       />
 
       <CustomerImportDialog

@@ -2,6 +2,46 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { CustomerForm } from "./CustomerForm";
 
+// The form body is deliberately separate from its dialog shell so it can be
+// used in the customer page and as a view inside the appointment dialog.
+export function CustomerCreateFormContent({
+  form,
+  onChange,
+  setForm,
+  onSubmit,
+  onCancel,
+  saving,
+  duplicateState,
+  errors,
+  cancelLabel = "Cancel",
+}) {
+  return (
+    <>
+      {duplicateState && (
+        <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
+          A customer with the same phone or email may already exist. Review before creating, or ignore to create anyway.
+        </div>
+      )}
+
+      <CustomerForm form={form} onChange={onChange} setForm={setForm} errors={errors} />
+
+      <DialogFooter className="gap-2">
+        <Button type="button" variant="outline" onClick={onCancel}>
+          {cancelLabel}
+        </Button>
+        {duplicateState && (
+          <Button type="button" variant="outline" disabled={saving} onClick={() => onSubmit(true)}>
+            Ignore Duplicate
+          </Button>
+        )}
+        <Button type="button" disabled={saving} onClick={() => onSubmit(false)}>
+          {saving ? "Saving..." : "Save Customer"}
+        </Button>
+      </DialogFooter>
+    </>
+  );
+}
+
 export function CustomerCreateDialog({
   open,
   onOpenChange,
@@ -21,27 +61,16 @@ export function CustomerCreateDialog({
           <DialogTitle>Add customer</DialogTitle>
         </DialogHeader>
 
-        {duplicateState && (
-          <div className="rounded-md border border-amber-200 bg-amber-50 p-3 text-sm text-amber-900">
-            A customer with the same phone or email may already exist. Review before creating, or ignore to create anyway.
-          </div>
-        )}
-
-        <CustomerForm form={form} onChange={onChange} setForm={setForm} errors={errors} />
-
-        <DialogFooter className="gap-2">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          {duplicateState && (
-            <Button type="button" variant="outline" disabled={saving} onClick={() => onSubmit(true)}>
-              Ignore Duplicate
-            </Button>
-          )}
-          <Button type="button" disabled={saving} onClick={() => onSubmit(false)}>
-            {saving ? "Saving..." : "Save Customer"}
-          </Button>
-        </DialogFooter>
+        <CustomerCreateFormContent
+          form={form}
+          onChange={onChange}
+          setForm={setForm}
+          onSubmit={onSubmit}
+          onCancel={onCancel}
+          saving={saving}
+          duplicateState={duplicateState}
+          errors={errors}
+        />
       </DialogContent>
     </Dialog>
   );

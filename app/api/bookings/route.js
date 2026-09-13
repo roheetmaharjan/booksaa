@@ -218,12 +218,6 @@ export async function POST(req) {
       paymentLinkExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       const origin = req.headers.get("origin") || "http://localhost:3000";
       paymentLink = `${origin}/pay/${paymentGroupId}`;
-    } else if (paymentOption === "skip_deposit") {
-      targetBookingStatus = "CONFIRMED";
-      targetPaymentStatus = "UNPAID";
-      paidAmount = 0;
-      remainingBalance = totalAmount;
-      paymentMethod = "DEPOSIT_WAIVED";
     } else if (paymentOption === "pay_at_business") {
       // Validate that all services permit pay at business
       const anyPrepaidBanned = services.some(svc => svc.prepaymentType !== "pay_later" && !svc.allowPayAtBusiness);

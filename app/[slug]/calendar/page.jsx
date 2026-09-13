@@ -19,8 +19,6 @@ import { Check, ChevronsUpDown } from "lucide-react";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import "react-big-calendar/lib/css/react-big-calendar.css";
 import NewAppointment from "@/components/common/NewAppointment";
-import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
-import { useMutation } from "@/hooks/useMutation";
 
 // ─── RBC localizer ────────────────────────────────────────────────────────────
 
@@ -67,25 +65,6 @@ function appointmentTitle(booking) {
   return booking.customerName || [booking.user?.firstname, booking.user?.lastname].filter(Boolean).join(" ") || "Appointment";
 }
 
-const emptyCustomerForm = {
-  fullName: "",
-  phone: "",
-  email: "",
-  gender: "",
-  dateOfBirth: "",
-  address: "",
-  profilePhoto: "",
-  notes: "",
-  status: "ACTIVE",
-  tags: "",
-  preferredStaffName: "",
-  preferredServiceName: "",
-  loyaltyPoints: 0,
-  earnedPoints: 0,
-  redeemedPoints: 0,
-  membershipLevel: "",
-};
-
 // ─── custom event component ───────────────────────────────────────────────────
 
 function EventComponent({ event }) {
@@ -124,36 +103,6 @@ export default function BookingsPage() {
   const [bookingDetailsOpen, setBookingDetailsOpen] = useState(false);
 
   // ── Customer create (from New Appointment dialog) ──────────────────────────
-  const [customerCreateOpen, setCustomerCreateOpen] = useState(false);
-  const [customerForm, setCustomerForm] = useState(emptyCustomerForm);
-  const [duplicateState, setDuplicateState] = useState(null);
-  const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
-
-  const handleCustomerFormChange = (e) => {
-    const { name, value } = e.target;
-    setCustomerForm((prev) => ({ ...prev, [name]: value }));
-  };
-
-  const resetCustomerForm = () => {
-    setCustomerForm(emptyCustomerForm);
-    setDuplicateState(null);
-  };
-
-  const submitCustomer = async (ignoreDuplicate = false) => {
-    try {
-      await createCustomer({ ...customerForm, ignoreDuplicate });
-      toast.success("Customer created.");
-      setCustomerCreateOpen(false);
-      resetCustomerForm();
-    } catch (error) {
-      if (error.message === "Possible duplicate customer.") {
-        setDuplicateState({ message: error.message });
-        toast.error("Possible duplicate customer.");
-        return;
-      }
-      toast.error(error.message || "Unable to create customer.");
-    }
-  };
   // ──────────────────────────────────────────────────────────────────────────
 
   // derived
@@ -525,26 +474,9 @@ export default function BookingsPage() {
         initialProfessionalId={bookingProfessionalId}
         professionals={professionals}
         services={services}
-        onNewCustomer={() => setCustomerCreateOpen(true)}
       />
 
       {/* Customer Create dialog — opened from inside New Appointment */}
-      <CustomerCreateDialog
-        open={customerCreateOpen}
-        onOpenChange={(open) => {
-          setCustomerCreateOpen(open);
-          if (!open) resetCustomerForm();
-        }}
-        form={customerForm}
-        onChange={handleCustomerFormChange}
-        setForm={setCustomerForm}
-        onSubmit={submitCustomer}
-        onCancel={() => setCustomerCreateOpen(false)}
-        saving={savingCustomer}
-        duplicateState={duplicateState}
-        errors={{}}
-      />
-
       {/* RBC styles */}
       <style>{`
         .rbc-host .rbc-calendar { font-family: inherit; }
