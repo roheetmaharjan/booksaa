@@ -11,15 +11,14 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import ProfessionalAvatar from "@/components/common/ProfessionalAvatar";
-import { PAYMENT_METHODS,getPaymentOptionForMethod,} from "@/constants/payment";
+import { PAYMENT_METHODS, PAYMENT_OPTIONS, getPaymentOptionForMethod } from "@/constants/payment";
 import { Calendar as ShadCalendar } from "@/components/ui/calendar";
-import { Clock, ChevronsUpDown, Check, CreditCard, Banknote, QrCode, Link2, ShieldCheck, AlertCircle } from "lucide-react";
+import { Clock, ChevronsUpDown, Check } from "lucide-react";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 import { CustomerCreateDialog } from "@/components/customers/CustomerCreateDialog";
 import { format, startOfDay, addMinutes, isAfter, isSameDay } from "date-fns";
 import { toast } from "sonner";
-
 // ─── constants ──────────────────────────────────────────────────────────────
 
 const DEFAULT_DURATION = 30;
@@ -115,21 +114,24 @@ function DatePickerField({ value, onChange, minDate }) {
 // Service Card
 function ServiceCard({ service, selected, onSelect }) {
   return (
-    <button type="button" onClick={() => onSelect(service.id)} className={cn("group relative flex w-full items-start gap-3 rounded-xl border p-3.5 text-left transition-all duration-150", selected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
-      <span className="mt-1 h-2.5 w-2.5 shrink-0 rounded-full" style={{ backgroundColor: service.color || "#2563eb" }} />
-      <span className="min-w-0 flex-1 flex justify-between pr-5">
-        <span className={cn("block truncate text-sm font-medium", selected ? "text-white" : "text-slate-700")}>
-          {service.name} | {paymentLabel(service)}
-        </span>
-        <span className={cn("mt-0.5 flex items-center gap-1.5 text-xs", selected ? "text-slate-200" : "text-slate-500")}>
+    <button type="button" onClick={() => onSelect(service.id)} className={cn("group relative flex w-full items-start gap-2 p-3 text-left transition-all duration-150", selected ? "bg-gray-50" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
+      <span className="h-full w-1 shrink-0 absolute left-0 top-0" style={{ backgroundColor: service.color || "#2563eb" }} />
+      <div className="min-w-0 flex-1 flex items-start justify-start gap-2 pr-1">
+        {selected ? (
+          <span className="flex h-4 w-4 items-center justify-center border border-gray-200 bg-white">
+            <Check className="h-5 w-5 text-slate-900" strokeWidth={3} />
+          </span>
+        ) : (
+          <span className="h-4 w-4 border border-gray-200 bg-white" />
+        )}
+        <div>
+          <p className={cn("truncate text-sm font-medium flex items-center gap-2", selected ? "" : "text-slate-700")}>{service.name}</p>
+          <p className="text-gray-600 font-normal text-xs">{paymentLabel(service)}</p>
+        </div>
+        <span className={cn("mt-0.5 flex items-center gap-1.5 text-xs", selected ? "text-slate-600" : "text-slate-600")}>
           <Clock className="h-3 w-3" /> {service.duration} min
         </span>
-      </span>
-      {selected && (
-        <span className="absolute right-3 top-3.5 flex h-4 w-4 items-center justify-center rounded-full bg-white">
-          <span className="h-2 w-2 rounded-full bg-slate-900" />
-        </span>
-      )}
+      </div>
     </button>
   );
 }
@@ -379,13 +381,13 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   return (
     <>
       <Dialog open={open} onOpenChange={onOpenChange} modal={false}>
-        <DialogContent className="p-0 sm:max-w-[1100px] w-full" onInteractOutside={(e) => e.preventDefault()}>
+        <DialogContent className="p-0 sm:max-w-[700px] w-full" onInteractOutside={(e) => e.preventDefault()}>
           <DialogHeader className="border-b border-slate-100 px-6 py-4">
             <DialogTitle className="font-semibold text-slate-900">New appointment</DialogTitle>
           </DialogHeader>
 
           <form onSubmit={handleSubmitWithValidation}>
-            <div className="no-scrollbar min-h-[80vh] overflow-y-auto px-3">
+            <div className="no-scrollbar overflow-y-auto px-3 pb-3">
               <section>
                 <div className="flex flex-row items-end gap-2.5">
                   <div className="flex-1">
@@ -402,7 +404,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
 
                       <PopoverContent className="p-0" align="start" sideOffset={4} style={{ width: "var(--radix-popover-trigger-width)" }} onOpenAutoFocus={(e) => e.preventDefault()}>
                         <Command>
-                          <CommandInput placeholder="Search customer..." />
+                          <CommandInput className="border-none pl-2" placeholder="Search customer..." />
                           <CommandList>
                             <CommandEmpty>No customer found.</CommandEmpty>
                             <CommandGroup className="max-h-64 overflow-y-auto">
@@ -444,9 +446,9 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                   </Button>
                 </div>
               </section>
-              <div className="grid grid-cols-2 divide-x divide-slate-100 border-t gap-4 pt-4 mt-4">
+              <div className="grid grid-cols-2 items-stretch divide-slate-100 border-t gap-4 pt-4 mt-4 h-full">
                 {/* Left: customer + scheduling */}
-                <div className="flex flex-col gap-5">
+                <div className="flex flex-col gap-5 h-full">
                   <section>
                     <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Scheduling</p>
                     <div className="flex flex-col gap-2.5">
@@ -493,14 +495,14 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                 </div>
 
                 {/* Right: service picker */}
-                <div className="flex flex-col pl-3">
-                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600">Service</p>
+                <div className="flex flex-col h-full border rounded-lg">
+                  <p className="mb-3 text-[10px] font-semibold uppercase tracking-widest text-slate-600 ml-3 mt-3">Service</p>
                   {services.length === 0 ? (
                     <div className="flex flex-1 items-center justify-center rounded-xl border border-dashed border-slate-200 p-6 text-center">
-                      <p className="text-sm text-slate-400">No services configured</p>
+                      <p className="text-sm text-slate-400">No any services added.</p>
                     </div>
                   ) : (
-                    <div className="flex flex-col gap-2 overflow-y-auto">
+                    <div className="flex flex-col rounded-md max-h-[400px] overflow-auto">
                       {services.map((svc) => (
                         <ServiceCard
                           key={svc.id}
@@ -519,8 +521,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                 </div>
               </div>
             </div>
-            <DialogFooter className="border-t border-slate-100 px-6 py-4">
-              <span className="mr-auto text-xs text-slate-400">{selectedServices.length > 0 ? `${selectedServices.reduce((sum, service) => sum + (service.duration || DEFAULT_DURATION), 0)} min · ${selectedServices.length} service${selectedServices.length > 1 ? "s" : ""} selected` : "Select a service"}</span>
+            <DialogFooter className="border-t border-slate-100 px-6 py-4 justify-between">
               <Button type="button" variant="ghost" onClick={() => onOpenChange(false)} className="h-8 text-slate-600">
                 Cancel
               </Button>
@@ -553,8 +554,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       <Dialog open={depositReviewOpen} onOpenChange={setDepositReviewOpen}>
         <DialogContent className="sm:max-w-[920px]">
           <DialogHeader>
-            <DialogTitle>Deposit collection</DialogTitle>
-            <DialogDescription>Review the appointment summary and choose how the deposit should be handled before confirming.</DialogDescription>
+            <DialogTitle>Book Appointment</DialogTitle>
           </DialogHeader>
 
           <div className="grid gap-4 md:grid-cols-[1.15fr_0.85fr] max-h-[500px] overflow-y-auto">
@@ -605,22 +605,21 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
             <div className="space-y-2">
               <div className="rounded-md border border-slate-200 p-4">
                 <p className="text-[11px] font-semibold uppercase text-slate-900">Payment method</p>
+
                 <div className="mt-3 space-y-2">
-                  {[
-                    { id: "card", label: "Card", description: "Collect the deposit securely", icon: CreditCard },
-                    { id: "cash", label: "Cash", description: "Record cash received at the desk", icon: Banknote },
-                    { id: "qr", label: "QR payment", description: "Use a dynamic payment QR", icon: QrCode },
-                    { id: "link", label: "Send payment link", description: "Send the deposit link by email or SMS", icon: Link2 },
-                  ].map((option) => {
+                  {PAYMENT_METHODS.map((option) => {
                     const Icon = option.icon;
                     const isSelected = selectedPaymentMethod === option.id;
+
                     return (
                       <button key={option.id} type="button" onClick={() => setSelectedPaymentMethod(option.id)} className={cn("flex w-full items-start gap-3 rounded-xl border px-3 py-2.5 text-left transition-all", isSelected ? "border-slate-900 bg-slate-900 text-white" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
                         <span className={cn("rounded-lg p-2", isSelected ? "bg-white/10 text-white" : "bg-slate-100 text-slate-700")}>
                           <Icon className="h-4 w-4" />
                         </span>
+
                         <span>
                           <span className={cn("block text-sm font-medium", isSelected ? "text-white" : "text-slate-700")}>{option.label}</span>
+
                           <span className={cn("text-xs", isSelected ? "text-slate-200" : "text-slate-500")}>{option.description}</span>
                         </span>
                       </button>
