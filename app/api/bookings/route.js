@@ -231,7 +231,7 @@ export async function POST(req) {
       paymentMethod = "PAY_AT_BUSINESS";
     } else {
       // pay_later (standard when no prepayment is required)
-      targetBookingStatus = "CONFIRMED";
+      targetBookingStatus = "PENDING_PAYMENT";
       targetPaymentStatus = "UNPAID";
       paidAmount = 0;
       remainingBalance = totalAmount;
