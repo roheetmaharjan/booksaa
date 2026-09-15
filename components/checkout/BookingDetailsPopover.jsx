@@ -4,48 +4,75 @@ import { format } from "date-fns";
 import { CreditCard, X } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
-import { Popover, PopoverContent, PopoverAnchor } from "@/components/ui/popover";
+import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Avatar } from "../customers/Avatar";
 
-export default function BookingDetailsPopover({ bookings, open, onOpenChange, onCheckout }) {
-  if (!bookings) return null;
-  console.log(bookings)
+export default function BookingDetailsPopover({ bookings, open, onOpenChange, onCheckout, trigger, anchorPosition }) {
+  if (!bookings) return trigger || null;
+  console.log(bookings);
+
+  const services = bookings.services;
+  const customerName = bookings.customerName || bookings.client;
+  const customerPhone = bookings.customerPhone || bookings.phone;
+  const customerEmail = bookings.customerEmail || "";
+  const paymentStatus = bookings.paymentStatus;
+  const averageVisit = bookings.avgVisit;
+  const showRate = bookings.showRate;
 
   return (
     <Popover open={open} onOpenChange={onOpenChange}>
-      <PopoverAnchor asChild>
-        <div className="fixed left-1/2 top-1/2 h-0 w-0" aria-hidden="true" />
-      </PopoverAnchor>
-
-      <PopoverContent align="center" side="bottom" className="w-[400px] rounded-xl p-5">
+      <PopoverAnchor asChild>{trigger || <div className="fixed h-0 w-0" style={anchorPosition ? { left: anchorPosition.left, top: anchorPosition.top } : { left: "50%", top: "50%" }} aria-hidden="true" />}</PopoverAnchor>
+      <PopoverContent align={anchorPosition ? "start" : "center"} side="bottom" sideOffset={0} className="w-[400px] rounded-xl p-5">
         <div className="flex items-start justify-between gap-3">
           <div>
-            <h3 className="text-lg text-slate-700">{bookings.customerName || "No name"}</h3>
-            <p className="text-sm text-slate-700">{bookings.customerPhone}|{bookings.customerEmail}</p>
+            <h3 className="text-lg text-slate-700">{customerName || "No name"}</h3>
+            <p className="text-xs text-slate-500">
+              {customerPhone}
+              {customerEmail && ` | ${customerEmail}`}
+            </p>
           </div>
 
           <button type="button" onClick={() => onOpenChange(false)} className="rounded-md p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-600">
             <X className="h-4 w-4" />
           </button>
         </div>
-
-        <div className="mt-4 space-y-3 text-sm text-slate-600">
-          <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-            <p className="font-medium text-slate-800">{bookings.service?.name || "Service"}</p>
-
-            <div className="flex flex-wrap gap-2 items-center mt-1">
-              
-              <Avatar customer={{fullName: bookings.professional?.name}}/>  
-              {bookings.professional?.name}
-            </div>
-
-            <p className="mt-1 text-xs text-slate-500">{bookings.scheduledAt ? format(new Date(bookings.scheduledAt), "EEE, MMM d • h:mm a") : ""}</p>
+        <div className="flex flex-wrap text-xs gap-2 mt-2 px-1">
+          <span>
+            <span className="text-muted-foreground">Show rate: </span>
+            <b>{showRate}%</b>
+          </span>
+          <span className="text-slate-300">|</span> 
+          <span>
+            <span className="text-muted-foreground">Avg. visit: </span>
+            <b>${averageVisit}</b>
+          </span>
+          <div className="ml-auto">
+            {paymentStatus}
           </div>
-
-          <div className="flex items-center justify-between rounded-lg border border-slate-200 px-3 py-2">
-            <span>Payment status</span>
-
-            <span className="font-medium text-slate-800">{bookings.paymentStatus || "UNPAID"}</span>
+        </div>
+        <hr className="my-3 border-slate-100" />
+        <div>
+          <h5 className="uppercase text-slate-500 font-bold text-[10px] mb-2">Services</h5>
+          <div className="rounded-lg border border-slate-200 divide-y divide-slate-200 max-h-[400px] overflow-y-auto">
+            {services.map((service) => (
+              <div key={service.id} className="py-2 px-3 flex justify-between items-center gap-3">
+                <div className="flex-1">
+                  <div>
+                    <span className="text-sm font-medium">{service.name}</span>
+                    <span className="text-xs text-slate-400"> - {service.duration} min</span>
+                  </div>
+                  <div className="text-xs text-gray-400">
+                    {service.start} - {service.end}
+                  </div>
+                </div>
+                <div className="text-sm font-bold">${service.price} </div>
+                <div>
+                  <div className="flex flex-wrap items-center gap-2 mt-1" title={service.staff}>
+                    <Avatar customer={{ fullName: service.staff }} />
+                  </div>
+                </div>
+              </div>
+            ))}
           </div>
         </div>
 
@@ -54,7 +81,7 @@ export default function BookingDetailsPopover({ bookings, open, onOpenChange, on
             Close
           </Button>
 
-          <Button className="flex-1" onClick={() => onCheckout(booking)}>
+          <Button className="flex-1" onClick={() => onCheckout(bookings)}>
             <CreditCard className="mr-2 h-4 w-4" />
             Checkout
           </Button>

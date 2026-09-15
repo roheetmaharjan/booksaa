@@ -134,7 +134,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
   };
 
   return (
-    <header className="sticky top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-surface-raised px-4 py-2.5">
+    <header className="sticky bg-white top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-surface-raised px-4 py-2.5">
       {/* Today's Date */}
       <div className="flex items-center gap-1.5">
         <div className="leading-tight">

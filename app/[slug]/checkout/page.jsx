@@ -81,6 +81,7 @@ export default function CheckoutPage() {
   const [staff, setStaff] = useState("ALL");
   const [selectedId, setSelectedId] = useState(bookingId);
   const [list, setList] = useState([]);
+  
   const url = useMemo(() => {
     const start = new Date();
     start.setHours(0, 0, 0, 0);
@@ -138,6 +139,9 @@ export default function CheckoutPage() {
     toast.success("Stripe QR payment received — appointment completed");
     await refetch();
   };
+  const openBookingCheckout = (booking) => {
+    if (booking?.id) setSelectedId(booking.id);
+  };
 
   return (
     <div className="min-h-screen bg-surface">
@@ -156,7 +160,7 @@ export default function CheckoutPage() {
           </button>
         )}
       </div>
-      <main className="flex gap-4 overflow-x-auto board-scroll px-5 py-5">
+      <main className="flex gap-4 overflow-x-auto board-scroll h-[calc(100vh-150px)] px-5 py-5">
         {STAGES.map((stage) => {
           const items = filtered.filter((item) => item.stage === stage.id);
           return (
@@ -166,7 +170,7 @@ export default function CheckoutPage() {
               </h2>
               <div className="mt-3 space-y-2">
                 {items.map((item) => (
-                  <AppointmentCard key={item.id} appt={item} active={item.id === selectedId} onSelect={() => setSelectedId(item.id)} />
+                  <AppointmentCard key={item.id} appt={item} active={item.id === selectedId} onCheckout={openBookingCheckout} />
                 ))}
                 {!items.length && <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">Nothing here</p>}
               </div>

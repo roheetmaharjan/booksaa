@@ -102,6 +102,7 @@ export default function BookingsPage() {
   const [bookingProfessionalId, setBookingProfessionalId] = useState("");
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingDetailsOpen, setBookingDetailsOpen] = useState(false);
+  const [bookingDetailsAnchor, setBookingDetailsAnchor] = useState(null);
 
   // ── Customer create (from New Appointment dialog) ──────────────────────────
   // ──────────────────────────────────────────────────────────────────────────
@@ -403,8 +404,15 @@ export default function BookingsPage() {
               }
               openBookingDialog(slotInfo.start, slotInfo.resourceId || professionals[0]?.id);
             }}
-            onSelectEvent={(event) => {
+            onSelectEvent={(event, clickEvent) => {
               setSelectedBooking(event.resource);
+              const eventElement = clickEvent?.currentTarget;
+              if (eventElement instanceof HTMLElement) {
+                const rect = eventElement.getBoundingClientRect();
+                setBookingDetailsAnchor({ left: rect.left, top: rect.bottom });
+              } else {
+                setBookingDetailsAnchor(null);
+              }
               setBookingDetailsOpen(true);
             }}
             onRangeChange={(range) => {
@@ -430,6 +438,7 @@ export default function BookingsPage() {
         onCheckout={openBookingCheckout}
         open={bookingDetailsOpen}
         onOpenChange={setBookingDetailsOpen}
+        anchorPosition={bookingDetailsAnchor}
       />
 
       {/* New Appointment dialog — fully self-contained, just told where/when */}
