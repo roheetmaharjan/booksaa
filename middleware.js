@@ -18,6 +18,22 @@ function getClientIp(request) {
   return request.headers.get("x-real-ip") || request.ip || "unknown";
 }
 
+function isPublicPath(pathname) {
+  return (
+    pathname === "/" ||
+    pathname.startsWith("/auth") ||
+    pathname.startsWith("/business-signup") ||
+    pathname.startsWith("/forgot-password") ||
+    pathname.startsWith("/pay") ||
+    pathname === "/home" ||
+    pathname.startsWith("/home/") ||
+    pathname.startsWith("/pricing") ||
+    pathname.startsWith("/contact") ||
+    pathname.startsWith("/api/auth") ||
+    pathname.startsWith("/api/public")
+  );
+}
+
 export async function middleware(request) {
   const { pathname } = request.nextUrl;
 
@@ -33,8 +49,8 @@ export async function middleware(request) {
     return NextResponse.next();
   }
 
-  // Allow the public marketing homepage
-  if (pathname === "/") {
+  // Allow public pages and APIs to run without a session.
+  if (isPublicPath(pathname)) {
     return NextResponse.next();
   }
 
@@ -62,8 +78,10 @@ export async function middleware(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
     const loginUrl = new URL("/auth/login", request.url);
-    loginUrl.searchParams.set("url", pathname);
-    return NextResponse.redirect(loginUrl);
+    loginUrl.searchParams.set("url", `${pathname}${request.nextUrl.search}`);
+    const response = NextResponse.redirect(loginUrl);
+    response.cookies.delete(AUTH_COOKIE_NAME);
+    return response;
   }
 
   // Already logged in, trying to access /auth/login
@@ -102,11 +120,6 @@ export async function middleware(request) {
 
 export const config = {
   matcher: [
-    '/admin',
-    '/admin/:path*',
-    '/customer',
-    '/customer/:path*',
-    '/api',
-    '/api/:path'
+    '/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|manifest\\.json).*)',
   ],
 };
