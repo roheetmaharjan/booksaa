@@ -178,7 +178,7 @@ export default function CheckoutPage() {
           );
         })}
       </main>
-      <Drawer open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)} direction="right">
+      <Drawer open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)} direction="right" dismissible={false}>
         <DrawerContent className="inset-y-0 right-0 left-auto mt-0 h-full rounded-l-xl w-full max-w-5xl border-y-0 border-r-0 border-l border-border bg-card p-0 shadow-pop">
           <DrawerTitle className="sr-only">Appointment details for {selected?.client}</DrawerTitle>
           {selected && <AppointmentDetail key={selected.id} appt={selected} onClose={() => setSelectedId(null)} onConfirm={() => move(selected.id, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected.id, "arrived", `${selected.client} marked as arrived`)} onCheckout={(total, method) => complete(selected.id, total, method, 0, selected.bookingIds)} onQrPaid={handleQrPaymentSuccess} />}

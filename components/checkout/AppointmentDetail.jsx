@@ -16,14 +16,19 @@ function toAmount(value) {
 function MoneyInput({ value, onChange, label }) {
   return (
     <label className="flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 focus-within:border-primary">
-      <span className="text-xs text-muted-foreground">$</span>
-      <input aria-label={label} type="number" min="0" step="0.01" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} className="w-20 bg-transparent text-right text-sm font-semibold outline-none" />
+      <span className="text-xs text-muted-foreground w-[20px] text-center">$</span>
+      <input aria-label={label} type="number" min="0" step="0.01" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} className="w-16 bg-transparent border-none text-right text-sm font-semibold outline-none py-1 px-0" />
     </label>
   );
 }
 
 function SummaryRow({ label, value, children, strong = false }) {
-  return <div className={`flex items-center justify-between gap-3 border-b border-border px-5 py-3 ${strong ? "bg-card" : ""}`}><span className={strong ? "font-display text-lg font-semibold" : "text-sm text-muted-foreground"}>{label}</span>{children || <span className={strong ? "font-display text-lg font-semibold" : "font-semibold"}>{value}</span>}</div>;
+  return (
+    <div className={`flex items-center justify-between gap-3 border-b border-border px-5 py-3 ${strong ? "bg-card" : ""}`}>
+      <span className={strong ? "font-display text-lg font-semibold" : "text-sm text-muted-foreground"}>{label}</span>
+      {children || <span className={strong ? "font-display text-lg font-semibold" : "font-semibold"}>{value}</span>}
+    </div>
+  );
 }
 
 export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onCheckout, onQrPaid }) {
@@ -58,7 +63,9 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
       if (!response.ok) throw new Error(result.error || "Unable to create QR payment");
       const imageUrl = await QRCode.toDataURL(result.checkoutUrl, { width: 320, margin: 2 });
       setQrPayment({ ...result, imageUrl });
-    } catch (error) { setQrError(error.message); }
+    } catch (error) {
+      setQrError(error.message);
+    }
   };
 
   useEffect(() => {
@@ -66,44 +73,140 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
     const poll = async () => {
       const response = await fetch(`/api/bookings/${appt.id}/qr-payment/${qrPayment.sessionId}`);
       const result = await response.json();
-      if (result.paid) { setQrPayment(null); await onQrPaid?.(); }
+      if (result.paid) {
+        setQrPayment(null);
+        await onQrPaid?.();
+      }
     };
     poll();
     const timer = window.setInterval(poll, 2500);
     return () => window.clearInterval(timer);
   }, [appt.id, onQrPaid, qrPayment]);
 
-  return <div className="flex h-full flex-col">
-    <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
-      <div><div className="flex items-center gap-2"><h2 className="font-display text-xl font-semibold text-gray-800">{appt.client}</h2><StageBadges appt={appt} /></div><p className="mt-1 font-mono text-sm text-muted-foreground">{appt.phone}</p></div>
-      <Button variant="ghost" size="icon" className="size-8" onClick={onClose} aria-label="Close appointment details"><X className="size-4" /></Button>
-    </div>
-    <div className="flex-1 overflow-y-auto board-scroll"><div className="grid grid-cols-1 lg:grid-cols-8">
-      <div className="col-span-5">
-        <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border px-5 py-3 text-sm"><span><span className="text-muted-foreground">Show rate: </span><b>{appt.showRate}%</b></span><span><span className="text-muted-foreground">Avg. visit: </span><b>{currency(appt.avgVisit)}</b></span></div>
-        <p className="flex justify-between border-b border-border px-5 py-3 text-sm"><b>Appointment</b><span>{appt.bookedOn}, {appt.start} – {appt.end}</span></p>
-        <div className="px-5 py-4"><div className="overflow-hidden rounded-lg border border-border">
-          <div className="grid grid-cols-[minmax(0,1fr)_120px_90px] bg-secondary/60 px-3 py-2 text-xs font-medium uppercase tracking-wide text-muted-foreground"><span>Service</span><span>Professional</span><span className="text-right">Price</span></div>
-          {appt.services.map((service) => <div key={service.bookingId || service.id} className="grid grid-cols-[minmax(0,1fr)_120px_90px] items-center border-t border-border px-3 py-3 text-sm"><div><p className="font-medium">{service.name}</p><p className="text-xs text-muted-foreground">{service.duration} min · {service.start}–{service.end}</p></div><span className="truncate text-muted-foreground">{service.staff}</span><span className="text-right font-mono font-medium">{currency(service.price)}</span></div>)}
-        </div>{appt.note && <div className="mt-5 border-t border-border pt-3"><p className="text-eyebrow text-muted-foreground">Notes</p><p className="mt-1 text-sm">{appt.note}</p></div>}</div>
-      </div>
-      <aside className="col-span-3 bg-gray-100">
-        <SummaryRow label="Services" value={currency(subtotal)} />
-        <SummaryRow label="Discount"><MoneyInput label="Discount" value={discount} onChange={setDiscount} /></SummaryRow>
-        <SummaryRow label="Deposit paid" value={`− ${currency(priorPaid)}`} />
-        <SummaryRow label="Tip"><MoneyInput label="Tip" value={tip} onChange={setTip} /></SummaryRow>
-        <SummaryRow label="Total" value={currency(total)} strong />
-        <SummaryRow label="Amount due" value={currency(amountDue)} />
-        {appt.stage !== "completed" && <SummaryRow label="Amount paid"><MoneyInput label="Amount paid" value={amountPaid} onChange={setAmountPaid} /></SummaryRow>}
-        {appt.stage !== "completed" && <SummaryRow label="Change due" value={currency(changeDue)} />}
-        <div className="p-5">
-          {appt.stage === "unconfirmed" && <Button variant="outline" className="mb-2 w-full" onClick={onConfirm}>Confirm appointment</Button>}
-          {appt.stage !== "arrived" && appt.stage !== "completed" && <Button variant="outline" className="mb-2 w-full" onClick={onArrive}>Mark as arrived</Button>}
-          {qrError && <p className="mb-2 text-sm text-destructive">{qrError}</p>}
-          {appt.stage !== "completed" ? <div className="grid grid-cols-2 gap-2"><Button variant="outline" disabled={amountPaidValue <= 0} onClick={() => pay("CASH")}><Banknote className="size-4" />Pay cash</Button><Button disabled={amountPaidValue <= 0} onClick={startQrPayment}><ScanQrCode className="size-4" />Pay by QR</Button></div> : <Button className="w-full" variant="outline" disabled>Completed</Button>}
+  return (
+    <div className="flex h-full flex-col">
+      <div className="flex items-start justify-between gap-3 border-b border-border px-5 py-4">
+        <div>
+          <div className="flex items-center gap-2">
+            <h2 className="font-display text-xl font-semibold text-gray-800">{appt.client}</h2>
+            <StageBadges appt={appt} />
+          </div>
+          <p className="mt-1 font-mono text-sm text-muted-foreground">{appt.phone}</p>
         </div>
-      </aside>
-    </div></div>
-    <Dialog open={Boolean(qrPayment)} onOpenChange={(open) => !open && setQrPayment(null)}><DialogContent className="max-w-sm"><DialogHeader><DialogTitle>Scan to pay</DialogTitle><DialogDescription>Ask {appt.client} to scan this QR code and complete the Stripe payment.</DialogDescription></DialogHeader>{qrPayment && <><img className="mx-auto size-72" src={qrPayment.imageUrl} alt={`Stripe payment QR code for ${currency(amountPaidValue)}`} /><p className="text-center text-sm font-medium">Waiting for {currency(amountPaidValue)} payment…</p></>}</DialogContent></Dialog>
-  </div>;
+        <Button variant="ghost" size="icon" className="size-8" onClick={onClose} aria-label="Close appointment details">
+          <X className="size-4" />
+        </Button>
+      </div>
+      <div className="flex-1 overflow-y-auto board-scroll">
+        <div className="grid grid-cols-1 lg:grid-cols-8">
+          <div className="col-span-5">
+            <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border px-5 py-3 text-sm">
+              <span>
+                <span className="text-muted-foreground">Show rate: </span>
+                <b>{appt.showRate}%</b>
+              </span>
+              <span>
+                <span className="text-muted-foreground">Avg. visit: </span>
+                <b>{currency(appt.avgVisit)}</b>
+              </span>
+            </div>
+            <p className="flex justify-between border-b border-border px-5 py-3 text-sm">
+              <b>Booked Date :</b>
+              <span>
+                {appt.bookedOn}
+              </span>
+            </p>
+            <div className="px-5 py-4">
+              <div className="overflow-hidden rounded-lg border border-border">
+                <div className="grid grid-cols-[minmax(0,1fr)_120px_90px] bg-secondary/60 px-3 py-2 text-[10px] font-700 uppercase tracking-wide text-muted-foreground">
+                  <span>Service name</span>
+                  <span>Professional</span>
+                  <span className="text-right">Price</span>
+                </div>
+                {appt.services.map((service) => (
+                  <div key={service.bookingId || service.id} className="grid grid-cols-[minmax(0,1fr)_120px_90px] items-center border-t border-border px-3 py-3 text-sm">
+                    <div>
+                      <p className="font-medium">{service.name}</p>
+                      <p className="text-xs text-muted-foreground">
+                        {service.duration} min · {service.start}–{service.end}
+                      </p>
+                    </div>
+                    <span className="truncate text-muted-foreground">{service.staff}</span>
+                    <span className="text-right font-mono font-medium">{currency(service.price)}</span>
+                  </div>
+                ))}
+              </div>
+              {appt.note && (
+                <div className="mt-5 border-t border-border pt-3">
+                  <p className="text-eyebrow text-muted-foreground">Notes</p>
+                  <p className="mt-1 text-sm">{appt.note}</p>
+                </div>
+              )}
+            </div>
+          </div>
+          <aside className="col-span-3 bg-gray-100">
+            <SummaryRow label="Services" value={currency(subtotal)} />
+            <SummaryRow label="Discount">
+              <MoneyInput label="Discount" value={discount} onChange={setDiscount} />
+            </SummaryRow>
+            <SummaryRow label="Deposit paid" value={`− ${currency(priorPaid)}`} />
+            <SummaryRow label="Tip">
+              <MoneyInput label="Tip" value={tip} onChange={setTip} />
+            </SummaryRow>
+            <SummaryRow label="Total" value={currency(total)} strong />
+            <SummaryRow label="Amount due" value={currency(amountDue)} />
+            {appt.stage !== "completed" && (
+              <SummaryRow label="Amount paid">
+                <MoneyInput label="Amount paid" className="border-none" value={amountPaid} onChange={setAmountPaid} />
+              </SummaryRow>
+            )}
+            {appt.stage !== "completed" && <SummaryRow label="Change due" value={currency(changeDue)} />}
+            <div className="p-5">
+              {appt.stage === "unconfirmed" && (
+                <Button variant="outline" className="mb-2 w-full" onClick={onConfirm}>
+                  Confirm appointment
+                </Button>
+              )}
+              {appt.stage !== "arrived" && appt.stage !== "completed" && (
+                <Button variant="outline" className="mb-2 w-full" onClick={onArrive}>
+                  Mark as arrived
+                </Button>
+              )}
+              {qrError && <p className="mb-2 text-sm text-destructive">{qrError}</p>}
+              {appt.stage !== "completed" ? (
+                <div className="grid grid-cols-2 gap-2">
+                  <Button variant="outline" disabled={amountPaidValue <= 0} onClick={() => pay("CASH")}>
+                    <Banknote className="size-4" />
+                    Pay cash
+                  </Button>
+                  <Button disabled={amountPaidValue <= 0} onClick={startQrPayment}>
+                    <ScanQrCode className="size-4" />
+                    Pay by QR
+                  </Button>
+                </div>
+              ) : (
+                <Button className="w-full" variant="outline" disabled>
+                  Completed
+                </Button>
+              )}
+            </div>
+          </aside>
+        </div>
+      </div>
+      <Dialog open={Boolean(qrPayment)} onOpenChange={(open) => !open && setQrPayment(null)}>
+        <DialogContent className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>Scan to pay</DialogTitle>
+            <DialogDescription>Ask {appt.client} to scan this QR code and complete the Stripe payment.</DialogDescription>
+          </DialogHeader>
+          {qrPayment && (
+            <>
+              <img className="mx-auto size-72" src={qrPayment.imageUrl} alt={`Stripe payment QR code for ${currency(amountPaidValue)}`} />
+              <p className="text-center text-sm font-medium">Waiting for {currency(amountPaidValue)} payment…</p>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
 }

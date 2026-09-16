@@ -142,7 +142,6 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
   const [depositReviewOpen, setDepositReviewOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
-  const [skipDepositConfirmOpen, setSkipDepositConfirmOpen] = useState(false);
   const [submittingBooking, setSubmittingBooking] = useState(false);
 
   const [customers, setCustomers] = useState([]);

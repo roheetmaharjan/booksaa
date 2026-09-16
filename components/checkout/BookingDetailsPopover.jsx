@@ -9,9 +9,22 @@ import { Avatar } from "../customers/Avatar";
 
 export default function BookingDetailsPopover({ bookings, open, onOpenChange, onCheckout, trigger, anchorPosition }) {
   if (!bookings) return trigger || null;
-  console.log(bookings);
 
-  const services = bookings.services;
+  const services = Array.isArray(bookings.services)
+    ? bookings.services
+    : bookings.service
+    ? [
+        {
+          ...bookings.service,
+          bookingId: bookings.id,
+          staff: bookings.professional?.name || "Unassigned",
+          price: Number(bookings.service.price || bookings.paymentAmount || 0),
+          duration: bookings.service.duration || 30,
+          start: bookings.startTime || "",
+          end: bookings.endTime || "",
+        },
+      ]
+    : [];
   const customerName = bookings.customerName || bookings.client;
   const customerPhone = bookings.customerPhone || bookings.phone;
   const customerEmail = bookings.customerEmail || "";
@@ -41,14 +54,12 @@ export default function BookingDetailsPopover({ bookings, open, onOpenChange, on
             <span className="text-muted-foreground">Show rate: </span>
             <b>{showRate}%</b>
           </span>
-          <span className="text-slate-300">|</span> 
+          <span className="text-slate-300">|</span>
           <span>
             <span className="text-muted-foreground">Avg. visit: </span>
             <b>${averageVisit}</b>
           </span>
-          <div className="ml-auto">
-            {paymentStatus}
-          </div>
+          <div className="ml-auto">{paymentStatus}</div>
         </div>
         <hr className="my-3 border-slate-100" />
         <div>
