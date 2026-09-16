@@ -16,7 +16,7 @@ const accentByStage = {
   completed: "before:bg-status-completed",
 };
 
-export function AppointmentCard({ appt, active, onSelect, onCheckout }) {
+export function AppointmentCard({ appt, active, onSelect, onCheckout, onDragStart, onDragEnd }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingDetailsOpen, setBookingDetailsOpen] = useState(false);
   const openBookingDetails = () => {
@@ -26,7 +26,7 @@ export function AppointmentCard({ appt, active, onSelect, onCheckout }) {
   };
 
   const card = (
-    <button type="button" onClick={openBookingDetails} className={cn("group relative w-full overflow-hidden rounded-md border bg-card px-3 py-2.5 text-left shadow-card transition-all", "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-['']", accentByStage[appt.stage], active ? "border-primary ring-2 ring-primary/25" : "border-border hover:-translate-y-px hover:border-primary/40 hover:shadow-pop/40")}>
+    <button type="button" draggable={appt.stage !== "completed"} onDragStart={(event) => onDragStart?.(event, appt)} onDragEnd={onDragEnd} onClick={openBookingDetails} className={cn("group relative w-full overflow-hidden rounded-md border bg-card px-3 py-2.5 text-left shadow-card transition-all", appt.stage === "completed" ? "cursor-default" : "cursor-grab active:cursor-grabbing", "before:absolute before:inset-y-0 before:left-0 before:w-[3px] before:content-['']", accentByStage[appt.stage], active ? "border-primary ring-2 ring-primary/25" : "border-border hover:-translate-y-px hover:border-primary/40 hover:shadow-pop/40")}>
           <div className="flex items-start gap-2.5">
             <span className="mt-0.5 grid size-7 shrink-0 place-items-center rounded-full bg-secondary text-[11px] font-semibold text-secondary-foreground">{initials(appt.client)}</span>
 

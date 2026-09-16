@@ -26,9 +26,12 @@ function toAppointment(booking) {
   const start = booking.startTime || scheduledAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const end = booking.endTime || (booking.scheduledEnd && new Date(booking.scheduledEnd).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   const paid = Number(booking.paidAmount || 0);
+  const latestPayment = booking.payments?.at(-1);
   return {
     id: booking.id,
-    customerKey: booking.customerId || booking.customer?.id || (booking.customerName || booking.customerPhone ? `${booking.customerName || ""}:${booking.customerPhone || ""}`.toLowerCase() : booking.id),
+    // A payment group represents one visit. Do not group a customer's later
+    // booking with an earlier, completed visit from the same day.
+    bookingGroupKey: booking.paymentGroupId || booking.id,
     stage: {
       PENDING: "unconfirmed",
       PENDING_PAYMENT: "unconfirmed",
@@ -47,14 +50,14 @@ function toAppointment(booking) {
     tags: [],
     note: booking.notes || "",
     services: service ? [{ id: service.id, bookingId: booking.id, name: service.name, staff: booking.professional?.name || "Unassigned", price: Number(service.price || booking.paymentAmount || 0), duration: service.duration || 30, start: displayTime(start), end: displayTime(end) }] : [],
-    paid: paid > 0 || booking.paymentStatus === "PAID" ? { total: paid, method: booking.paymentMethod || "Card", tip: 0 } : null,
+    paid: paid > 0 || booking.paymentStatus === "PAID" ? { total: paid, method: latestPayment?.method || "Unknown", tip: 0 } : null,
   };
 }
 
-function groupByCustomer(appointments) {
+function groupByBookingGroup(appointments) {
   const groups = new Map();
   for (const appointment of appointments) {
-    const key = appointment.customerKey || appointment.id;
+    const key = appointment.bookingGroupKey || appointment.id;
     const group = groups.get(key);
     if (!group) {
       groups.set(key, { ...appointment, bookingIds: [appointment.id] });
@@ -81,6 +84,7 @@ export default function CheckoutPage() {
   const [staff, setStaff] = useState("ALL");
   const [selectedId, setSelectedId] = useState(bookingId);
   const [list, setList] = useState([]);
+  const [draggedAppointment, setDraggedAppointment] = useState(null);
   
   const url = useMemo(() => {
     const start = new Date();
@@ -101,7 +105,7 @@ export default function CheckoutPage() {
   const { data, loading, error, refetch } = useFetch(url);
 
   useEffect(() => {
-    const appointments = groupByCustomer(filterDueBookings(data?.bookings || [])
+    const appointments = groupByBookingGroup(filterDueBookings(data?.bookings || [])
       .map(toAppointment)
       .filter(Boolean));
     setList(appointments);
@@ -113,9 +117,36 @@ export default function CheckoutPage() {
   const selected = list.find((item) => item.id === selectedId) || null;
   const staffOptions = ["ALL", ...new Set(list.flatMap((item) => item.services.map((service) => service.staff)).filter(Boolean))];
   const revenue = list.filter((item) => item.paid).reduce((sum, item) => sum + Number(item.paid.total || 0), 0);
-  const move = (id, stage, message) => {
-    setList((items) => items.map((item) => (item.id === id ? { ...item, stage } : item)));
-    toast.success(message);
+  const move = async (appointment, stage, message) => {
+    try {
+      const response = await fetch(`/api/bookings/${appointment.id}/checkout`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ stage, bookingIds: appointment.bookingIds }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Unable to move booking");
+      setList((items) => items.map((item) => (item.id === appointment.id ? { ...item, stage } : item)));
+      toast.success(message);
+    } catch (moveError) {
+      toast.error(moveError.message);
+    }
+  };
+  const handleDragStart = (event, appointment) => {
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", appointment.id);
+    setDraggedAppointment(appointment);
+  };
+  const handleDrop = (event, stage) => {
+    event.preventDefault();
+    const appointment = draggedAppointment;
+    setDraggedAppointment(null);
+    if (!appointment || appointment.stage === stage) return;
+    if (stage === "completed") {
+      setSelectedId(appointment.id);
+      return;
+    }
+    move(appointment, stage, `${appointment.client} moved to ${STAGES.find((item) => item.id === stage)?.label || stage}`);
   };
   const complete = async (id, total, method, _tip, bookingIds = [id]) => {
     try {
@@ -164,13 +195,13 @@ export default function CheckoutPage() {
         {STAGES.map((stage) => {
           const items = filtered.filter((item) => item.stage === stage.id);
           return (
-            <section key={stage.id} className="w-[280px] shrink-0">
+            <section key={stage.id} onDragOver={(event) => event.preventDefault()} onDrop={(event) => handleDrop(event, stage.id)} className={`w-[280px] shrink-0 rounded-lg transition-colors ${draggedAppointment && draggedAppointment.stage !== stage.id ? "bg-primary/5" : ""}`}>
               <h2 className="text-lg font-semibold tracking-tight">
                 {stage.label} <span className="text-base font-normal italic text-muted-foreground">({items.length})</span>
               </h2>
               <div className="mt-3 space-y-2">
                 {items.map((item) => (
-                  <AppointmentCard key={item.id} appt={item} active={item.id === selectedId} onCheckout={openBookingCheckout} />
+                  <AppointmentCard key={item.id} appt={item} active={item.id === selectedId} onCheckout={openBookingCheckout} onDragStart={handleDragStart} onDragEnd={() => setDraggedAppointment(null)} />
                 ))}
                 {!items.length && <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">Nothing here</p>}
               </div>
@@ -181,7 +212,7 @@ export default function CheckoutPage() {
       <Drawer open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)} direction="right" dismissible={false}>
         <DrawerContent className="inset-y-0 right-0 left-auto mt-0 h-full rounded-l-xl w-full max-w-5xl border-y-0 border-r-0 border-l border-border bg-card p-0 shadow-pop">
           <DrawerTitle className="sr-only">Appointment details for {selected?.client}</DrawerTitle>
-          {selected && <AppointmentDetail key={selected.id} appt={selected} onClose={() => setSelectedId(null)} onConfirm={() => move(selected.id, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected.id, "arrived", `${selected.client} marked as arrived`)} onCheckout={(total, method) => complete(selected.id, total, method, 0, selected.bookingIds)} onQrPaid={handleQrPaymentSuccess} />}
+          {selected && <AppointmentDetail key={selected.id} appt={selected} onClose={() => setSelectedId(null)} onConfirm={() => move(selected, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected, "arrived", `${selected.client} marked as arrived`)} onCheckout={(total, method) => complete(selected.id, total, method, 0, selected.bookingIds)} onQrPaid={handleQrPaymentSuccess} />}
         </DrawerContent>
       </Drawer>
       {/* <Toaster /> */}

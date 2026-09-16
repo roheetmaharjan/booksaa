@@ -16,8 +16,21 @@ export async function GET(_req, { params }) {
     const ids = (checkout.metadata?.bookingIds || "").split(",").filter(Boolean);
     if (!ids.includes(id) || checkout.metadata?.vendorId !== vendor.id) return NextResponse.json({ error: "Payment session does not match this booking." }, { status: 403 });
     if (checkout.payment_status !== "paid") return NextResponse.json({ paid: false, status: checkout.payment_status });
-    const bookings = await prisma.bookings.findMany({ where: { id: { in: ids }, service: { vendorId: vendor.id } }, select: { id: true, paymentAmount: true } });
-    await prisma.$transaction(bookings.map((booking) => prisma.bookings.update({ where: { id: booking.id }, data: { status: "COMPLETED", paymentStatus: "PAID", paidAmount: Number(booking.paymentAmount), remainingBalance: 0, paymentMethod: "QR", stripePaymentIntentId: typeof checkout.payment_intent === "string" ? checkout.payment_intent : null } })));
+    const bookings = await prisma.bookings.findMany({ where: { id: { in: ids }, service: { vendorId: vendor.id } }, select: { id: true, paymentAmount: true, paidAmount: true } });
+    await prisma.$transaction(bookings.map((booking) => {
+      const amount = Math.max(0, Number(booking.paymentAmount) - Number(booking.paidAmount));
+      return prisma.bookings.update({
+        where: { id: booking.id },
+        data: {
+          status: "COMPLETED",
+          paymentStatus: "PAID",
+          paidAmount: Number(booking.paymentAmount),
+          remainingBalance: 0,
+          stripePaymentIntentId: typeof checkout.payment_intent === "string" ? checkout.payment_intent : null,
+          payments: amount > 0 ? { create: { amount, method: "QR", type: "BALANCE", status: "PAID" } } : undefined,
+        },
+      });
+    }));
     return NextResponse.json({ paid: true });
   } catch (error) {
     console.error("QR checkout status error:", error);

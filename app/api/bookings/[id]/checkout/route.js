@@ -16,7 +16,17 @@ const bookingSelect = {
   paymentStatus: true,
   paidAmount: true,
   remainingBalance: true,
-  paymentMethod: true,
+  payments: {
+    orderBy: { createdAt: "asc" },
+    select: {
+      id: true,
+      amount: true,
+      method: true,
+      type: true,
+      status: true,
+      createdAt: true,
+    },
+  },
   notes: true,
   scheduledAt: true,
   scheduledEnd: true,
@@ -140,7 +150,23 @@ export async function PUT(req, { params }) {
       const newPaidAmount = Number(booking.paidAmount) + allocation;
       const newRemainingBalance = Math.max(0, Number(booking.paymentAmount) - newPaidAmount);
       const paymentStatus = newPaidAmount >= Number(booking.paymentAmount) ? "PAID" : newPaidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID";
-      return prisma.bookings.update({ where: { id: booking.id }, data: { status: newRemainingBalance === 0 ? "COMPLETED" : booking.status, paidAmount: newPaidAmount, remainingBalance: newRemainingBalance, paymentStatus, paymentMethod: normalizedPaymentMethod } });
+      return prisma.bookings.update({
+        where: { id: booking.id },
+        data: {
+          status: newRemainingBalance === 0 ? "COMPLETED" : booking.status,
+          paidAmount: newPaidAmount,
+          remainingBalance: newRemainingBalance,
+          paymentStatus,
+          payments: allocation > 0 ? {
+            create: {
+              amount: allocation,
+              method: normalizedPaymentMethod,
+              type: "BALANCE",
+              status: "PAID",
+            },
+          } : undefined,
+        },
+      });
     }));
 
     return NextResponse.json({ success: true, bookings: updatedBookings });
@@ -148,6 +174,54 @@ export async function PUT(req, { params }) {
     console.error("Booking checkout error:", error);
     return NextResponse.json(
       { error: error.message || "Failed to process booking checkout" },
+      { status: error.status || 500 }
+    );
+  }
+}
+
+const stageToBookingStatus = {
+  unconfirmed: "PENDING",
+  confirmed: "CONFIRMED",
+  arrived: "CHECKED_IN",
+  in_service: "IN_SERVICE",
+};
+
+export async function PATCH(req, { params }) {
+  try {
+    const { id } = await params;
+    const session = await getCurrentSession();
+    const vendor = await getCurrentVendorOrThrow(session);
+    const { stage, bookingIds } = await req.json();
+    const status = stageToBookingStatus[stage];
+
+    if (!status) {
+      return NextResponse.json({ error: "Completed bookings must be finalized through payment checkout." }, { status: 400 });
+    }
+
+    const requestedIds = [...new Set(Array.isArray(bookingIds) && bookingIds.length ? bookingIds : [id])];
+    if (!requestedIds.includes(id)) requestedIds.unshift(id);
+    const bookings = await prisma.bookings.findMany({
+      where: { id: { in: requestedIds }, service: { vendorId: vendor.id } },
+      select: { id: true, status: true },
+    });
+
+    if (bookings.length !== requestedIds.length) {
+      return NextResponse.json({ error: "Booking not found" }, { status: 404 });
+    }
+
+    if (bookings.some((booking) => booking.status === "COMPLETED")) {
+      return NextResponse.json({ error: "Completed bookings cannot be moved to another stage." }, { status: 400 });
+    }
+
+    const updatedBookings = await prisma.$transaction(
+      bookings.map((booking) => prisma.bookings.update({ where: { id: booking.id }, data: { status } }))
+    );
+
+    return NextResponse.json({ success: true, bookings: updatedBookings });
+  } catch (error) {
+    console.error("Booking stage update error:", error);
+    return NextResponse.json(
+      { error: error.message || "Failed to update booking stage" },
       { status: error.status || 500 }
     );
   }

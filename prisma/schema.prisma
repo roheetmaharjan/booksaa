@@ -112,7 +112,6 @@ model Bookings {
   paymentStatus        PaymentStatus @default(UNPAID)
   paidAmount           Float         @default(0)
   remainingBalance     Float         @default(0)
-  paymentMethod        String?
   stripePaymentIntentId String?
   paymentLink          String?
   paymentLinkExpiresAt DateTime?
@@ -125,11 +124,25 @@ model Bookings {
   professional       Professional? @relation(fields: [professionalId], references: [id])
   service            Service       @relation(fields: [serviceId], references: [id])
   user               Users         @relation(fields: [userId], references: [id])
+  payments           Payment[]
 
   @@index([customerId])
   @@index([professionalId])
   @@index([locationId])
   @@index([scheduledAt])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  bookingId String
+  amount    Float
+  method    String
+  type      PaymentType
+  status    PaymentStatus @default(PAID)
+  createdAt DateTime      @default(now())
+  booking   Bookings      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
 }
 
 model Invitation {
@@ -404,6 +417,11 @@ enum PaymentStatus {
   PAID
   FAILED
   REFUNDED
+}
+
+enum PaymentType {
+  DEPOSIT
+  BALANCE
 }
 
 enum AccountStatus {

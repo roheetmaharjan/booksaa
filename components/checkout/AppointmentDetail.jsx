@@ -97,8 +97,8 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
           <X className="size-4" />
         </Button>
       </div>
-      <div className="flex-1 overflow-y-auto board-scroll">
-        <div className="grid grid-cols-1 lg:grid-cols-8">
+      <div className="flex-1 overflow-y-auto board-scroll items-stretch h-full">
+        <div className="grid grid-cols-1 lg:grid-cols-8 h-full">
           <div className="col-span-5">
             <div className="flex flex-wrap gap-x-6 gap-y-1 border-b border-border px-5 py-3 text-sm">
               <span>
@@ -145,50 +145,42 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
             </div>
           </div>
           <aside className="col-span-3 bg-gray-100">
-            <SummaryRow label="Services" value={currency(subtotal)} />
-            <SummaryRow label="Discount">
-              <MoneyInput label="Discount" value={discount} onChange={setDiscount} />
-            </SummaryRow>
-            <SummaryRow label="Deposit paid" value={`− ${currency(priorPaid)}`} />
-            <SummaryRow label="Tip">
-              <MoneyInput label="Tip" value={tip} onChange={setTip} />
-            </SummaryRow>
-            <SummaryRow label="Total" value={currency(total)} strong />
-            <SummaryRow label="Amount due" value={currency(amountDue)} />
-            {appt.stage !== "completed" && (
-              <SummaryRow label="Amount paid">
-                <MoneyInput label="Amount paid" className="border-none" value={amountPaid} onChange={setAmountPaid} />
+            <div className="flex h-full flex-col">
+              <SummaryRow label="Services" value={currency(subtotal)} />
+              <SummaryRow label="Discount">
+                <MoneyInput label="Discount" value={discount} onChange={setDiscount} />
               </SummaryRow>
-            )}
-            {appt.stage !== "completed" && <SummaryRow label="Change due" value={currency(changeDue)} />}
-            <div className="p-5">
-              {appt.stage === "unconfirmed" && (
-                <Button variant="outline" className="mb-2 w-full" onClick={onConfirm}>
-                  Confirm appointment
-                </Button>
+              <SummaryRow label="Deposit paid" value={`− ${currency(priorPaid)}`} />
+              <SummaryRow label="Tip">
+                <MoneyInput label="Tip" value={tip} onChange={setTip} />
+              </SummaryRow>
+              <SummaryRow label="Total" value={currency(total)} />
+              <SummaryRow label="Amount due" value={currency(amountDue)} />
+              {appt.stage !== "completed" && (
+                <SummaryRow label="Amount paid">
+                  <MoneyInput label="Amount paid" className="border-none" value={amountPaid} onChange={setAmountPaid} />
+                </SummaryRow>
               )}
-              {appt.stage !== "arrived" && appt.stage !== "completed" && (
-                <Button variant="outline" className="mb-2 w-full" onClick={onArrive}>
-                  Mark as arrived
-                </Button>
-              )}
-              {qrError && <p className="mb-2 text-sm text-destructive">{qrError}</p>}
-              {appt.stage !== "completed" ? (
-                <div className="grid grid-cols-2 gap-2">
-                  <Button variant="outline" disabled={amountPaidValue <= 0} onClick={() => pay("CASH")}>
-                    <Banknote className="size-4" />
-                    Pay cash
+              {appt.stage !== "completed" && <SummaryRow label="Change due" value={currency(changeDue)} />}
+              <div className="p-5 mt-auto">
+                {qrError && <p className="mb-2 text-sm text-destructive">{qrError}</p>}
+                {appt.stage !== "completed" ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    <Button variant="outline" disabled={amountPaidValue <= 0} onClick={() => pay("CASH")}>
+                      <Banknote className="size-4" />
+                      Pay cash
+                    </Button>
+                    <Button disabled={amountPaidValue <= 0} onClick={startQrPayment}>
+                      <ScanQrCode className="size-4" />
+                      Pay by card
+                    </Button>
+                  </div>
+                ) : (
+                  <Button className="w-full" variant="outline" disabled>
+                    Completed
                   </Button>
-                  <Button disabled={amountPaidValue <= 0} onClick={startQrPayment}>
-                    <ScanQrCode className="size-4" />
-                    Pay by QR
-                  </Button>
-                </div>
-              ) : (
-                <Button className="w-full" variant="outline" disabled>
-                  Completed
-                </Button>
-              )}
+                )}
+              </div>
             </div>
           </aside>
         </div>
@@ -196,8 +188,8 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
       <Dialog open={Boolean(qrPayment)} onOpenChange={(open) => !open && setQrPayment(null)}>
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle>Scan to pay</DialogTitle>
-            <DialogDescription>Ask {appt.client} to scan this QR code and complete the Stripe payment.</DialogDescription>
+            <DialogTitle>Pay by card</DialogTitle>
+            <DialogDescription>Ask {appt.client} to scan this code and complete the secure card payment.</DialogDescription>
           </DialogHeader>
           {qrPayment && (
             <>

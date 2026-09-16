@@ -85,6 +85,9 @@ export async function GET(req) {
       include: {
         service: true,
         customer: true,
+        payments: {
+          orderBy: { createdAt: "asc" },
+        },
         professional: {
           include: {
             role: true,
@@ -209,7 +212,7 @@ export async function POST(req) {
       paidAmount = totalDepositRequired > 0 ? totalDepositRequired : totalAmount;
       remainingBalance = totalAmount - paidAmount;
       targetPaymentStatus = paidAmount >= totalAmount ? "PAID" : (paidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID");
-      paymentMethod = "STRIPE";
+      paymentMethod = "CARD";
     } else if (paymentOption === "send_link") {
       targetBookingStatus = "CONFIRMED";
       targetPaymentStatus = totalDepositRequired > 0 ? "PARTIALLY_PAID" : "UNPAID";
@@ -218,17 +221,6 @@ export async function POST(req) {
       paymentLinkExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       const origin = req.headers.get("origin") || "http://localhost:3000";
       paymentLink = `${origin}/pay/${paymentGroupId}`;
-    } else if (paymentOption === "pay_at_business") {
-      // Validate that all services permit pay at business
-      const anyPrepaidBanned = services.some(svc => svc.prepaymentType !== "pay_later" && !svc.allowPayAtBusiness);
-      if (anyPrepaidBanned) {
-        return Response.json({ error: "One or more selected services do not permit Payment at Business." }, { status: 400 });
-      }
-      targetBookingStatus = BookingStatus.PENDING_PAYMENT;
-      targetPaymentStatus = "UNPAID";
-      paidAmount = 0;
-      remainingBalance = totalAmount;
-      paymentMethod = "PAY_AT_BUSINESS";
     } else {
       // pay_later (standard when no prepayment is required)
       targetBookingStatus = "PENDING_PAYMENT";
@@ -280,11 +272,18 @@ export async function POST(req) {
           paymentStatus: targetPaymentStatus,
           paidAmount: svcPaidAmount,
           remainingBalance: svcRemainingBalance,
-          paymentMethod,
           stripePaymentIntentId,
           paymentLink,
           paymentLinkExpiresAt,
           paymentGroupId,
+          payments: svcPaidAmount > 0 ? {
+            create: {
+              amount: svcPaidAmount,
+              method: paymentMethod,
+              type: svcPaidAmount < svc.price ? "DEPOSIT" : "BALANCE",
+              status: "PAID",
+            },
+          } : undefined,
         },
       });
 

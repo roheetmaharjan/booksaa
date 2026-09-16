@@ -175,6 +175,7 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
           <TabsList className="flex h-auto flex-wrap">
             <TabsTrigger value="profile">Profile</TabsTrigger>
             <TabsTrigger value="bookings">Bookings</TabsTrigger>
+            <TabsTrigger value="payments">Payments</TabsTrigger>
             <TabsTrigger value="invoices">Invoices</TabsTrigger>
             <TabsTrigger value="notes">Notes</TabsTrigger>
             <TabsTrigger value="communication">Communication</TabsTrigger>
@@ -231,6 +232,35 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
                   </TableRow>
                 ))}
                 {!customer.bookings?.length && <EmptyRow colSpan={6} label="No booking history yet." />}
+              </TableBody>
+            </Table>
+          </TabsContent>
+
+          {/* Payments tab */}
+          <TabsContent value="payments">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Paid at</TableHead>
+                  <TableHead>Service</TableHead>
+                  <TableHead>Type</TableHead>
+                  <TableHead>Method</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead className="text-right">Amount</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {(customer.paymentHistory || []).map((payment) => (
+                  <TableRow key={payment.id}>
+                    <TableCell>{formatDateTime(payment.createdAt)}</TableCell>
+                    <TableCell>{payment.serviceName}</TableCell>
+                    <TableCell>{payment.type}</TableCell>
+                    <TableCell>{payment.method}</TableCell>
+                    <TableCell>{payment.status}</TableCell>
+                    <TableCell className="text-right">{money(payment.amount)}</TableCell>
+                  </TableRow>
+                ))}
+                {!customer.paymentHistory?.length && <EmptyRow colSpan={6} label="No payment history yet." />}
               </TableBody>
             </Table>
           </TabsContent>
