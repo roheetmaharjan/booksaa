@@ -141,7 +141,7 @@ function ServiceCard({ service, selected, onSelect }) {
 export default function NewAppointment({ open, onOpenChange, onBookingSuccess, initialStart, initialProfessionalId, professionals = [], services = [], initialCustomer }) {
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
   const [depositReviewOpen, setDepositReviewOpen] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState("card");
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [submittingBooking, setSubmittingBooking] = useState(false);
 
   const [customers, setCustomers] = useState([]);
@@ -343,7 +343,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       }
 
       // At least one selected service requires payment/deposit.
-      setSelectedPaymentMethod("card");
+      setSelectedPaymentMethod(null);
       setDepositReviewOpen(true);
     },
     [bookingForm.customerId, bookingForm.serviceIds, requiresDeposit, handleCreateBooking],
@@ -602,6 +602,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
             <div className="space-y-2">
               <div className="rounded-md border border-slate-200 p-4">
                 <p className="text-[11px] font-semibold uppercase text-slate-900">Payment method</p>
+                <p className="mt-1 text-xs text-slate-500">Select one payment method to collect the required deposit.</p>
 
                 <div className="mt-3 space-y-2">
                   {PAYMENT_METHODS.map((option) => {
@@ -633,7 +634,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                 Back
               </Button>
               <Button type="button" onClick={() => handleCreateBooking(getPaymentOptionForMethod(selectedPaymentMethod))} disabled={submittingBooking || !selectedPaymentMethod} className="h-9">
-                {submittingBooking ? "Processing…" : `Collect ${formatCurrency(bookingTotals.requiredDeposit)}`}
+                {submittingBooking ? "Processing…" : `Book Now`}
               </Button>
             </div>
           </DialogFooter>

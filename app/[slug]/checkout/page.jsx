@@ -82,16 +82,16 @@ export default function CheckoutPage() {
   const locationId = params.get("locationId");
   const [query, setQuery] = useState("");
   const [staff, setStaff] = useState("ALL");
+  const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [selectedId, setSelectedId] = useState(bookingId);
   const [list, setList] = useState([]);
   const [draggedAppointment, setDraggedAppointment] = useState(null);
   
   const url = useMemo(() => {
-    const start = new Date();
+    const start = new Date(selectedDate);
     start.setHours(0, 0, 0, 0);
-    // The bookings API treats `end` as the start of its exclusive end day.
+    // The bookings API makes `end` exclusive after advancing it by one day.
     const end = new Date(start);
-    end.setDate(end.getDate() + 1);
     const requestParams = new URLSearchParams({
       start: start.toISOString(),
       end: end.toISOString(),
@@ -100,18 +100,18 @@ export default function CheckoutPage() {
       requestParams.set("locationId", locationId);
     }
     return `/api/bookings?${requestParams.toString()}`;
-  }, [locationId]);
+  }, [locationId, selectedDate]);
   
   const { data, loading, error, refetch } = useFetch(url);
 
   useEffect(() => {
-    const appointments = groupByBookingGroup(filterDueBookings(data?.bookings || [])
+    const appointments = groupByBookingGroup(filterDueBookings(data?.bookings || [], selectedDate)
       .map(toAppointment)
       .filter(Boolean));
     setList(appointments);
     if (bookingId && appointments.some((item) => item.bookingIds.includes(bookingId))) setSelectedId(appointments.find((item) => item.bookingIds.includes(bookingId)).id);
     else if (selectedId && !appointments.some((item) => item.id === selectedId)) setSelectedId(null);
-  }, [data, bookingId]);
+  }, [data, bookingId, selectedDate]);
 
   const filtered = list.filter((item) => item.client.toLowerCase().includes(query.trim().toLowerCase()) && (staff === "ALL" || item.services.some((service) => service.staff === staff)));
   const selected = list.find((item) => item.id === selectedId) || null;
@@ -176,7 +176,7 @@ export default function CheckoutPage() {
 
   return (
     <div className="min-h-screen bg-surface">
-      <BoardTopBar query={query} onQuery={setQuery} staff={staff} onStaff={setStaff} staffOptions={staffOptions} waitlist={0} onBookingSuccess={handleBookingSuccess} />
+      <BoardTopBar query={query} onQuery={setQuery} staff={staff} onStaff={setStaff} staffOptions={staffOptions} selectedDate={selectedDate} onDateChange={setSelectedDate} onBookingSuccess={handleBookingSuccess} />
       <div className="flex items-center gap-6 border-b border-border bg-surface-raised/60 px-5 py-2 text-sm">
         <span className="text-muted-foreground">
           Checked out today: <strong className="text-foreground">{currency(revenue)}</strong>

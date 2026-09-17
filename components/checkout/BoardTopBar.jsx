@@ -4,7 +4,7 @@ import { useState, useEffect, useCallback } from "react";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { ChevronDown, ChevronLeft, ChevronRight, Plus, Search } from "lucide-react";
-import { addMinutes, isAfter, format } from "date-fns";
+import { addDays, addMinutes, isAfter, format, isSameDay } from "date-fns";
 import { Button } from "@/components/ui/button";
 import NewAppointment from "@/components/common/NewAppointment";
 import {
@@ -32,7 +32,7 @@ function isBookableSlot(date) {
   return isAfter(date, new Date());
 }
 
-export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOptions, onBookingSuccess }) {
+export function BoardTopBar({ query, onQuery, staff, onStaff, staffOptions, selectedDate, onDateChange, onBookingSuccess }) {
   const searchParams = useSearchParams();
 
   const [loading, setLoading] = useState(true);
@@ -135,16 +135,17 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
 
   return (
     <header className="sticky bg-white top-0 z-20 flex flex-wrap items-center gap-3 border-b border-border bg-surface-raised px-4 py-2.5">
-      {/* Today's Date */}
-      <div className="flex items-center gap-1.5">
+      {/* Selected date */}
+      <label className="flex cursor-pointer items-center gap-1.5">
         <div className="leading-tight">
-          <p className="text-[10px] text-muted-foreground">Today's Date</p>
+          <p className="text-[10px] text-muted-foreground">{isSameDay(selectedDate, new Date()) ? "Today's Date" : "Selected Date"}</p>
 
-          <p className="text-sm font-semibold">{format(new Date(), "EEE. MMM d")}</p>
+          <p className="text-sm font-semibold">{format(selectedDate, "EEE. MMM d")}</p>
         </div>
 
         <ChevronDown className="size-4 text-muted-foreground" />
-      </div>
+        <input aria-label="Checkout date" type="date" value={format(selectedDate, "yyyy-MM-dd")} onChange={(event) => onDateChange(new Date(`${event.target.value}T00:00:00`))} className="sr-only" />
+      </label>
 
       {/* Search */}
       <label className="relative min-w-[200px] flex-1 md:max-w-sm">
@@ -165,16 +166,16 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
           </SelectTrigger>
 
           <SelectContent>
-            <SelectItem value="all">
+            <SelectItem value="ALL">
               All Professionals
             </SelectItem>
 
-            {professionals.map((professional) => (
+            {staffOptions.filter((name) => name !== "ALL").map((name) => (
               <SelectItem
-                key={professional.id}
-                value={professional.id}
+                key={name}
+                value={name}
               >
-                {professional.name}
+                {name}
               </SelectItem>
             ))}
           </SelectContent>
@@ -182,17 +183,17 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, waitlist, staffOpt
       </label>
 
         {/* Today */}
-        <Button variant="secondary" size="sm">
+        <Button variant="secondary" size="sm" onClick={() => onDateChange(new Date())}>
           Today
         </Button>
 
         {/* Previous */}
-        <Button variant="outline" size="icon" className="size-8">
+        <Button variant="outline" size="icon" className="size-8" onClick={() => onDateChange(addDays(selectedDate, -1))}>
           <ChevronLeft className="size-4" />
         </Button>
 
         {/* Next */}
-        <Button variant="outline" size="icon" className="size-8">
+        <Button variant="outline" size="icon" className="size-8" onClick={() => onDateChange(addDays(selectedDate, 1))}>
           <ChevronRight className="size-4" />
         </Button>
 

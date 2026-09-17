@@ -87,16 +87,22 @@ export default function BookingDetailsPopover({ bookings, open, onOpenChange, on
           </div>
         </div>
 
-        <div className="mt-5 flex gap-2">
-          <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
-            Close
-          </Button>
+        {bookings.stage === "completed" ? (
+          <div className="mt-5 rounded-md border border-emerald-200 bg-emerald-50 px-3 py-2 text-center text-sm font-medium text-emerald-700">
+            Completed
+          </div>
+        ) : (
+          <div className="mt-5 flex gap-2">
+            <Button variant="outline" className="flex-1" onClick={() => onOpenChange(false)}>
+              Close
+            </Button>
 
-          <Button className="flex-1" onClick={() => onCheckout(bookings)}>
-            <CreditCard className="mr-2 h-4 w-4" />
-            Checkout
-          </Button>
-        </div>
+            <Button className="flex-1" onClick={() => onCheckout(bookings)}>
+              <CreditCard className="mr-2 h-4 w-4" />
+              Checkout
+            </Button>
+          </div>
+        )}
       </PopoverContent>
     </Popover>
   );

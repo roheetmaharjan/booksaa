@@ -109,15 +109,6 @@ export async function middleware(request) {
   return NextResponse.next();
 }
 
-// export const config = {
-//   // Excludes _next/static, _next/image, and any path with a file extension
-//   // at the matcher level too — belt-and-suspenders with the STATIC_FILE
-//   // check above, so middleware isn't even invoked for asset requests.
-//   matcher: [
-//     "/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|manifest\\.json).*)",
-//   ],
-// };
-
 export const config = {
   matcher: [
     '/((?!_next/static|_next/image|favicon\\.ico|robots\\.txt|manifest\\.json).*)',

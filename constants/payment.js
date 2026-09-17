@@ -13,9 +13,11 @@ export const PAYMENT_OPTIONS = {
 };
 
 export function getPaymentOptionForMethod(method) {
-  if (method === "cash") return PAYMENT_OPTIONS.CASH;
-  if (method === "link") return PAYMENT_OPTIONS.LINK;
-  if (method === "skip") return PAYMENT_OPTIONS.SKIP;
+  const normalizedMethod = String(method || "").toUpperCase();
+
+  if (normalizedMethod === "CASH") return PAYMENT_OPTIONS.CASH;
+  if (normalizedMethod === "LINK") return PAYMENT_OPTIONS.LINK;
+  if (normalizedMethod === "SKIP") return PAYMENT_OPTIONS.SKIP;
 
   return PAYMENT_OPTIONS.CARD;
 }
