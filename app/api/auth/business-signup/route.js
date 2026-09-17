@@ -2,7 +2,7 @@ import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendWelcomeEmail } from "@/lib/sendWelcomeEmail";
+import { sendWelcomeEmail } from "@/lib/emails/sendWelcomeEmail";
 import {
   AUTH_COOKIE_NAME,
   createSessionToken,

@@ -1,7 +1,7 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { createCustomerCode, findCustomerDuplicates, getCurrentVendorOrThrow, normalizeEmail, normalizePhone } from "@/lib/customer-crm";
-import { sendPaymentLinkEmail, sendBookingConfirmationEmail } from "@/lib/sendBookingEmails";
+import { sendPaymentLinkEmail, sendBookingConfirmationEmail } from "@/lib/emails/sendBookingEmails";
 import { BookingStatus } from "@/constants/enums";
 
 // Helper to calculate deposit required for a service
