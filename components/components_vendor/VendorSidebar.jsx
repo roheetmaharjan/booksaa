@@ -1,6 +1,5 @@
 "use client";
 
-import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users,Contact,ScanLine  } from "lucide-react";
@@ -9,11 +8,33 @@ import { signOut } from "@/lib/auth-client";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
+async function resolveBusinessImage(imageKey) {
+  if (!imageKey) return "";
+  if (!imageKey.startsWith("vendors/")) return imageKey;
+
+  try {
+    const response = await fetch("/api/storage/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+      body: JSON.stringify({ keys: [imageKey] }),
+    });
+    const data = await response.json();
+
+    if (!response.ok) return "";
+    return data.images?.find((image) => image.key === imageKey)?.url || "";
+  } catch {
+    return "";
+  }
+}
+
 export function VendorSidebar({ startTransition }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const [business, setBusiness] = useState(null);
+  const [businessImageUrl, setBusinessImageUrl] = useState("");
   const [locationOpen, setLocationOpen] = useState(false);
   const [profileOpen, setProfileOpen] = useState(false);
 
@@ -60,21 +81,29 @@ export function VendorSidebar({ startTransition }) {
         const data = await res.json();
 
         if (res.ok && isActive) {
-          setBusiness(data.vendor || null);
+          const currentBusiness = data.vendor || null;
+          setBusiness(currentBusiness);
+          setBusinessImageUrl(await resolveBusinessImage(currentBusiness?.image));
         } else {
-          if (isActive) setBusiness(null);
+          if (isActive) {
+            setBusiness(null);
+            setBusinessImageUrl("");
+          }
         }
       } catch {
         if (isActive) {
           setBusiness(null);
+          setBusinessImageUrl("");
         }
       }
     };
 
+    window.addEventListener("vendor-profile-image-updated", fetchBusiness);
     fetchBusiness();
 
     return () => {
       isActive = false;
+      window.removeEventListener("vendor-profile-image-updated", fetchBusiness);
     };
   }, []);
 
@@ -143,7 +172,7 @@ export function VendorSidebar({ startTransition }) {
               <Popover open={locationOpen} onOpenChange={setLocationOpen}>
                 <PopoverTrigger asChild>
                   <SidebarMenuButton size="lg" tooltip={business?.name || "Business"} className="h-12">
-                    <BusinessIdentity business={business} selectedLocation={selectedLocation} businessInitial={businessInitial} />
+                    <BusinessIdentity business={business} businessImageUrl={businessImageUrl} selectedLocation={selectedLocation} businessInitial={businessInitial} />
                     <ChevronDown className="ml-auto size-4 text-slate-400 group-data-[collapsible=icon]:hidden" />
                   </SidebarMenuButton>
                 </PopoverTrigger>
@@ -177,7 +206,7 @@ export function VendorSidebar({ startTransition }) {
             ) : (
               <SidebarMenuButton asChild size="lg" tooltip={business?.name || "Business"} className="h-12 hover:bg-transparent">
                 <button onClick={handleNav(withSelectedLocation(businessBasePath))} type="button">
-                  <BusinessIdentity business={business} selectedLocation={selectedLocation} businessInitial={businessInitial} />
+                  <BusinessIdentity business={business} businessImageUrl={businessImageUrl} selectedLocation={selectedLocation} businessInitial={businessInitial} />
                 </button>
               </SidebarMenuButton>
             )}
@@ -278,12 +307,12 @@ function ProfileMenuButton({ icon: Icon, label, onClick }) {
   );
 }
 
-function BusinessIdentity({ business, selectedLocation, businessInitial }) {
+function BusinessIdentity({ business, businessImageUrl, selectedLocation, businessInitial }) {
   return (
     <>
       <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900">
-        {business?.image ? (
-          <Image src={business.image} width={36} height={36} alt={`${business.name} logo`} className="size-full object-cover" />
+        {businessImageUrl ? (
+          <img src={businessImageUrl} width={36} height={36} alt={`${business.name} logo`} className="size-full object-cover" />
         ) : (
           businessInitial
         )}

@@ -41,9 +41,14 @@ export async function POST(request) {
       return Response.json({ error: "keys must be an array" }, { status: 400 });
     }
 
-    const prefix = `vendors/${vendor.id}/gallery/`;
+    const allowedPrefixes = [
+      `vendors/${vendor.id}/gallery/`,
+      `vendors/${vendor.id}/branding/`,
+    ];
 
-    const validKeys = keys.filter((key) => key.startsWith(prefix));
+    const validKeys = keys.filter(
+      (key) => typeof key === "string" && allowedPrefixes.some((prefix) => key.startsWith(prefix)),
+    );
 
     const images = await Promise.all(
       validKeys.map(async (key) => {

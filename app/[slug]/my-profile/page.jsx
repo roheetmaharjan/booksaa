@@ -15,12 +15,13 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation } from "@/hooks/useMutation";
 import { validateForm } from "@/utils/formValidator";
 import { CameraIcon, InfoIcon, PenIcon } from "@phosphor-icons/react";
-import { MapPin, Plus } from "lucide-react";
+import { Loader2, MapPin, Plus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import GalleryGrid from "@/components/photos/GalleryGrid";
+import { ASSET_TYPES } from "@/constants/storage";
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -78,6 +79,9 @@ export default function BusinessProfilePage() {
   const [openAddLocation, setOpenAddLocation] = useState(false);
   const [photos, setPhotos] = useState([]);
   const [dateFilter, setDateFilter] = useState("all");
+  const [profileImageUrl, setProfileImageUrl] = useState("");
+  const [uploadingProfileImage, setUploadingProfileImage] = useState(false);
+  const profileImageInputRef = useRef(null);
 
   const selectedLocationId = selectedLocationFromSidebar || form.selectedLocationId || form.defaultLocationId || form.locations?.[0]?.id || "";
   const selectedLocation = useMemo(() => form.locations?.find((location) => location.id === selectedLocationId) || form.location || form.locations?.[0] || null, [form.location, form.locations, selectedLocationId]);
@@ -150,7 +154,98 @@ export default function BusinessProfilePage() {
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Unable to load business profile.");
     setForm(normalizeBusinessForm(data));
+    await resolveProfileImageUrl(data.image);
     setError("");
+  };
+
+  const resolveProfileImageUrl = async (imageKey) => {
+    if (!imageKey) {
+      setProfileImageUrl("");
+      return;
+    }
+
+    if (!imageKey.startsWith("vendors/")) {
+      setProfileImageUrl(imageKey);
+      return;
+    }
+
+    try {
+      const response = await fetch("/api/storage/view", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        cache: "no-store",
+        body: JSON.stringify({ keys: [imageKey] }),
+      });
+      const data = await response.json();
+
+      if (!response.ok) {
+        throw new Error(data.error || "Unable to load profile image.");
+      }
+
+      setProfileImageUrl(data.images?.find((image) => image.key === imageKey)?.url || "");
+    } catch (err) {
+      console.error("Failed to load profile image:", err);
+      setProfileImageUrl("");
+    }
+  };
+
+  const handleProfileImageChange = async (event) => {
+    const file = event.target.files?.[0];
+    event.target.value = "";
+    if (!file) return;
+
+    setUploadingProfileImage(true);
+
+    try {
+      const uploadResponse = await fetch("/api/storage/upload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          fileName: file.name,
+          contentType: file.type,
+          type: ASSET_TYPES.BRANDING,
+        }),
+      });
+      const uploadData = await uploadResponse.json();
+
+      if (!uploadResponse.ok) {
+        throw new Error(uploadData.error || "Failed to prepare profile image upload.");
+      }
+
+      const storageResponse = await fetch(uploadData.uploadUrl, {
+        method: "PUT",
+        headers: { "Content-Type": file.type },
+        body: file,
+      });
+
+      if (!storageResponse.ok) {
+        throw new Error("Failed to upload profile image.");
+      }
+
+      const completeResponse = await fetch("/api/storage/complete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ key: uploadData.key, type: ASSET_TYPES.BRANDING }),
+      });
+      const completeData = await completeResponse.json();
+
+      if (!completeResponse.ok) {
+        throw new Error(completeData.error || "Failed to save profile image.");
+      }
+
+      setForm((current) => ({ ...current, image: uploadData.key }));
+      await resolveProfileImageUrl(uploadData.key);
+      window.dispatchEvent(new Event("vendor-profile-image-updated"));
+      toast.success("Profile image updated.");
+    } catch (err) {
+      console.error("Profile image upload error:", err);
+      toast.error(err.message || "Failed to update profile image.");
+    } finally {
+      setUploadingProfileImage(false);
+    }
   };
   const refreshPhotos = async () => {
   if (!vendorId) return;
@@ -292,16 +387,30 @@ export default function BusinessProfilePage() {
           <>
             <div className="flex flex-col gap-5 md:flex-row md:items-center">
               <div className="relative w-fit">
-                {form.image ? (
+                {profileImageUrl ? (
                   <figure className="h-32 w-32 overflow-hidden rounded-md">
-                    <img src={form.image} alt={`${form.name} image`} className="h-full w-full object-cover" />
+                    <img src={profileImageUrl} alt={`${form.name} image`} className="h-full w-full object-cover" />
                   </figure>
                 ) : (
                   <span className="flex h-32 w-32 items-center justify-center rounded-md border border-primary bg-primary/10 text-3xl font-bold uppercase">{form.name?.charAt(0) || "B"}</span>
                 )}
-                <Button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none">
-                  <CameraIcon />
+                <Button
+                  type="button"
+                  className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none"
+                  onClick={() => profileImageInputRef.current?.click()}
+                  disabled={uploadingProfileImage}
+                  aria-label="Change profile image"
+                  title="Change profile image"
+                >
+                  {uploadingProfileImage ? <Loader2 className="size-4 animate-spin" /> : <CameraIcon />}
                 </Button>
+                <input
+                  ref={profileImageInputRef}
+                  type="file"
+                  accept="image/jpeg,image/png,image/webp"
+                  className="hidden"
+                  onChange={handleProfileImageChange}
+                />
               </div>
 
               <div className="flex-1">
@@ -332,7 +441,6 @@ export default function BusinessProfilePage() {
               <TabsList className="mb-5 flex h-auto flex-wrap">
                 <TabsTrigger value="detail">Business Profile</TabsTrigger>
                 <TabsTrigger value="photos">Photos</TabsTrigger>
-                <TabsTrigger value="reviews">Reviews</TabsTrigger>
                 <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
                 <TabsTrigger value="location">Business Location</TabsTrigger>
               </TabsList>
@@ -426,7 +534,6 @@ export default function BusinessProfilePage() {
                 </div>
                 <GalleryGrid photos={photos} dateFilter={dateFilter} />
               </TabsContent>
-              <TabsContent value="reviews">Reviews Coming Soon</TabsContent>
 
               <TabsContent value="businesshours">
                 <BusinessHours vendorId={form.id} locationId={selectedLocationId} initialHours={form.businessHours || []} onSaved={() => refreshBusiness(selectedLocationId)} />
