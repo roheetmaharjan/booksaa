@@ -29,6 +29,7 @@ model Users {
 model Vendors {
   id                    String                       @id @default(uuid())
   name                  String
+  slug                  String?
   description           String?
   image                 String?
   phone                 String?
@@ -39,12 +40,14 @@ model Vendors {
   joinedAt              DateTime                     @default(now())
   trialEndsAt           DateTime?
   userId                String                       @unique
-  photos                String?
+  photos                Json?
   isComplete            Boolean                      @default(false)
   defaultLocationId     String?                      @unique
   autoRenewEnabled      Boolean                      @default(true)
   lastPaymentAttemptAt  DateTime?
   stripeCustomerId      String?                      @unique
+  stripePublishableKey  String?
+  stripeSecretKey       String?
   subscriptionExpiresAt DateTime?
   businessHours         BusinessHour[]
   customers             Customer[]
@@ -103,10 +106,17 @@ model Bookings {
   customerPhone      String?
   endTime            String?
   locationId         String?
-  notes              String?
-  paymentAmount      Float         @default(0)
-  paymentRequirement String        @default("pay_later")
-  professionalId     String?
+  notes                String?
+  paymentAmount        Float         @default(0)
+  paymentRequirement   String        @default("pay_later")
+  paymentStatus        PaymentStatus @default(UNPAID)
+  paidAmount           Float         @default(0)
+  remainingBalance     Float         @default(0)
+  stripePaymentIntentId String?
+  paymentLink          String?
+  paymentLinkExpiresAt DateTime?
+  paymentGroupId       String?
+  professionalId       String?
   scheduledEnd       DateTime?
   startTime          String?
   customer           Customer?     @relation(fields: [customerId], references: [id])
@@ -114,11 +124,25 @@ model Bookings {
   professional       Professional? @relation(fields: [professionalId], references: [id])
   service            Service       @relation(fields: [serviceId], references: [id])
   user               Users         @relation(fields: [userId], references: [id])
+  payments           Payment[]
 
   @@index([customerId])
   @@index([professionalId])
   @@index([locationId])
   @@index([scheduledAt])
+}
+
+model Payment {
+  id        String        @id @default(cuid())
+  bookingId String
+  amount    Float
+  method    String
+  type      PaymentType
+  status    PaymentStatus @default(PAID)
+  createdAt DateTime      @default(now())
+  booking   Bookings      @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+
+  @@index([bookingId, createdAt])
 }
 
 model Invitation {
@@ -166,9 +190,10 @@ model Service {
   locationId     String
   color          String     @default("#2563eb")
   depositType    String?
-  depositValue   Float?
-  prepaymentType String     @default("pay_later")
-  booking        Bookings[]
+  depositValue       Float?
+  prepaymentType     String     @default("pay_later")
+  allowPayAtBusiness Boolean    @default(true)
+  booking            Bookings[]
   location       Location   @relation(fields: [locationId], references: [id])
   vendor         Vendors    @relation(fields: [vendorId], references: [id])
 
@@ -194,7 +219,7 @@ model Professional {
 
 model Customer {
   id                   String                  @id @default(cuid())
-  customerCode         String                  @unique
+  customerCode         String                  
   vendorId             String
   fullName             String
   phone                String?
@@ -222,7 +247,7 @@ model Customer {
   communications       CustomerCommunication[]
   invoices             CustomerInvoice[]
   noteEntries          CustomerNote[]
-
+  @@unique([vendorId, customerCode])
   @@index([vendorId])
   @@index([status])
   @@index([phone])
@@ -301,6 +326,7 @@ model VendorSubscription {
   planId         String
   status         String                       @default("ACTIVE")
   createdAt      DateTime                     @default(now())
+  expiryDate     DateTime?
   entitlements   SubscriptionEntitlement[]
   paymentHistory SubscriptionPaymentHistory[]
   plan           Plans                        @relation(fields: [planId], references: [id])
@@ -375,9 +401,27 @@ enum UserStatus {
 
 enum BookingStatus {
   PENDING
+  DRAFT
+  PENDING_PAYMENT
   CONFIRMED
-  CANCELED
+  CHECKED_IN
+  IN_SERVICE
   COMPLETED
+  CANCELED
+  PAYMENT_EXPIRED
+}
+
+enum PaymentStatus {
+  UNPAID
+  PARTIALLY_PAID
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum PaymentType {
+  DEPOSIT
+  BALANCE
 }
 
 enum AccountStatus {

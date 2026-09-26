@@ -4,7 +4,7 @@ const nextConfig = {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'example.com',
+        hostname: '*.storage.c-9.us-east-1.aws.neon.tech',
         pathname: '/**',
       },
     ],

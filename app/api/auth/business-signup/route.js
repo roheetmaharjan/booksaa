@@ -2,13 +2,14 @@ import bcrypt from "bcrypt";
 import { randomUUID } from "crypto";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { sendWelcomeEmail } from "@/lib/sendWelcomeEmail";
+import { sendWelcomeEmail } from "@/lib/emails/sendWelcomeEmail";
 import {
   AUTH_COOKIE_NAME,
   createSessionToken,
   getSessionCookieOptions,
 } from "@/lib/auth";
 import { createVendorSubscription } from "@/lib/subscriptions";
+import { slugifyText } from "@/lib/utils";
 
 function isPresent(value) {
   return value !== undefined && value !== null && String(value).trim() !== "";
@@ -157,6 +158,7 @@ export async function POST(req) {
 
     const now = new Date();
     const hasTrial = Number(plan.trial_period) > 0;
+    const slug = slugifyText(body.name);
     const trialEndsAt = hasTrial
       ? new Date(now.getTime() + Number(plan.trial_period) * 24 * 60 * 60 * 1000)
       : null;
@@ -195,6 +197,7 @@ export async function POST(req) {
       const vendor = await tx.vendors.create({
         data: {
           name: body.name,
+          slug,
           categoryId: body.categoryId,
           planId: body.planId,
           joinedAt: now,

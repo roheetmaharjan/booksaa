@@ -1,13 +1,15 @@
 import { prisma } from "@/lib/prisma";
-import { sendInviteEmail } from "@/lib/sendInviteEmail";
+import { sendInviteEmail } from "@/lib/emails/sendInviteEmail";
 import bcrypt from "bcryptjs";
 import { NextResponse } from "next/server";
 import { createVendorSubscription } from "@/lib/subscriptions";
+import { slugifyText } from "@/lib/utils";
 
 export async function POST(req) {
   const body = await req.json();
   const { firstname, lastname, email, categoryId, planId, name, userId } = body;
   const normalizedEmail = email?.trim().toLowerCase();
+  const slug = slugifyText(name);
 
   if (!firstname || !lastname || !normalizedEmail || !categoryId || !planId || !name) {
     return NextResponse.json({ error: "Missing fields" }, { status: 400 });
@@ -63,6 +65,7 @@ export async function POST(req) {
     const created = await tx.vendors.create({
       data: {
         name,
+        slug,
         categoryId,
         planId,
         trialEndsAt,

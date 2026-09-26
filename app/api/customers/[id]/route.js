@@ -9,21 +9,28 @@ function parseDate(value) {
   return Number.isNaN(date.getTime()) ? null : date;
 }
 
-function bookingAmount(booking) {
-  return Number(booking.paymentAmount || booking.service?.price || 0);
-}
-
 function buildProfile(customer, fallbackBookings = []) {
   const bookings = [...(customer.bookings || []), ...fallbackBookings]
     .filter((booking, index, items) => items.findIndex((item) => item.id === booking.id) === index)
     .sort((a, b) => new Date(b.scheduledAt) - new Date(a.scheduledAt));
   const completed = bookings.filter((booking) => booking.status === "COMPLETED");
   const upcoming = bookings.find((booking) => new Date(booking.scheduledAt) >= new Date() && !["CANCELED", "COMPLETED"].includes(booking.status));
-  const lifetimeSpending = completed.reduce((sum, booking) => sum + bookingAmount(booking), 0);
+  const paymentHistory = bookings
+    .flatMap((booking) => (booking.payments || []).map((payment) => ({
+      ...payment,
+      bookingId: booking.id,
+      bookingDate: booking.scheduledAt,
+      serviceName: booking.service?.name || "Booking",
+    })))
+    .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+  const lifetimeSpending = paymentHistory
+    .filter((payment) => payment.status === "PAID")
+    .reduce((sum, payment) => sum + Number(payment.amount || 0), 0);
 
   return {
     ...customer,
     bookings,
+    paymentHistory,
     statistics: {
       totalVisits: completed.length,
       totalBookings: bookings.length,
@@ -50,6 +57,7 @@ async function getCustomerForVendor(id, vendorId) {
         include: {
           service: { select: { name: true, price: true } },
           professional: { select: { name: true } },
+          payments: { orderBy: { createdAt: "asc" } },
         },
       },
     },
@@ -83,6 +91,7 @@ export async function GET(req, { params }) {
             include: {
               service: { select: { name: true, price: true } },
               professional: { select: { name: true } },
+              payments: { orderBy: { createdAt: "asc" } },
             },
           })
         : [];

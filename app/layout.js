@@ -2,6 +2,7 @@ import { Archivo } from "next/font/google";
 import "../styles/globals.css";
 import SessionWrapper from "@/components/components_admin/SessionWrapper";
 import { Toaster } from "@/components/ui/sonner";
+import { Suspense } from "react";
 
 const archivo = Archivo({
   weight: ["400", "700"],
@@ -19,7 +20,9 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`${archivo.variable} antialiased`}>
         <SessionWrapper>
-          {children}
+          <Suspense fallback={null}>
+            {children}
+          </Suspense>
           <Toaster position="top-center" theme="light" richColors /> 
         </SessionWrapper>
       </body>

@@ -4,6 +4,7 @@ import { AccountStatus } from "@/constants/enums";
 import { getCurrentSession } from "@/lib/auth";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
 import { createVendorSubscription, getActiveVendorSubscription, getSubscriptionLimits } from "@/lib/subscriptions";
+import { slugifyText } from "@/lib/utils";
 
 export async function GET(req, { params }) {
   const { id } = await params;
@@ -185,6 +186,7 @@ export async function PUT(req, { params }) {
         where: { id },
         data: {
           name,
+          slug: slugifyText(name),
           description,
           phone,
           cancellation_policy,

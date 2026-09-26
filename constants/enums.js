@@ -1,10 +1,28 @@
 export const BookingStatus = {
   PENDING: "PENDING",
+  DRAFT: "DRAFT",
+  PENDING_PAYMENT: "PENDING_PAYMENT",
   CONFIRMED: "CONFIRMED",
-  CANCELED: "CANCELED",
+  CHECKED_IN: "CHECKED_IN",
+  IN_SERVICE: "IN_SERVICE",
   COMPLETED: "COMPLETED",
+  CANCELED: "CANCELED",
+  PAYMENT_EXPIRED: "PAYMENT_EXPIRED",
+};
+export const BOOKING_TYPES = {
+  ONLINE: "ONLINE",
+  WALK_IN: "WALK_IN",
 };
 export const BOOKING_STATUS = Object.values(BookingStatus);
+
+export const PaymentStatus = {
+  UNPAID: "UNPAID",
+  PARTIALLY_PAID: "PARTIALLY_PAID",
+  PAID: "PAID",
+  FAILED: "FAILED",
+  REFUNDED: "REFUNDED",
+};
+export const PAYMENT_STATUS = Object.values(PaymentStatus);
 
 export const UserStatus = {
   ACTIVE: "ACTIVE",

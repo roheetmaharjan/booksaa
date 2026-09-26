@@ -118,7 +118,7 @@ body {
     @apply py-4 border-b;
   }
   .page-body{
-    @apply !mt-0 !border-none !rounded-none
+    @apply !mt-0 !border-none !rounded-none p-5
   }
   .page-title {
     @apply text-xl font-bold tracking-tight;
@@ -250,4 +250,26 @@ body {
 
 .phone-input .PhoneInputInput:disabled {
   cursor: not-allowed;
+}
+* {
+  scrollbar-width: thin;
+  scrollbar-color: #e2e8f0 transparent;
+}
+
+*::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+
+*::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+*::-webkit-scrollbar-thumb {
+  background: #e2e8f0;
+  border-radius: 999px;
+}
+
+*::-webkit-scrollbar-thumb:hover {
+  background: #cbd5e1;
 }

@@ -1,5 +1,5 @@
 import { prisma } from "@/lib/prisma";
-import { sendInviteEmail } from "@/lib/sendInviteEmail";
+import { sendInviteEmail } from "@/lib/emails/sendInviteEmail";
 import { NextResponse } from "next/server";
 
 export async function POST(req) {

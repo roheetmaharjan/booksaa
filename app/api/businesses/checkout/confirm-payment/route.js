@@ -94,7 +94,14 @@ export async function POST(request) {
     }
 
     // Calculate new expiry date
-    const expiryDate = new Date();
+    const now = new Date();
+    const startDate =
+      vendor.subscriptionExpiresAt &&
+      new Date(vendor.subscriptionExpiresAt) > now
+        ? new Date(vendor.subscriptionExpiresAt)
+        : now;
+
+    const expiryDate = new Date(startDate);
     expiryDate.setDate(expiryDate.getDate() + plan.duration);
 
     // Update vendor with new plan and expiry
@@ -126,6 +133,7 @@ export async function POST(request) {
         status: "ACTIVE",
         locationCount,
         professionalCount,
+        expiryDate,
       });
     });
 

@@ -1,4 +1,4 @@
-import transporter from "@/utils/mailer";
+import { transporter } from "@/utils/mailer";
 
 export async function POST(request) {
   try {
