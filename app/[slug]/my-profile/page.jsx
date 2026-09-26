@@ -19,6 +19,8 @@ import { MapPin, Plus } from "lucide-react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import PhotoUpload from "@/components/photos/PhotoUpload";
+import GalleryGrid from "@/components/photos/GalleryGrid";
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -74,12 +76,11 @@ export default function BusinessProfilePage() {
   const [formErrors, setFormErrors] = useState({});
   const [locationForm, setLocationForm] = useState({});
   const [openAddLocation, setOpenAddLocation] = useState(false);
+  const [photos, setPhotos] = useState([]);
+  const [dateFilter, setDateFilter] = useState("all");
 
   const selectedLocationId = selectedLocationFromSidebar || form.selectedLocationId || form.defaultLocationId || form.locations?.[0]?.id || "";
-  const selectedLocation = useMemo(
-    () => form.locations?.find((location) => location.id === selectedLocationId) || form.location || form.locations?.[0] || null,
-    [form.location, form.locations, selectedLocationId]
-  );
+  const selectedLocation = useMemo(() => form.locations?.find((location) => location.id === selectedLocationId) || form.location || form.locations?.[0] || null, [form.location, form.locations, selectedLocationId]);
   const selectedPlan = plans.find((plan) => plan.id === form?.planId) || form.plan || null;
   const locationLimit = Number(form?.subscriptionLocationLimit) || Number(selectedPlan?.location) || 1;
   const activeLocationCount = form.locations?.filter((location) => location.isActive !== false).length || 0;
@@ -151,11 +152,53 @@ export default function BusinessProfilePage() {
     setForm(normalizeBusinessForm(data));
     setError("");
   };
+  const refreshPhotos = async () => {
+  if (!vendorId) return;
+
+  try {
+    const res = await fetch(
+      `/api/storage/list?vendorId=${encodeURIComponent(vendorId)}`,
+      { cache: "no-store" }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data.error || "Failed to load photos.");
+    }
+
+    const files = data.files || [];
+
+    if (!files.length) {
+      setPhotos([]);
+      return;
+    }
+
+    const viewRes = await fetch("/api/storage/view", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      credentials: "include",
+      cache: "no-store",
+      body: JSON.stringify({ keys: files.map((file) => file.key) }),
+    });
+    const viewData = await viewRes.json();
+
+    if (!viewRes.ok) {
+      throw new Error(viewData.error || "Failed to load photo URLs.");
+    }
+
+    const urlsByKey = new Map((viewData.images || []).map((image) => [image.key, image.url]));
+    setPhotos(files.map((file) => ({ ...file, url: urlsByKey.get(file.key) })).filter((file) => file.url));
+  } catch (err) {
+    console.error("Failed to load photos:", err);
+  }
+};
 
   useEffect(() => {
     if (!vendorId) return;
 
     setLoading(true);
+    refreshPhotos();
     refreshBusiness()
       .catch((err) => {
         setError(err.message || "Unable to load business profile.");
@@ -254,9 +297,7 @@ export default function BusinessProfilePage() {
                     <img src={form.image} alt={`${form.name} image`} className="h-full w-full object-cover" />
                   </figure>
                 ) : (
-                  <span className="flex h-32 w-32 items-center justify-center rounded-md border border-primary bg-primary/10 text-3xl font-bold uppercase">
-                    {form.name?.charAt(0) || "B"}
-                  </span>
+                  <span className="flex h-32 w-32 items-center justify-center rounded-md border border-primary bg-primary/10 text-3xl font-bold uppercase">{form.name?.charAt(0) || "B"}</span>
                 )}
                 <Button className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none">
                   <CameraIcon />
@@ -309,7 +350,6 @@ export default function BusinessProfilePage() {
                     <CardContent className="!card-body">
                       <DetailValue label="Business Name" value={form.name} />
                       <DetailValue label="Category" value={categories.find((category) => category.id === form.categoryId)?.name || form.category?.name} />
-                      <DetailValue label="Plan" value={selectedPlan?.name} />
                       <DetailValue label="Description" value={form.description} multiline />
                       <DetailValue label="Cancellation Policy" value={form.cancellation_policy} multiline />
                     </CardContent>
@@ -347,10 +387,6 @@ export default function BusinessProfilePage() {
                           {formErrors.categoryId && <p className="text-sm text-red-500">{formErrors.categoryId}</p>}
                         </div>
                         <div className="card-value">
-                          <Label>Plan</Label>
-                          <Input value={selectedPlan?.name || "-"} disabled />
-                        </div>
-                        <div className="card-value">
                           <Label>Description</Label>
                           <Textarea name="description" value={form.description || ""} onChange={handleChange} className="h-40" />
                         </div>
@@ -360,15 +396,36 @@ export default function BusinessProfilePage() {
                         </div>
                       </CardContent>
                       <CardFooter className="gap-2">
-                        <Button type="submit" disabled={savingBusiness}>{savingBusiness ? "Saving..." : "Save"}</Button>
-                        <Button type="button" variant="outline" onClick={() => setIsEditingDetails(false)}>Cancel</Button>
+                        <Button type="submit" disabled={savingBusiness}>
+                          {savingBusiness ? "Saving..." : "Save"}
+                        </Button>
+                        <Button type="button" variant="outline" onClick={() => setIsEditingDetails(false)}>
+                          Cancel
+                        </Button>
                       </CardFooter>
                     </Card>
                   </form>
                 )}
               </TabsContent>
 
-              <TabsContent value="photos">Coming Soon</TabsContent>
+              <TabsContent value="photos">
+                <div className="flex gap-2 flex-wrap justify-between mb-4">
+                  <PhotoUpload onUploadComplete={refreshPhotos} />
+                  <Select value={dateFilter} onValueChange={setDateFilter}>
+                    <SelectTrigger className="w-[160px]">
+                      <SelectValue placeholder="Filter by date" />
+                    </SelectTrigger>
+
+                    <SelectContent>
+                      <SelectItem value="all">All photos</SelectItem>
+                      <SelectItem value="today">Today</SelectItem>
+                      <SelectItem value="week">This week</SelectItem>
+                      <SelectItem value="month">This month</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <GalleryGrid photos={photos} dateFilter={dateFilter} />
+              </TabsContent>
               <TabsContent value="reviews">Reviews Coming Soon</TabsContent>
 
               <TabsContent value="businesshours">
@@ -438,8 +495,12 @@ export default function BusinessProfilePage() {
                         </CardContent>
                         {isEditingLocation && (
                           <CardFooter className="gap-2">
-                            <Button type="submit" disabled={savingLocation}>{savingLocation ? "Saving..." : "Save Location"}</Button>
-                            <Button type="button" variant="outline" onClick={() => setIsEditingLocation(false)}>Cancel</Button>
+                            <Button type="submit" disabled={savingLocation}>
+                              {savingLocation ? "Saving..." : "Save Location"}
+                            </Button>
+                            <Button type="button" variant="outline" onClick={() => setIsEditingLocation(false)}>
+                              Cancel
+                            </Button>
                           </CardFooter>
                         )}
                       </Card>
@@ -465,13 +526,7 @@ export default function BusinessProfilePage() {
               </TabsContent>
             </Tabs>
 
-            <AddLocation
-              open={openAddLocation}
-              setAddLocationOpen={setOpenAddLocation}
-              vendorId={form.id}
-              vendor={form}
-              onAdded={(created) => refreshBusiness(created?.id || selectedLocationId)}
-            />
+            <AddLocation open={openAddLocation} setAddLocationOpen={setOpenAddLocation} vendorId={form.id} vendor={form} onAdded={(created) => refreshBusiness(created?.id || selectedLocationId)} />
           </>
         )}
       </div>
