@@ -1,5 +1,14 @@
 -- Preserve every booking payment as an immutable history entry.
+
 CREATE TYPE "PaymentType" AS ENUM ('DEPOSIT', 'BALANCE');
+
+CREATE TYPE "PaymentStatus" AS ENUM (
+  'UNPAID',
+  'PARTIALLY_PAID',
+  'PAID',
+  'FAILED',
+  'REFUNDED'
+);
 
 CREATE TABLE "Payment" (
     "id" TEXT NOT NULL,
@@ -13,7 +22,12 @@ CREATE TABLE "Payment" (
     CONSTRAINT "Payment_pkey" PRIMARY KEY ("id")
 );
 
-CREATE INDEX "Payment_bookingId_createdAt_idx" ON "Payment"("bookingId", "createdAt");
+CREATE INDEX "Payment_bookingId_createdAt_idx"
+ON "Payment"("bookingId", "createdAt");
 
-ALTER TABLE "Payment" ADD CONSTRAINT "Payment_bookingId_fkey"
-FOREIGN KEY ("bookingId") REFERENCES "Bookings"("id") ON DELETE CASCADE ON UPDATE CASCADE;
+ALTER TABLE "Payment"
+ADD CONSTRAINT "Payment_bookingId_fkey"
+FOREIGN KEY ("bookingId")
+REFERENCES "Bookings"("id")
+ON DELETE CASCADE
+ON UPDATE CASCADE;
