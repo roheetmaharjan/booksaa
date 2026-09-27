@@ -8,7 +8,6 @@ export default function MarketingHome() {
       <HeroSection />
       <TargetAudience />
       <Solution />
-      <h4>h5</h4>
     </div>
   );
 }
