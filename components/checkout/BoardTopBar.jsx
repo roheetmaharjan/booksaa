@@ -84,7 +84,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, staffOptions, sele
       try {
         setLoading(true);
 
-        const currentRes = await fetch("/api/businesses/current", {
+        const currentRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, {
           cache: "no-store",
         });
 

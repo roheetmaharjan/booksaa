@@ -75,7 +75,7 @@ export function VendorSidebar({ startTransition }) {
 
     const fetchBusiness = async () => {
       try {
-        const res = await fetch("/api/businesses/current", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, {
           cache: "no-store",
         });
         const data = await res.json();

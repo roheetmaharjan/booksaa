@@ -33,7 +33,7 @@ export default function UpgradePage() {
 
   const fetchVendorInfo = async () => {
     try {
-      const response = await api.get("/api/businesses/current");
+      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`);
       setData(response);
     } catch (err) {
       setError(err.message || "Failed to load business information");
