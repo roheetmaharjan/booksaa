@@ -111,7 +111,7 @@ export default function BusinessProfilePage() {
     const resolveCurrentVendor = async () => {
       setLoading(true);
       try {
-        const res = await fetch("/api/businesses/current", { cache: "no-store" });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, { cache: "no-store" });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Unable to resolve your business account.");
         if (isActive) setVendorId(data.vendorId);

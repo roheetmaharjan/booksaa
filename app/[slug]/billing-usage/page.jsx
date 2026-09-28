@@ -27,7 +27,7 @@ export default function BillingUsagePage() {
 
       const fetchBusiness = async () => {
         try {
-          const res = await fetch("/api/businesses/current", {
+          const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, {
             cache: "no-store",
           });
           const data = await res.json();
@@ -58,7 +58,7 @@ export default function BillingUsagePage() {
   const loadBillingData = async () => {
     try {
       setIsLoading(true);
-      const [fullData, methods] = await Promise.all([api.get("/api/businesses/current"), api.get("/api/businesses/payment-methods/list")]);
+      const [fullData, methods] = await Promise.all([api.get(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`), api.get("/api/businesses/payment-methods/list")]);
 
       setData(fullData);
       setPaymentMethods(methods.paymentMethods || []);

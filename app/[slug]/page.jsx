@@ -53,7 +53,7 @@ export default function VendorPage() {
   const fetchVendorData = async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/businesses/current", { cache: "no-store" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, { cache: "no-store" });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Unable to resolve your business account.");
       setData(json);

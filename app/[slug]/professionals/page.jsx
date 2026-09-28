@@ -30,7 +30,7 @@ export default function ProfessionalsPage() {
         setLoading(true);
 
         // Get current business
-        const currentRes = await fetch("/api/businesses/current", {
+        const currentRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, {
           cache: "no-store",
         });
         const currentData = await currentRes.json();

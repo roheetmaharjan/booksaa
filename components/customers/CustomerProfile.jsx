@@ -68,7 +68,7 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
     async function loadVendor() {
       try {
         setLoading(true);
-        const currentRes = await fetch("/api/businesses/current", { cache: "no-store" });
+        const currentRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, { cache: "no-store" });
         const currentData = await currentRes.json();
         if (!currentRes.ok || !currentData.vendor) {
           toast.error("Failed to load business");
