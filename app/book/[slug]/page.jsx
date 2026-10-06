@@ -2,12 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { MapPin, ChevronRight } from "lucide-react";
-
-import Step from "@/components/public_booking/Step";
-
-import Image from "next/image";
-import { Button } from "@/components/ui/button";
+import ServiceSelect from "@/components/public_booking/ServiceSelect";
+import DateTimeSelect from "@/components/public_booking/DateTimeSelect";
+import PaymentSelect from "@/components/public_booking/PaymentSelect";
+import BookingSteps from "@/components/public_booking/BookingSteps";
+import { MapPin } from "lucide-react";
 
 export default function BookingServiceSelection() {
   const router = useRouter();
@@ -24,6 +23,17 @@ export default function BookingServiceSelection() {
   const [locationId, setLocationId] = useState(initialLocationId || "");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [currentStep, setCurrentStep] = useState(1);
+  const [selectedDate, setSelectedDate] = useState(null);
+  const [selectedTime, setSelectedTime] = useState(null);
+
+  const goNext = () => {
+    setCurrentStep((step) => step + 1);
+  };
+
+  const goBack = () => {
+    setCurrentStep((step) => step - 1);
+  };
 
   useEffect(() => {
     const fetchBusiness = async () => {
@@ -68,27 +78,24 @@ export default function BookingServiceSelection() {
     }
   }, [slug, locationId]);
 
-  const getServiceImage = (index) => {
-    const images = ["https://images.unsplash.com/photo-1562322140-8baeececf3df?auto=format&fit=crop&w=300&q=80", "https://images.unsplash.com/photo-1560869713-da86a9ec0744?auto=format&fit=crop&w=300&q=80", "https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=300&q=80", "https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=300&q=80"];
-
-    return images[index % images.length];
-  };
-
   if (loading) {
     return (
       <div className="min-h-screen bg-slate-50 text-slate-900">
-        <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white shadow-sm py-2">
-          <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between py-2">
+        <header className="sticky top-0 z-30 w-full border-b bg-white">
+          <div className="mx-auto flex max-w-[1180px] items-center justify-between py-3">
             <div className="flex items-center gap-4">
-              <a href="#">{/* <Image src="/logo.png" alt="logo" width={100} height={20} className="header-logo w-full dark:hidden" /> */}</a>
+              <div className="hidden items-center gap-2 sm:flex">
+                <span className="bg-gray-100 w-32 h-3 rounded-md"></span>
+              </div>
+              <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
+                {/* <MapPin size={16} /> */}
+                <span className="w-3 h-3 bg-gray-100 rounded-full"></span>
+
+                <span className="bg-gray-100 w-32 h-3"></span>
+              </div>
             </div>
 
-            <nav className="hidden items-center gap-6 md:flex">
-              <Step active number="1" label="Service" />
-              <Step number="2" label="Staff" />
-              <Step number="3" label="Date & Time" />
-              <Step number="4" label="Details" />
-            </nav>
+            <BookingSteps currentStep={currentStep} />
           </div>
         </header>
 
@@ -111,7 +118,7 @@ export default function BookingServiceSelection() {
 
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900">
-      {/* ================= HEADER ================= */}
+      {/* Header */}
       <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white shadow-sm py-2">
         <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between py-2">
           {/* Brand */}
@@ -143,16 +150,11 @@ export default function BookingServiceSelection() {
           </div>
 
           {/* Steps */}
-          <nav className="hidden items-center gap-6 md:flex">
-            <Step active number="1" label="Service" />
-            <Step number="2" label="Staff" />
-            <Step number="3" label="Date & Time" />
-            <Step number="4" label="Details" />
-          </nav>
+          <BookingSteps currentStep={currentStep} />
         </div>
       </header>
 
-      {/* ================= MAIN ================= */}
+      {/* Main */}
       <main className="flex min-h-[calc(100vh-40px)] items-center justify-center p-3 sm:p-5 lg:py-5">
         <div className="flex w-full max-w-[1230px] flex-col overflow-hidden rounded-lg border border-white bg-white shadow-[0_24px_64px_-12px_rgba(30,39,46,0.14)] lg:flex-row">
           {/* ================= LEFT PANEL ================= */}
@@ -187,88 +189,15 @@ export default function BookingServiceSelection() {
 
           {/* ================= RIGHT PANEL ================= */}
           <section className="flex w-full flex-col justify-start bg-white p-5 sm:p-7 lg:w-1/2 lg:p-8">
-            {/* Header */}
-            <div className="mb-4">
-              <div className="flex items-baseline justify-between gap-3">
-                <h1 className="text-xl font-bold tracking-tight text-slate-900">Select a service</h1>
+            {currentStep === 1 && <ServiceSelect services={services} selectedService={selectedService} onSelectService={setSelectedService} onContinue={goNext} />}
 
-                <span className="shrink-0 text-[11px] font-medium text-slate-500">{services.length} available</span>
-              </div>
-            </div>
+            {currentStep === 2 && <DateTimeSelect selectedService={selectedService} selectedDate={selectedDate} selectedTime={selectedTime} onSelectDate={setSelectedDate} onSelectTime={setSelectedTime} onBack={goBack} onContinue={goNext} />}
 
-            {/* ================= SERVICES ================= */}
-            <div className="max-h-[390px] space-y-2 overflow-y-auto pr-1">
-              {services.length === 0 ? (
-                <div className="flex min-h-[200px] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
-                  <p className="text-sm text-slate-500">No services available at this location.</p>
-                </div>
-              ) : (
-                services.map((service, index) => {
-                  const selected = selectedService?.id === service.id;
-
-                  return (
-                    <label
-                      key={service.id}
-                      className={`
-                        group relative flex cursor-pointer items-center justify-between gap-3 rounded-md p-3.5 transition-all
-                        ${selected ? "border border-indigo-600 bg-indigo-50/70 shadow-sm" : "border border-slate-200 bg-white hover:border-indigo-400 hover:bg-slate-50"}
-                      `}
-                    >
-                      {/* Left */}
-                      <div className="flex min-w-0 items-center gap-3">
-                        {/* Radio */}
-                        <input type="radio" name="service" checked={selected} onChange={() => setSelectedService(service)} className="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-
-                        {/* Image */}
-                        <div className="h-[52px] w-[52px] shrink-0 overflow-hidden rounded-lg border border-slate-200 bg-slate-100">
-                          <img src={getServiceImage(index)} alt={service.name} className="h-full w-full object-cover transition-transform duration-200 group-hover:scale-105" />
-                        </div>
-
-                        {/* Information */}
-                        <div className="min-w-0">
-                          <div className="flex flex-wrap items-center gap-2">
-                            <span className="text-sm font-semibold text-slate-900">{service.name}</span>
-
-                            <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{service.duration} MIN</span>
-                          </div>
-
-                          <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{service.depositValue ? `Deposit required: ${service.depositType === "fixed" ? `$${service.depositValue}` : `${service.depositValue}%`}` : "No Deposit Required"}</p>
-                        </div>
-                      </div>
-
-                      {/* Price */}
-                      <div className="shrink-0 pl-2 text-right">
-                        <span className="text-base font-bold text-slate-900">${service.price}</span>
-                      </div>
-                    </label>
-                  );
-                })
-              )}
-            </div>
-
-            {/* ================= ACTION ================= */}
-            <div className="flex flex-col mt-auto gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
-              <div className="flex min-w-0 flex-col">
-                <span className="text-[10px] font-medium uppercase tracking-wide text-slate-500">Selected Package</span>
-
-                <span className="truncate text-sm font-bold text-slate-900">{selectedService ? `${selectedService.name} ($${selectedService.price})` : "No service selected"}</span>
-              </div>
-
-              <div className="flex items-center gap-3">
-                <Button type="primary">
-                  Continue <ChevronRight size="14" />
-                </Button>
-                {/* <button type="button" className="inline-flex items-center justify-center gap-2 rounded-lg bg-primary px-5 py-2.5 text-xs font-semibold text-gray-700 shadow-md transition hover:bg-pink-700 active:scale-95">
-                  <span></span>
-                  <span>→</span>
-                </button> */}
-              </div>
-            </div>
+            {currentStep === 3 && <PaymentSelect selectedService={selectedService} selectedDate={selectedDate} selectedTime={selectedTime} onBack={goBack} />}
           </section>
         </div>
       </main>
-
-      {/* ================= FOOTER ================= */}
+      {/* Foooter */}
       <footer className="border-t border-slate-200 bg-white">
         <div className="mx-auto flex w-full max-w-[1180px] flex-col items-center justify-between gap-3 px-4 py-5 text-center md:flex-row md:px-10 md:text-left">
           <p className="text-sm text-slate-500">© 2026 {business?.name || "Beauty & Wellness"}. Powered by Booksaa.</p>
