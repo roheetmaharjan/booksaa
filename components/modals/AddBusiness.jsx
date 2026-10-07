@@ -49,7 +49,7 @@ export default function AddVendor({ open, setAddOpen }) {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
         if (!res.ok) throw new Error("Failed to fetch categories");
         const data = await res.json();
         setCategories(data.categories || data);
@@ -60,7 +60,7 @@ export default function AddVendor({ open, setAddOpen }) {
     };
     const fetchPlans = async () => {
       try {
-        const res = await fetch("/api/plans");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/plans`);
         if (!res.ok) throw new Error("Failed to fetch plans");
         const data = await res.json();
         setPlans(data.plans || data);
@@ -89,7 +89,7 @@ export default function AddVendor({ open, setAddOpen }) {
     try {
       setEmailChecking(true);
       const res = await fetch(
-        `/api/auth/business-signup?email=${encodeURIComponent(email)}`
+        `${process.env.NEXT_PUBLIC_API_URL}/api/auth/business-signup?email=${encodeURIComponent(email)}`
       );
       const data = await res.json();
 
@@ -128,7 +128,7 @@ export default function AddVendor({ open, setAddOpen }) {
 
     try {
       setAddLoading(true);
-      const res = await fetch("/api/businesses/create", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(form),

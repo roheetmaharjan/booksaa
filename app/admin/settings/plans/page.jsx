@@ -11,7 +11,7 @@ export default function Plan() {
   const [openAdd, setAdd] = useState(false);
   const [savingPlanId, setSavingPlanId] = useState("");
   const fetchPlans = () => {
-    fetch("/api/plans")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/plans`)
       .then((res) => res.json())
       .then((data) =>
         setPlans(
@@ -43,7 +43,7 @@ export default function Plan() {
   const savePlan = async (plan) => {
     try {
       setSavingPlanId(plan.id);
-      const res = await fetch(`/api/plans/${plan.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/plans/${plan.id}`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

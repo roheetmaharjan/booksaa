@@ -92,14 +92,14 @@ export default function AddProfessional({
     mutate: addProfessional,
     loading: addLoading,
     error: addError,
-  } = useMutation(`/api/professionals/create`, { method: "POST" });
+  } = useMutation(`${process.env.NEXT_PUBLIC_API_URL}/api/professionals/create`, { method: "POST" });
 
   // ── Add new role ──────────────────────────────────────────────────────────
   const handleAddProfessionalRole = async () => {
     if (!newRole.trim()) return;
     try {
       setRoleLoading(true);
-      const res = await fetch(`/api/professional-roles`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professional-roles`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: newRole.trim() }),

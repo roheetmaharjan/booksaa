@@ -19,7 +19,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
   const [openAlert, setAlertOpen] = useState(false);
   const [loading, setLoading] = useState(true);
 
-  const { data: fetchedLocations } = useFetch(vendorId ? `/api/businesses/${vendorId}/locations` : null);
+  const { data: fetchedLocations } = useFetch(vendorId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}/locations` : null);
   const [locations, setLocations] = useState([]);
 
   useEffect(() => {
@@ -31,7 +31,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    const url = locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`;
+    const url = locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`;
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
@@ -66,13 +66,13 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
 
   const handleDeleteService = async () => {
     try {
-      const res = await fetch(`/api/services/${selectedService.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/services/${selectedService.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Service deleted successfully");
-        const updated = await fetch(`/api/businesses/${vendorId}`).then((res) => res.json());
+        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`).then((res) => res.json());
         setVendorDetail(updated);
       } else {
         toast.error(data.error || "Failed to delete service");
@@ -97,7 +97,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
                 locations={locations}
                 locationId={locationId || vendor.selectedLocationId}
                 onAdded={async () => {
-                  const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
+                  const updatedVendor = await fetch(locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`).then((r) => r.json());
                   setVendorDetail(updatedVendor);
                 }}
               />
@@ -176,7 +176,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
               locationId={locationId || vendor.selectedLocationId}
               service={selectedService}
               onEdited={async () => {
-                const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
+                const updatedVendor = await fetch(locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`).then((r) => r.json());
                 setVendorDetail(updatedVendor);
               }}
             />

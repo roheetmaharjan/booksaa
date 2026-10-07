@@ -36,7 +36,7 @@ export default function Users() {
   useEffect(() => {
     async function fetchCategories() {
       try {
-        const response = await fetch("/api/categories");
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
         const data = await response.json();
         setCategories(data);
       } catch (error) {
@@ -68,7 +68,7 @@ export default function Users() {
       formData.append("file", imageFile); // 🔑 use key "file"
 
       // 1. Upload the image
-      const uploadRes = await fetch("/api/upload", {
+      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
         method: "POST",
         body: formData,
       });
@@ -80,7 +80,7 @@ export default function Users() {
       }
 
       // Creating category using image URL
-      const categoryRes = await fetch("/api/categories/create", {
+      const categoryRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ name: form.name, image: uploadData.url }),
@@ -99,7 +99,7 @@ export default function Users() {
       setOpen(false);
       toast.success("Category has been created.");
 
-      const updated = await fetch("/api/categories").then((res) => res.json());
+      const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`).then((res) => res.json());
       setCategories(updated);
     } catch (err) {
       console.error("Submit error:", err);
@@ -112,13 +112,13 @@ export default function Users() {
   };
   const handleDelete = async (selectedCategoryId) => {
     try {
-      const res = await fetch(`/api/categories/${selectedCategoryId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${selectedCategoryId}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Category deleted successfully");
-        const updated = await fetch("/api/categories").then((res) =>
+        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`).then((res) =>
           res.json()
         );
         setCategories(updated);
@@ -147,7 +147,7 @@ export default function Users() {
     }
     const categoryId = selectedCategory?.id;
     try {
-      const res = await fetch(`/api/categories/${categoryId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${categoryId}`, {
         method: "PATCH",
         body: formData,
       });
@@ -155,7 +155,7 @@ export default function Users() {
       if (res.ok) {
         toast.success("Category updated successfully");
         setEditOpen(false);
-        const updated = await fetch("/api/categories").then((res) =>
+        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`).then((res) =>
           res.json()
         );
         setCategories(updated);

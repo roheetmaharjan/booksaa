@@ -40,7 +40,7 @@ export default function BookingServiceSelection() {
       try {
         setLoading(true);
 
-        const response = await fetch(`/api/public/bookings/${slug}?locationId=${locationId}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/public/bookings/${slug}?locationId=${locationId}`);
 
         if (!response.ok) {
           throw new Error("Failed to fetch business");

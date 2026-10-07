@@ -22,7 +22,7 @@ export default function VendorsList() {
   useEffect(() => {
     const fetchVendors = async () => {
       try {
-        const res = await fetch("/api/businesses");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses`);
         if (!res.ok) throw new Error("Failed to fetch vendors");
         const data = await res.json();
         setVendors(data.vendors || data);
@@ -44,13 +44,13 @@ export default function VendorsList() {
 
   const handleDelete = async (vendorId) => {
     try {
-      const res = await fetch(`/api/businesses/${vendorId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Business deleted successfully");
-        const updated = await fetch("/api/businesses").then((res) =>
+        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses`).then((res) =>
           res.json()
         );
         setVendors(updated);

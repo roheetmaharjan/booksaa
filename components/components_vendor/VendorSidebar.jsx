@@ -13,7 +13,7 @@ async function resolveBusinessImage(imageKey) {
   if (!imageKey.startsWith("vendors/")) return imageKey;
 
   try {
-    const response = await fetch("/api/storage/view", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

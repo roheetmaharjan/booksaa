@@ -92,8 +92,8 @@ export default function BusinessProfilePage() {
   const ownerName = [form?.user?.firstname, form?.user?.lastname].filter(Boolean).join(" ") || "Not assigned";
   const selectedLocationPhone = selectedLocation?.phone || form.phone || "-";
 
-  const { mutate: updateBusiness, loading: savingBusiness } = useMutation(vendorId ? `/api/businesses/${vendorId}` : "", { method: "PUT" });
-  const { mutate: updateLocation, loading: savingLocation } = useMutation(selectedLocationId ? `/api/locations/${selectedLocationId}` : "", { method: "PATCH" });
+  const { mutate: updateBusiness, loading: savingBusiness } = useMutation(vendorId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}` : "", { method: "PUT" });
+  const { mutate: updateLocation, loading: savingLocation } = useMutation(selectedLocationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${selectedLocationId}` : "", { method: "PATCH" });
   const locations = form.locations || [];
 
   const validationRules = {

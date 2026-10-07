@@ -55,7 +55,7 @@ export default function PhotoUpload({ onUploadComplete }) {
     try {
       for (const item of files) {
         // 1. Get presigned upload URL
-        const uploadResponse = await fetch("/api/storage/upload", {
+        const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/upload`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -88,7 +88,7 @@ export default function PhotoUpload({ onUploadComplete }) {
         }
 
         // 3. Save storage key to Vendors.photos
-        const completeResponse = await fetch("/api/storage/complete", {
+        const completeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/complete`, {
           method: "POST",
           headers: {
             "Content-Type": "application/json",

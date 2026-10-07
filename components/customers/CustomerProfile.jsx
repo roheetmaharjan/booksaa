@@ -74,7 +74,7 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
           toast.error("Failed to load business");
           return;
         }
-        const url = effectiveLocationId ? `/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}` : `/api/businesses/${currentData.vendor.id}`;
+        const url = effectiveLocationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}`;
         const vendorRes = await fetch(url, { cache: "no-store" });
         const vendorData = await vendorRes.json();
         if (!vendorRes.ok) {

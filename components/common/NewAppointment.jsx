@@ -192,7 +192,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
 
   const loadCustomers = useCallback(async () => {
     try {
-      const res = await fetch("/api/customers");
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers`);
       const data = await res.json();
       setCustomers(data.customers || []);
     } catch {}
@@ -220,7 +220,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       setCustomerErrors({});
       setDuplicateState(null);
       try {
-        const res = await fetch("/api/customers", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ ...customerForm, ignoreDuplicate }),
@@ -286,7 +286,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
 
       setSubmittingBooking(true);
       try {
-        const res = await fetch("/api/bookings", {
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({

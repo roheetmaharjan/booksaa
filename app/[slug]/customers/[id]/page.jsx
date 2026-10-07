@@ -17,7 +17,7 @@ export default function CustomerProfilePage() {
     try {
       setLoading(true);
 
-      const res = await fetch(`/api/customers/${params.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers/${params.id}`, {
         cache: "no-store",
       });
 
@@ -45,7 +45,7 @@ export default function CustomerProfilePage() {
     if (!customer || !noteContent.trim()) return;
 
     try {
-      const res = await fetch(`/api/customers/${customer.id}/notes`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers/${customer.id}/notes`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

@@ -48,7 +48,7 @@ export default function UpgradePage() {
     setError(null);
 
     try {
-      const session = await api.post("/api/businesses/checkout/create-session", {
+      const session = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/checkout/create-session`, {
         planId,
         locationCount: selection.locationCount,
         professionalCount: selection.professionalCount,

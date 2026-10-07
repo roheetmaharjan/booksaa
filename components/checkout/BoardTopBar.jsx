@@ -66,7 +66,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, staffOptions, sele
   useEffect(() => {
     async function loadProfessionals() {
       try {
-        const response = await fetch(`/api/professionals?locationId=${locationId}`);
+        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professionals?locationId=${locationId}`);
         const result = await response.json();
         console.log(result);
       } catch {}
@@ -95,7 +95,7 @@ export function BoardTopBar({ query, onQuery, staff, onStaff, staffOptions, sele
           return;
         }
 
-        const url = locationId ? `/api/businesses/${currentData.vendor.id}?locationId=${locationId}` : `/api/businesses/${currentData.vendor.id}`;
+        const url = locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}`;
 
         const vendorRes = await fetch(url, {
           cache: "no-store",

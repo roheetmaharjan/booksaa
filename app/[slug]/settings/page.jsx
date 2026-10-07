@@ -22,7 +22,7 @@ export default function Settings() {
   useEffect(() => {
     async function loadSettings() {
       try {
-        const res = await fetch("/api/businesses/stripe-setup");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/stripe-setup`);
         const data = await res.json();
         if (res.ok) {
           setPublishableKey(data.stripePublishableKey || "");
@@ -49,7 +49,7 @@ export default function Settings() {
 
     setSaving(true);
     try {
-      const res = await fetch("/api/businesses/stripe-setup", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/stripe-setup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

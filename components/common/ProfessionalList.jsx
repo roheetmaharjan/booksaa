@@ -23,7 +23,7 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
     data: fetchedRoles,
     rolesLoading,
     error,
-  } = useFetch("/api/professional-roles", {
+  } = useFetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professional-roles`, {
     lazy: true,
   });
 
@@ -40,7 +40,7 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
   useEffect(() => {
     if (!vendorId) return;
     setLoading(true);
-    const url = locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`;
+    const url = locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`;
     fetch(url)
       .then((res) => res.json())
       .then((data) => {
@@ -95,13 +95,13 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
 
   const handleDeleteProfessional = async () => {
     try {
-      const res = await fetch(`/api/professionals/${selectedProfessional.id}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professionals/${selectedProfessional.id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Professional deleted successfully");
-        const updated = await fetch(`/api/businesses/${vendorId}`).then((res) => res.json());
+        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`).then((res) => res.json());
         setVendorDetail(updated);
       } else {
         toast.error(data.error || "Failed to delete professional");
@@ -137,7 +137,7 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
                   vendor={vendor}
                   locationId={locationId || vendor.selectedLocationId}
                   onAdded={async () => {
-                    const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
+                    const updatedVendor = await fetch(locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`).then((r) => r.json());
                     setVendorDetail(updatedVendor);
                   }}
                 />
@@ -203,7 +203,7 @@ export default function ProfessionalList({ vendorId, locationId, canManage = fal
           roles={roles}
           locationId={locationId || vendor.selectedLocationId}
           onEdited={async () => {
-            const updatedVendor = await fetch(locationId ? `/api/businesses/${vendorId}?locationId=${locationId}` : `/api/businesses/${vendorId}`).then((r) => r.json());
+            const updatedVendor = await fetch(locationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${locationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`).then((r) => r.json());
             setVendorDetail(updatedVendor);
           }}
         />

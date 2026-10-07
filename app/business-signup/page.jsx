@@ -76,7 +76,7 @@ export default function BusinessSignupPage() {
   useEffect(() => {
     async function loadOptions() {
       try {
-        const res = await fetch("/api/auth/business-signup");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/business-signup`);
         if (!res.ok) throw new Error("Unable to load signup options.");
 
         const options = await res.json();
@@ -138,7 +138,7 @@ export default function BusinessSignupPage() {
 
     try {
       setEmailChecking(true);
-      const res = await fetch(`/api/auth/business-signup?email=${encodeURIComponent(email)}`);
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/business-signup?email=${encodeURIComponent(email)}`);
       const data = await res.json();
 
       if (!res.ok) throw new Error(data.error || "Unable to validate email.");
@@ -247,7 +247,7 @@ export default function BusinessSignupPage() {
 
     try {
       setSubmitting(true);
-      const res = await fetch("/api/auth/business-signup", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/business-signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -114,7 +114,7 @@ export default function GalleryGrid({ photos = [], dateFilter }) {
     try {
       setDeleting(true);
 
-      const response = await fetch("/api/storage/delete", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/delete`, {
         method: "DELETE",
         headers: {
           "Content-Type": "application/json",

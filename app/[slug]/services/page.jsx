@@ -44,8 +44,8 @@ export default function ServicesPage() {
 
         // Fetch vendor with services filtered by location
         const url = effectiveLocationId
-          ? `/api/businesses/${vendorId}?locationId=${effectiveLocationId}`
-          : `/api/businesses/${vendorId}`;
+          ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${effectiveLocationId}`
+          : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`;
 
         const vendorRes = await fetch(url, {
           cache: "no-store",
