@@ -58,7 +58,7 @@ export default function BillingUsagePage() {
   const loadBillingData = async () => {
     try {
       setIsLoading(true);
-      const [fullData, methods] = await Promise.all([api.get(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`), api.get(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/payment-methods/list`)]);
+      const [fullData, methods] = await Promise.all([api.get('/api/businesses/current'), api.get('/api/businesses/payment-methods/list')]);
 
       setData(fullData);
       setPaymentMethods(methods.paymentMethods || []);
@@ -82,7 +82,7 @@ export default function BillingUsagePage() {
 
   const handleToggleAutoRenewal = async () => {
     try {
-      const result = await api.put(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/toggle`, {
+      const result = await api.put('/api/businesses/toggle', {
         enabled: !autoRenewEnabled,
       });
 
@@ -95,7 +95,7 @@ export default function BillingUsagePage() {
   const handleDeletePaymentMethod = async (methodId) => {
     if (!window.confirm("Are you sure you want to delete this payment method?")) return;
     try {
-      await api.delete(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/payment-methods/${methodId}`);
+      await api.delete('/api/businesses/payment-methods/${methodId}');
       setPaymentMethods((prev) => prev.filter((m) => m.id !== methodId));
     } catch (err) {
       setError(err.message);

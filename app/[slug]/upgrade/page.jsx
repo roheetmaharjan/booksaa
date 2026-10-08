@@ -33,7 +33,7 @@ export default function UpgradePage() {
 
   const fetchVendorInfo = async () => {
     try {
-      const response = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`);
+      const response = await api.get('/api/businesses/current');
       setData(response);
     } catch (err) {
       setError(err.message || "Failed to load business information");
@@ -48,7 +48,7 @@ export default function UpgradePage() {
     setError(null);
 
     try {
-      const session = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/checkout/create-session`, {
+      const session = await api.post('/api/businesses/checkout/create-session', {
         planId,
         locationCount: selection.locationCount,
         professionalCount: selection.professionalCount,

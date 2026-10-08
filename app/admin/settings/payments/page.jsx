@@ -28,7 +28,7 @@ function PaymentSettingsContent() {
   const loadStatus = async () => {
     try {
       setIsLoading(true);
-      const data = await api.get(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stripe/status`);
+      const data = await api.get('/api/admin/stripe/status');
       if (data.configured) {
         setPublishableKey(data.publishableKey || '');
         setLiveMode(data.live || false);
@@ -53,7 +53,7 @@ function PaymentSettingsContent() {
 
     try {
       setIsSaving(true);
-      await api.post(`${process.env.NEXT_PUBLIC_API_URL}/api/admin/stripe/setup`, {
+      await api.post('/api/admin/stripe/setup', {
         secretKey,
         publishableKey,
         live: liveMode,

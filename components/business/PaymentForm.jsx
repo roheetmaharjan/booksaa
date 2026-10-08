@@ -55,7 +55,7 @@ function PaymentFormContent({ planId, locationCount, professionalCount, onSucces
         }); // <-- ADD THIS
 
         // Confirm payment on backend
-        const confirmation = await api.post(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/checkout/confirm-payment`, {
+        const confirmation = await api.post('/api/businesses/checkout/confirm-payment', {
           paymentIntentId: result.paymentIntent.id,
           planId,
           paymentMethodId: result.paymentIntent.payment_method,
