@@ -246,23 +246,22 @@ export default function BusinessSignupPage() {
     } catch (error) {
       toast.error(error.message);
     } finally {
-      setSubmitting(false);
     }
   };
 
   return (
-    <main className="min-h-screen bg-primary text-slate-950 p-10">
+    <main className="min-h-screen bg-[#062B3D] text-slate-950 p-10">
       <div className="w-full mx-auto">
-        <div className="mx-auto w-full flex flex-row">
+        <div className="mx-auto w-full flex flex-row rounded-lg shadow-sm border-slate-200 overflow-hidden">
           {/* ── Sidebar ── */}
-          <aside className="flex-row flex lg:flex-col">
+          <aside className="flex-row flex lg:flex-col bg-gray-50">
             <header>
               <div className="flex flex-row gap-2 items-center justify-center">
                 <Button variant="ghost" size="sm" className="w-7 h-7 border border-white text-white inline-flex justify-center items-center gap-2 p-0 text-sm text-slate-600" onClick={() => router.back()}>
                   <ArrowLeft className="h-3 w-3" />
                 </Button>
                 <Link href="/" className="mt-5 inline-flex">
-                  <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority />
+                  {/* <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority /> */}
                 </Link>
               </div>
             </header>
@@ -277,10 +276,10 @@ export default function BusinessSignupPage() {
 
                     return (
                       <div key={item.title} className="flex min-w-[132px] flex-1 items-center gap-3">
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${complete ? "border-emerald-600 bg-emerald-600 text-white" : active ? "border-slate-950 bg-slate-950 text-white" : "border-slate-200 bg-white text-slate-500"}`}>{complete ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">{stepNumber}</span>}</div>
+                        <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${complete ? "border-emerald-600 bg-emerald-600 text-slate-500" : active ? "border-primary bg-primary text-slate-500" : "border-slate-200 bg-white text-slate-500"}`}>{complete ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">{stepNumber}</span>}</div>
                         <div>
-                          <p className="text-sm uppercase font-semibold text-white">{item.title}</p>
-                          <p className="text-xs text-white">{item.subtitle}</p>
+                          <p className="text-sm uppercase font-semibold text-slate-500">{item.title}</p>
+                          <p className="text-xs text-slate-500">{item.subtitle}</p>
                         </div>
                       </div>
                     );
@@ -291,7 +290,7 @@ export default function BusinessSignupPage() {
           </aside>
           {/* ── Main form ── */}
           <section className="h-screen w-full flex-1">
-            <Card className="rounded-lg border-slate-200 shadow-sm">
+            <Card className="rounded-none h-full shadow-none">
               <CardContent className="p-0">
                 <form onSubmit={handleSubmit} className="px-5 py-6 sm:px-8">
                   {loading ? (
