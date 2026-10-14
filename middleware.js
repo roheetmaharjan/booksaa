@@ -23,6 +23,7 @@ function isPublicPath(pathname) {
     pathname === "/" ||
     pathname.startsWith("/auth") ||
     pathname.startsWith("/business-signup") ||
+    pathname.startsWith("/book") ||
     pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/pay") ||
     pathname === "/home" ||

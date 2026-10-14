@@ -134,7 +134,7 @@ export default function BusinessProfilePage() {
   useEffect(() => {
     const fetchLookups = async () => {
       try {
-        const [categoriesRes, plansRes] = await Promise.all([fetch("/api/categories", { cache: "no-store" }), fetch("/api/plans", { cache: "no-store" })]);
+        const [categoriesRes, plansRes] = await Promise.all([fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, { cache: "no-store" }), fetch("/api/plans", { cache: "no-store" })]);
         const [categoriesData, plansData] = await Promise.all([categoriesRes.json(), plansRes.json()]);
         setCategories(categoriesRes.ok ? categoriesData.categories || categoriesData : []);
         setPlans(plansRes.ok ? plansData.plans || plansData : []);
@@ -150,7 +150,7 @@ export default function BusinessProfilePage() {
   const refreshBusiness = async (locationId = selectedLocationFromSidebar) => {
     if (!vendorId) return;
     const locationQuery = locationId ? `?locationId=${encodeURIComponent(locationId)}` : "";
-    const res = await fetch(`/api/businesses/${encodeURIComponent(vendorId)}${locationQuery}`, { cache: "no-store" });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${encodeURIComponent(vendorId)}${locationQuery}`, { cache: "no-store" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Unable to load business profile.");
     setForm(normalizeBusinessForm(data));
@@ -170,7 +170,7 @@ export default function BusinessProfilePage() {
     }
 
     try {
-      const response = await fetch("/api/storage/view", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -198,7 +198,7 @@ export default function BusinessProfilePage() {
     setUploadingProfileImage(true);
 
     try {
-      const uploadResponse = await fetch("/api/storage/upload", {
+      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -224,7 +224,7 @@ export default function BusinessProfilePage() {
         throw new Error("Failed to upload profile image.");
       }
 
-      const completeResponse = await fetch("/api/storage/complete", {
+      const completeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -252,7 +252,7 @@ export default function BusinessProfilePage() {
 
   try {
     const res = await fetch(
-      `/api/storage/list?vendorId=${encodeURIComponent(vendorId)}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/storage/list?vendorId=${encodeURIComponent(vendorId)}`,
       { cache: "no-store" }
     );
 
@@ -269,7 +269,7 @@ export default function BusinessProfilePage() {
       return;
     }
 
-    const viewRes = await fetch("/api/storage/view", {
+    const viewRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",

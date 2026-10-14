@@ -12,7 +12,7 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { planId } = await request.json();
+    const { planId, locationCount: requestedLocationCount, professionalCount: requestedProfessionalCount } = await request.json();
 
     if (!planId) {
       return NextResponse.json({ error: 'planId is required' }, { status: 400 });
@@ -70,25 +70,43 @@ export async function POST(request) {
     const latestSubscription = vendor.subscriptions?.[0];
     const entitlements = latestSubscription?.entitlements ?? [];
 
-    const professionalLimit =
+    const currentProfessionalLimit =
       entitlements
         .filter((e) => e.type === 'PROFESSIONAL')
         .reduce((sum, e) => sum + Number(e.quantity), 0) ||
       Number(newPlan.professional || 1);
 
-    const locationLimit =
+    const currentLocationLimit =
       entitlements
         .filter((e) => e.type === 'LOCATION')
         .reduce((sum, e) => sum + Number(e.quantity), 0) ||
       Number(newPlan.location || 1);
+
+    const requestedProfessionalCountValue = requestedProfessionalCount === undefined
+      ? currentProfessionalLimit
+      : Number(requestedProfessionalCount);
+    const requestedLocationCountValue = requestedLocationCount === undefined
+      ? currentLocationLimit
+      : Number(requestedLocationCount);
+
+    if (
+      !Number.isInteger(requestedProfessionalCountValue) ||
+      !Number.isInteger(requestedLocationCountValue) ||
+      requestedProfessionalCountValue < Math.max(currentProfessionalLimit, vendor.professionals.length) ||
+      requestedLocationCountValue < Math.max(currentLocationLimit, vendor.locations.length)
+    ) {
+      return NextResponse.json({ error: 'Selected subscription limits are invalid.' }, { status: 400 });
+    }
+    const professionalCount = Math.max(requestedProfessionalCountValue, Number(newPlan.professional || 1));
+    const locationCount = Math.max(requestedLocationCountValue, Number(newPlan.location || 1));
 
     // Calculate total price for the new plan with existing usage
     const pricing = calculateBusinessSubscription({
       plan: newPlan,
       locations: vendor.locations,
       professionals: vendor.professionals,
-      professionalLimit,
-      locationLimit,
+      professionalLimit: professionalCount,
+      locationLimit: locationCount,
     });
 
     // Get Stripe publishable key
@@ -109,6 +127,9 @@ export async function POST(request) {
         planId,
         planName: newPlan.name,
         vendorName: vendor.name,
+        locationCount: String(locationCount),
+        professionalCount: String(professionalCount),
+        expectedAmount: String(Math.round(pricing.totalPrice * 100)),
       }
     );
 
@@ -118,6 +139,8 @@ export async function POST(request) {
       amount: Math.round(pricing.totalPrice * 100),
       currency: 'usd',
       planName: newPlan.name,
+      locationCount,
+      professionalCount,
       vendorEmail: vendor.user.email,
       // Send breakdown so frontend can display it
       pricing: {

@@ -18,7 +18,11 @@ export default function UpgradeButton({
     setIsLoading(true);
     const slug = vendor?.slug;
     if (slug) {
-      router.push(`/${slug}/upgrade`);
+      const query = new URLSearchParams({
+        businessSlug: slug,
+        returnTo: `/${slug}/billing-usage`,
+      });
+      router.push(`/upgrade?${query.toString()}`);
     } else {
       setIsLoading(false);
     }

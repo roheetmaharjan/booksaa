@@ -1,8 +1,10 @@
 import { NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { confirmPaymentIntent, getStripeClient, attachPaymentMethod, setDefaultPaymentMethod } from "@/lib/stripe-client";
 import { createVendorSubscription } from "@/lib/subscriptions";
+import { ACTIVE_SUBSCRIPTION_STATUSES, getSubscriptionState } from "@/lib/subscription-state";
 import { sendSubscriptionUpgradeEmail } from "@/lib/emails/subscriptionUpgradeSuccess";
 
 export async function POST(request) {
@@ -13,7 +15,7 @@ export async function POST(request) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    const { paymentIntentId, planId, paymentMethodId, saveCard, locationCount, professionalCount } = await request.json();
+    const { paymentIntentId, planId, paymentMethodId, saveCard } = await request.json();
 
     if (!paymentIntentId || !planId) {
       return NextResponse.json({ error: "paymentIntentId and planId are required" }, { status: 400 });
@@ -56,14 +58,48 @@ export async function POST(request) {
       return NextResponse.json({ error: `Payment failed with status: ${paymentIntent.status}` }, { status: 400 });
     }
 
-    const stripeCustomerId = paymentIntent.customer;
+    const metadata = paymentIntent.metadata || {};
+    if (
+      metadata.vendorId !== vendor.id ||
+      metadata.planId !== plan.id ||
+      metadata.expectedAmount !== String(paymentIntent.amount) ||
+      paymentIntent.currency !== "usd" ||
+      (vendor.stripeCustomerId && paymentIntent.customer !== vendor.stripeCustomerId)
+    ) {
+      return NextResponse.json({ error: "This payment does not match the selected business and plan." }, { status: 403 });
+    }
+
+    const paymentHistory = await prisma.subscriptionPaymentHistory.findFirst({
+      where: { stripePaymentIntentId: paymentIntentId },
+      select: { status: true },
+    });
+    if (paymentHistory?.status === "SUCCEEDED") {
+      return NextResponse.json({
+        success: true,
+        message: "Subscription upgraded successfully",
+        planName: plan.name,
+      });
+    }
+
+    const confirmedLocationCount = Number(metadata.locationCount);
+    const confirmedProfessionalCount = Number(metadata.professionalCount);
+    if (
+      !Number.isInteger(confirmedLocationCount) ||
+      !Number.isInteger(confirmedProfessionalCount) ||
+      confirmedLocationCount < Number(plan.location || 1) ||
+      confirmedProfessionalCount < Number(plan.professional || 1)
+    ) {
+      return NextResponse.json({ error: "The paid subscription limits are invalid." }, { status: 400 });
+    }
+
+    const confirmedPaymentMethodId = paymentMethodId || paymentIntent.payment_method;
 
     // Attach payment method if provided and saveCard is true
-    if (paymentMethodId && saveCard) {
+    if (confirmedPaymentMethodId && saveCard) {
       try {
         const stripe = await getStripeClient();
 
-        await attachPaymentMethod(paymentMethodId, vendor.id);
+        await attachPaymentMethod(confirmedPaymentMethodId, vendor.id);
 
         // Set as default if no default exists
         const existingMethods = await prisma.vendorPaymentMethod.findFirst({
@@ -71,16 +107,16 @@ export async function POST(request) {
         });
 
         if (!existingMethods) {
-          await setDefaultPaymentMethod(paymentMethodId, vendor.id);
+          await setDefaultPaymentMethod(confirmedPaymentMethodId, vendor.id);
         }
         // const stripe = getStripeAccount();
-        const pm = await stripe.paymentMethods.retrieve(paymentMethodId);
+        const pm = await stripe.paymentMethods.retrieve(confirmedPaymentMethodId);
         
         // Save payment method to database
         await prisma.vendorPaymentMethod.create({
           data: {
             vendorId: vendor.id,
-            stripePaymentMethodId: paymentMethodId,
+            stripePaymentMethodId: confirmedPaymentMethodId,
             isDefault: !existingMethods,
             brand: pm.card?.brand ?? null,
             last4Digits: pm.card?.last4 ?? null,      
@@ -95,61 +131,67 @@ export async function POST(request) {
 
     // Calculate new expiry date
     const now = new Date();
-    const startDate =
-      vendor.subscriptionExpiresAt &&
-      new Date(vendor.subscriptionExpiresAt) > now
+    const subscriptionState = getSubscriptionState({
+      subscriptionExpiresAt: vendor.subscriptionExpiresAt,
+    });
+    const startDate = subscriptionState.isExpired
+      ? now
+      : vendor.subscriptionExpiresAt
         ? new Date(vendor.subscriptionExpiresAt)
         : now;
 
     const expiryDate = new Date(startDate);
     expiryDate.setDate(expiryDate.getDate() + plan.duration);
 
-    // Update vendor with new plan and expiry
-    await prisma.vendors.update({
-      where: { id: vendor.id },
-      data: {
-        planId: planId,
-        subscriptionExpiresAt: expiryDate,
-        autoRenewEnabled: true,
-        status: "ACTIVE",
-      },
-    });
-
-    // Create/update subscription inside a transaction
     await prisma.$transaction(async (tx) => {
+      const existingPayment = await tx.subscriptionPaymentHistory.findFirst({
+        where: { stripePaymentIntentId: paymentIntentId, status: "SUCCEEDED" },
+        select: { id: true },
+      });
+      if (existingPayment) return;
+
+      await tx.vendors.update({
+        where: { id: vendor.id },
+        data: {
+          planId,
+          subscriptionExpiresAt: expiryDate,
+          autoRenewEnabled: true,
+          status: "ACTIVE",
+        },
+      });
+
       // Deactivate any existing active subscriptions first
       await tx.vendorSubscription.updateMany({
         where: {
           vendorId: vendor.id,
-          status: { in: ["ACTIVE", "TRIAL_ACTIVE", "TRIAL_EXPIRING"] },
+          status: { in: ACTIVE_SUBSCRIPTION_STATUSES },
         },
         data: { status: "INACTIVE" },
       });
 
-      await createVendorSubscription(tx, {
+      const subscription = await createVendorSubscription(tx, {
         vendorId: vendor.id,
         plan,
         planId: plan.id,
         status: "ACTIVE",
-        locationCount,
-        professionalCount,
+        locationCount: confirmedLocationCount,
+        professionalCount: confirmedProfessionalCount,
         expiryDate,
       });
-    });
 
-    // Create payment history record
-    await prisma.subscriptionPaymentHistory.create({
-      data: {
-        vendorId: vendor.id,
-        subscriptionId: vendor.subscriptions[0]?.id,
-        type: "INITIAL",
-        amount: paymentIntent.amount / 100,
-        currency: paymentIntent.currency.toUpperCase(),
-        stripePaymentIntentId: paymentIntentId,
-        status: "SUCCEEDED",
-        chargedAt: new Date(paymentIntent.created * 1000),
-      },
-    });
+      await tx.subscriptionPaymentHistory.create({
+        data: {
+          vendorId: vendor.id,
+          subscriptionId: subscription.id,
+          type: "INITIAL",
+          amount: paymentIntent.amount / 100,
+          currency: paymentIntent.currency.toUpperCase(),
+          stripePaymentIntentId: paymentIntentId,
+          status: "SUCCEEDED",
+          chargedAt: new Date(paymentIntent.created * 1000),
+        },
+      });
+    }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
     // Send confirmation email
     try {
