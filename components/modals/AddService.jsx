@@ -72,7 +72,7 @@ export default function AddService({ open, setAddServiceOpen,vendorId, locations
     setLoading(true);
 
     try {
-      const res = await fetch("/api/services/create", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/services/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ ...serviceForm, locationId: serviceForm.locationId || locationId, vendorId }),

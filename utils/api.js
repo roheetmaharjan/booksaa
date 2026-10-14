@@ -1,5 +1,5 @@
 // utils/api.js
-const BASE_URL = process.env.NEXT_PUBLIC_BASE_URL || "";
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
 
 async function apiRequest(method, path, data) {
   const options = {

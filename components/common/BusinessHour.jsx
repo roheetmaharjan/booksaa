@@ -68,7 +68,7 @@ export default function BusinessHours({ vendorId, locationId, initialHours = [],
 
     try {
       setSaving(true);
-      const res = await fetch("/api/business-hours", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/business-hours`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

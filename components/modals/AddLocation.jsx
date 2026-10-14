@@ -86,7 +86,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
     mutate: addLocation,
     loading: addLoading,
     error: addError,
-  } = useMutation(`/api/locations/create`, { method: "POST" });
+  } = useMutation(`${process.env.NEXT_PUBLIC_API_URL}/api/locations/create`, { method: "POST" });
 
   // Debounce function for suggestions
   function debounce(fn, delay) {

@@ -84,7 +84,7 @@ export default function VendorPage() {
     const fetchRoles = async () => {
       setRolesLoading(true);
       try {
-        const res = await fetch("/api/professional-roles", { cache: "no-store" });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professional-roles`, { cache: "no-store" });
         const json = await res.json();
         if (!res.ok) throw new Error(json.error || "Unable to load roles.");
         setRoles(Array.isArray(json) ? json : []);

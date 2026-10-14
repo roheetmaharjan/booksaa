@@ -37,7 +37,7 @@ export default function Users() {
     role: "",
   });
   useEffect(() => {
-    fetch("/api/users")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`)
       .then((res) => res.json())
       .then((data) => setUsers(data))
       .catch((error) => console.error("Failed to fetch users:", error));
@@ -53,7 +53,7 @@ export default function Users() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    await fetch("/api/users/invite", {
+    await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/invite`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
@@ -67,13 +67,13 @@ export default function Users() {
 
   const handleDelete = async (userId) => {
     try {
-      const res = await fetch(`/api/users/${userId}`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users/${userId}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Users deleted successfully");
-        const updated = await fetch("/api/users").then((res) => res.json());
+        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/users`).then((res) => res.json());
         setUsers(updated);
       } else {
         toast.error(data.error || "failed to delete user");

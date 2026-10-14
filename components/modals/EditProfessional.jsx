@@ -71,7 +71,7 @@ export default function EditProfessional({
     mutate: editProfessional,
     loading: editLoading,
     error: editError,
-  } = useMutation(`/api/professionals/${professional?.id}`, {
+  } = useMutation(`${process.env.NEXT_PUBLIC_API_URL}/api/professionals/${professional?.id}`, {
     method: "PATCH",
   });
 

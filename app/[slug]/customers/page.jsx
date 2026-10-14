@@ -90,7 +90,7 @@ export default function CustomersPage() {
   const [importDuplicates, setImportDuplicates] = useState([]);
 
 
-  const { mutate: createCustomer, loading: savingCustomer } = useMutation("/api/customers", { method: "POST" });
+  const { mutate: createCustomer, loading: savingCustomer } = useMutation(`${process.env.NEXT_PUBLIC_API_URL}/api/customers`, { method: "POST" });
 
   const resources = useMemo(
     () =>
@@ -115,8 +115,8 @@ export default function CustomersPage() {
           return;
         }
         const url = effectiveLocationId
-          ? `/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}`
-          : `/api/businesses/${currentData.vendor.id}`;
+          ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}`
+          : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}`;
         const vendorRes = await fetch(url, { cache: "no-store" });
         const vendorData = await vendorRes.json();
         if (!vendorRes.ok) {
@@ -141,7 +141,7 @@ export default function CustomersPage() {
     setLoading(true);
     try {
       const qs = encodeQuery({ q: query, status, sort, page, pageSize: pagination.pageSize });
-      const res = await fetch(`/api/customers?${qs}`, { cache: "no-store" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers?${qs}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to load customers.");
       setCustomers(data.customers || []);
@@ -162,7 +162,7 @@ export default function CustomersPage() {
   const loadProfile = async (id) => {
     setProfileLoading(true);
     try {
-      const res = await fetch(`/api/customers/${id}`, { cache: "no-store" });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers/${id}`, { cache: "no-store" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Unable to load customer profile.");
       setSelectedCustomer(data.customer);
@@ -222,7 +222,7 @@ export default function CustomersPage() {
       return;
     }
     try {
-      const res = await fetch(`/api/customers/${selectedCustomer.id}/notes`, {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers/${selectedCustomer.id}/notes`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ content: noteContent }),
@@ -262,7 +262,7 @@ export default function CustomersPage() {
       const formData = new FormData();
       formData.append("file", importFile);
       formData.append("ignoreDuplicates", String(ignoreDuplicates));
-      const res = await fetch("/api/customers/import", { method: "POST", body: formData });
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/customers/import`, { method: "POST", body: formData });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Import failed.");
       setImportDuplicates(data.duplicates || []);
@@ -275,7 +275,7 @@ export default function CustomersPage() {
   };
 
   const exportCustomers = (format) => {
-    window.location.href = `/api/customers/export?format=${format}`;
+    window.location.href = `${process.env.NEXT_PUBLIC_API_URL}/api/customers/export?format=${format}`;
   };
 
   // ── Render ───────────────────────────────────────────────────────

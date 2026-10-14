@@ -58,7 +58,7 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
   const startQrPayment = async () => {
     setQrError("");
     try {
-      const response = await fetch(`/api/bookings/${appt.id}/qr-payment`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: amountPaidValue, bookingIds: appt.bookingIds }) });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings/${appt.id}/qr-payment`, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: amountPaidValue, bookingIds: appt.bookingIds }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to create QR payment");
       const imageUrl = await QRCode.toDataURL(result.checkoutUrl, { width: 320, margin: 2 });
@@ -71,7 +71,7 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
   useEffect(() => {
     if (!qrPayment) return undefined;
     const poll = async () => {
-      const response = await fetch(`/api/bookings/${appt.id}/qr-payment/${qrPayment.sessionId}`);
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings/${appt.id}/qr-payment/${qrPayment.sessionId}`);
       const result = await response.json();
       if (result.paid) {
         setQrPayment(null);
