@@ -1,6 +1,6 @@
 import { prisma } from "@/lib/prisma";
 import { NextResponse } from "next/server";
-import { AccountStatus } from "@/constants/enums";
+import { getSubscriptionState } from "@/lib/subscription-state";
 
 export async function GET(req) {
   try {
@@ -26,6 +26,7 @@ export async function GET(req) {
         },
         joinedAt: true,
         trialEndsAt: true,
+        status: true,
       },
     });
 
@@ -44,21 +45,10 @@ export async function GET(req) {
         ? vendor.trialEndsAt.toISOString().slice(0, 10)
         : null;
 
-      let accountStatus = vendor.status;
-      if (vendor.trialEndsAt) {
-        const now = new Date();
-        const trialEnd = new Date(vendor.trialEndsAt);
-        if (now > trialEnd) {
-          accountStatus = AccountStatus.TRIAL_EXPIRED;
-        } else {
-          const diffMs = trialEnd - now;
-          const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
-          accountStatus =
-            diffDays <= 3
-              ? AccountStatus.TRIAL_EXPIRING
-              : AccountStatus.TRIAL_ACTIVE;
-        }
-      }
+      const accountStatus = getSubscriptionState({
+        subscriptionStatus: vendor.status,
+        trialEndsAt: vendor.trialEndsAt,
+      }).accountStatus;
 
       return {
         ...vendor,

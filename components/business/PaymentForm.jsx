@@ -19,7 +19,7 @@ function getStripe() {
   return stripePromise;
 }
 
-function PaymentFormContent({ planId, locationCount, professionalCount, onSuccess }) {
+function PaymentFormContent({ planId, locationCount, professionalCount, returnUrl, onSuccess }) {
   const stripe = useStripe();
   const elements = useElements();
   const [isProcessing, setIsProcessing] = useState(false);
@@ -34,10 +34,13 @@ function PaymentFormContent({ planId, locationCount, professionalCount, onSucces
     setError(null);
 
     try {
+      const paymentReturnUrl = new URL(returnUrl || "/upgrade", window.location.origin);
+      paymentReturnUrl.searchParams.set("saveCard", String(saveCard));
+
       const result = await stripe.confirmPayment({
         elements,
         confirmParams: {
-          return_url: `${window.location.origin}/businesses/upgrade?success=true`,
+          return_url: paymentReturnUrl.toString(),
         },
         redirect: 'if_required',
       });
@@ -112,7 +115,7 @@ function PaymentFormContent({ planId, locationCount, professionalCount, onSucces
   );
 }
 
-export default function PaymentForm({ planId, locationCount, professionalCount, amount, clientSecret, publishableKey, onSuccess }) {
+export default function PaymentForm({ planId, locationCount, professionalCount, amount, clientSecret, publishableKey, returnUrl, onSuccess }) {
   if (!clientSecret) {
     return (
       <div className="bg-red-50 border border-red-200 rounded-lg p-4 text-red-800">
@@ -123,7 +126,7 @@ export default function PaymentForm({ planId, locationCount, professionalCount, 
 
   return (
     <Elements stripe={getStripe()} options={{ clientSecret }}>
-      <PaymentFormContent planId={planId} locationCount={locationCount} professionalCount={professionalCount} onSuccess={onSuccess}  />
+      <PaymentFormContent planId={planId} locationCount={locationCount} professionalCount={professionalCount} returnUrl={returnUrl} onSuccess={onSuccess} />
     </Elements>
   );
 }

@@ -1,7 +1,6 @@
-export default function SubscriptionExpired(){
-    return(
-        <>
-            <h1>Your Subscription is expired</h1>
-        </>
-    )
+import { redirect } from "next/navigation";
+
+export default async function LegacySubscriptionExpiredPage({ params }) {
+  const { slug } = await params;
+  redirect(`/subscription-expired?businessSlug=${encodeURIComponent(slug)}`);
 }
