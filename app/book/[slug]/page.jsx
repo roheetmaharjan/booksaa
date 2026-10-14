@@ -1,22 +1,39 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams, useRouter, useSearchParams } from "next/navigation";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Check, ChevronDown, MapPin } from "lucide-react";
+
 import { Button } from "@/components/ui/button";
-import ServiceSelect from "@/components/public_booking/ServiceSelect";
-import DateTimeSelect from "@/components/public_booking/DateTimeSelect";
-import PaymentSelect from "@/components/public_booking/PaymentSelect";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import BookingSteps from "@/components/public_booking/BookingSteps";
-import { MapPin, ChevronDown, Check } from "lucide-react";
+import DateTimeSelect from "@/components/public_booking/DateTimeSelect";
+import EmailVerification from "@/components/public_booking/EmailVerification";
+import GuestDetails from "@/components/public_booking/GuestDetails";
+import PaymentSelect from "@/components/public_booking/PaymentSelect";
+import ServiceSelect from "@/components/public_booking/ServiceSelect";
+
+const flowStorageKey = "booksaa-guest-booking-flow";
+
+async function requestJson(url, options) {
+  const response = await fetch(url, {
+    ...options,
+    headers: { "Content-Type": "application/json", ...options?.headers },
+  });
+  const result = await response.json();
+  if (!response.ok || !result.success) {
+    throw new Error(result.message || "The request could not be completed.");
+  }
+  return result;
+}
 
 export default function BookingServiceSelection() {
   const router = useRouter();
   const params = useParams();
   const searchParams = useSearchParams();
-
   const slug = params.slug;
   const initialLocationId = searchParams.get("locationId");
+
   const [business, setBusiness] = useState(null);
   const [locations, setLocations] = useState([]);
   const [location, setLocation] = useState(null);
@@ -24,228 +41,378 @@ export default function BookingServiceSelection() {
   const [selectedService, setSelectedService] = useState(null);
   const [locationId, setLocationId] = useState(initialLocationId || "");
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState("");
+  const [pageError, setPageError] = useState("");
+
   const [currentStep, setCurrentStep] = useState(1);
-  const [selectedDate, setSelectedDate] = useState(null);
-  const [selectedTime, setSelectedTime] = useState(null);
+  const [appointment, setAppointment] = useState(null);
+  const [contact, setContact] = useState({ fullName: "", phone: "", email: "" });
+  const [challengeToken, setChallengeToken] = useState("");
+  const [verifiedEmailToken, setVerifiedEmailToken] = useState("");
+  const [verificationMode, setVerificationMode] = useState("");
+  const [mockCode, setMockCode] = useState("");
+  const [paymentSetup, setPaymentSetup] = useState(null);
+  const [confirmation, setConfirmation] = useState(null);
+  const [actionLoading, setActionLoading] = useState(false);
+  const [flowError, setFlowError] = useState("");
 
-  const goNext = () => {
-    setCurrentStep((step) => step + 1);
-  };
-
-  const goBack = () => {
-    setCurrentStep((step) => step - 1);
+  const clearVerification = () => {
+    setChallengeToken("");
+    setVerifiedEmailToken("");
+    setVerificationMode("");
+    setMockCode("");
+    setPaymentSetup(null);
+    setConfirmation(null);
+    setFlowError("");
+    sessionStorage.removeItem(flowStorageKey);
   };
 
   useEffect(() => {
-    const fetchBusiness = async () => {
+    let cancelled = false;
+
+    async function fetchBusiness() {
+      if (!slug || !locationId) {
+        setLoading(false);
+        setPageError("Choose a location to view available services.");
+        return;
+      }
+
       try {
         setLoading(true);
+        setPageError("");
+        const result = await requestJson(`/api/public/bookings/${slug}?locationId=${encodeURIComponent(locationId)}`);
+        if (cancelled) return;
 
-        const response = await fetch(`/api/public/bookings/${slug}?locationId=${locationId}`);
+        const data = result.data;
+        setBusiness(data.business);
+        setLocation(data.location);
+        setLocations(data.locations || []);
+        setServices(data.services || []);
 
-        if (!response.ok) {
-          throw new Error("Failed to fetch business");
+        const saved = sessionStorage.getItem(flowStorageKey);
+        if (saved) {
+          try {
+            const flow = JSON.parse(saved);
+            const savedService = (data.services || []).find((service) => service.id === flow.serviceId);
+            if (flow.slug === slug && flow.locationId === locationId && savedService && flow.verifiedEmailToken) {
+              setSelectedService(savedService);
+              setAppointment(flow.appointment);
+              setContact(flow.contact);
+              setVerifiedEmailToken(flow.verifiedEmailToken);
+              setPaymentSetup(flow.paymentSetup);
+              setCurrentStep(5);
+              return;
+            }
+          } catch {
+            sessionStorage.removeItem(flowStorageKey);
+          }
         }
 
-        const result = await response.json();
-
-        if (!result.success) {
-          throw new Error("Failed to load business data");
-        }
-
-        const businessData = result.data.business;
-        const locationData = result.data.location;
-        const servicesData = result.data.services || [];
-        const locationsData = result.data.locations || [];
-
-        setBusiness(businessData);
-        setLocation(locationData);
-        setServices(servicesData);
-        setLocations(locationsData);
-
-        if (servicesData.length > 0) {
-          setSelectedService(servicesData[0]);
-        }
-      } catch (err) {
-        console.error("Error fetching business:", err);
-        setError("Unable to load services.");
+        setSelectedService((current) => (data.services || []).find((service) => service.id === current?.id) || data.services?.[0] || null);
+      } catch (error) {
+        if (!cancelled) setPageError(error.message || "Unable to load services.");
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
-    };
-
-    if (slug && locationId) {
-      fetchBusiness();
     }
+
+    fetchBusiness();
+    return () => {
+      cancelled = true;
+    };
   }, [slug, locationId]);
 
-  if (loading) {
+  const requestOtp = useCallback(async () => {
+    if (!contact.fullName.trim()) throw new Error("Enter your full name.");
+    const result = await requestJson(`/api/public/bookings/${slug}/otp`, {
+      method: "POST",
+      body: JSON.stringify({ email: contact.email }),
+    });
+    setChallengeToken(result.challengeToken);
+    setVerificationMode(result.mode);
+    setMockCode(result.mockCode || "");
+    setVerifiedEmailToken("");
+    setFlowError("");
+  }, [contact.email, contact.fullName, slug]);
+
+  const startEmailVerification = async () => {
+    setActionLoading(true);
+    setFlowError("");
+    try {
+      await requestOtp();
+      setCurrentStep(4);
+    } catch (error) {
+      setFlowError(error.message || "Unable to send the verification code.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const resendOtp = async () => {
+    setFlowError("");
+    try {
+      await requestOtp();
+    } catch (error) {
+      setFlowError(error.message || "Unable to resend the verification code.");
+      throw error;
+    }
+  };
+
+  const createPaymentSetup = useCallback(async (emailToken) => {
+    if (!appointment || !selectedService) throw new Error("Select a service and appointment time first.");
+    const result = await requestJson(`/api/public/bookings/${slug}/payment-intent`, {
+      method: "POST",
+      body: JSON.stringify({
+        ...appointment,
+        serviceId: selectedService.id,
+        verifiedEmailToken: emailToken,
+      }),
+    });
+    return result;
+  }, [appointment, selectedService, slug]);
+
+  const verifyEmail = async (code) => {
+    setActionLoading(true);
+    setFlowError("");
+    try {
+      const result = await requestJson(`/api/public/bookings/${slug}/otp`, {
+        method: "PUT",
+        body: JSON.stringify({ challengeToken, code }),
+      });
+      setVerifiedEmailToken(result.verifiedEmailToken);
+
+      if (selectedService?.prepaymentType === "full" || selectedService?.prepaymentType === "deposit") {
+        setPaymentSetup(null);
+        setCurrentStep(5);
+        try {
+          const setup = await createPaymentSetup(result.verifiedEmailToken);
+          setPaymentSetup(setup);
+        } catch (error) {
+          setFlowError(error.message || "Unable to prepare the deposit payment.");
+        }
+      } else {
+        setCurrentStep(5);
+      }
+    } catch (error) {
+      setFlowError(error.message || "The verification code could not be verified.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const saveFlowForPayment = useCallback(async () => {
+    sessionStorage.setItem(flowStorageKey, JSON.stringify({
+      slug,
+      locationId,
+      serviceId: selectedService?.id,
+      appointment,
+      contact,
+      verifiedEmailToken,
+      paymentSetup,
+    }));
+  }, [appointment, contact, locationId, paymentSetup, selectedService?.id, slug, verifiedEmailToken]);
+
+  const confirmBooking = useCallback(async (paymentIntentId) => {
+    setActionLoading(true);
+    setFlowError("");
+    try {
+      const result = await requestJson(`/api/public/bookings/${slug}/confirm`, {
+        method: "POST",
+        body: JSON.stringify({
+          ...appointment,
+          serviceId: selectedService.id,
+          fullName: contact.fullName,
+          phone: contact.phone,
+          verifiedEmailToken,
+          ...(paymentIntentId ? { paymentIntentId } : {}),
+        }),
+      });
+      setConfirmation(result);
+      setCurrentStep(6);
+      sessionStorage.removeItem(flowStorageKey);
+      const nextUrl = new URL(window.location.href);
+      nextUrl.searchParams.delete("payment_intent");
+      nextUrl.searchParams.delete("payment_intent_client_secret");
+      nextUrl.searchParams.delete("redirect_status");
+      window.history.replaceState({}, "", nextUrl);
+    } catch (error) {
+      setFlowError(error.message || "Unable to confirm the booking.");
+    } finally {
+      setActionLoading(false);
+    }
+  }, [appointment, contact.fullName, contact.phone, selectedService, slug, verifiedEmailToken]);
+
+  const chooseLocation = (nextLocationId) => {
+    if (nextLocationId === locationId) return;
+    setLocationId(nextLocationId);
+    setSelectedService(null);
+    setAppointment(null);
+    setCurrentStep(1);
+    clearVerification();
+    router.replace(`/book/${slug}?locationId=${nextLocationId}`);
+  };
+
+  const showLoading = loading || !business;
+
+  if (showLoading) {
     return (
-      <>
-        <main className="flex items-stretch justify-center">
-          <div className="flex w-full flex-col overflow-hidden rounded-lg border border-white bg-white lg:flex-row">
-            <header className="sticky top-0 z-30 w-full border-b bg-white">
-              <div className="mx-auto flex items-center justify-between py-3">
-                <div className="flex items-center gap-4">
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <span className="bg-gray-100 w-32 h-3 rounded-md"></span>
-                  </div>
-                  <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                    {/* <MapPin size={16} /> */}
-                    <span className="w-3 h-3 bg-gray-100 rounded-full"></span>
-
-                    <span className="bg-gray-100 w-32 h-3"></span>
-                  </div>
-                </div>
-
-                <BookingSteps currentStep={currentStep} />
-              </div>
-            </header>
-            <div className="flex w-full items-center justify-center rounded-md bg-white p-10 shadow-sm">
-              <p className="text-sm text-slate-500">Loading services...</p>
-            </div>
-          </div>
-          <div></div>
-        </main>
-      </>
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <p className="text-sm text-slate-500">Loading booking options...</p>
+      </main>
     );
   }
 
-  if (error) {
+  if (pageError) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-slate-50">
-        <p className="text-sm text-red-500">{error}</p>
-      </div>
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <p role="alert" className="text-sm text-red-600">{pageError}</p>
+      </main>
     );
   }
 
   return (
-    <>
-      {/* Main */}
-      <main className="flex items-stretch justify-center">
-        <div className="flex w-full flex-col overflow-hidden rounded-lg border border-white bg-white lg:flex-row">
-          {/* ================= LEFT PANEL ================= */}
-          <section className="flex w-full min-h-screen flex-col justify-start flex-1 bg-white">
-            {/* Header */}
-            <header className="sticky top-0 z-30 w-full border-b border-slate-200 bg-white shadow-sm py-2 px-5">
-              <div className="mx-auto flex w-full max-w-[1180px] items-center justify-between py-2">
-                {/* Brand */}
-                <div className="flex items-center gap-4">
-                  <div className="hidden items-center gap-2 sm:flex">
-                    <span className="text-md font-bold text-slate-600">{business.name || "No Business Name"}</span>
-                  </div>
-                  <div className="flex items-center gap-2 border-l border-slate-200 pl-3">
-                    {/* Location Dropdown */}
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="outline" className="h-auto gap-2 rounded-xl border-slate-200 bg-white px-3 py-1.5 text-xs font-semibold text-slate-700 shadow-sm">
-                          <MapPin className="h-3.5 w-3.5 text-slate-400" />
+    <main className="min-h-screen bg-slate-50">
+      <div className="mx-auto flex min-h-screen max-w-7xl flex-col overflow-hidden bg-white shadow-sm lg:flex-row">
+        <section className="flex min-w-0 flex-1 flex-col">
+          <header className="sticky top-0 z-30 border-b border-slate-200 bg-white px-4 py-3 sm:px-6">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex min-w-0 items-center gap-3">
+                <span className="truncate text-sm font-bold text-slate-700">{business.name}</span>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="h-auto max-w-52 gap-2 rounded-xl px-3 py-1.5 text-xs">
+                      <MapPin className="h-3.5 w-3.5 shrink-0 text-slate-400" />
+                      <span className="truncate">{locations.find((item) => item.id === locationId)?.name || "Select location"}</span>
+                      <ChevronDown className="h-3.5 w-3.5 shrink-0" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="start">
+                    {locations.map((item) => (
+                      <DropdownMenuItem key={item.id} onSelect={() => chooseLocation(item.id)}>
+                        <MapPin className="mr-2 h-3.5 w-3.5 text-slate-400" />
+                        {item.name}
+                        {item.id === locationId && <Check className="ml-auto h-4 w-4" />}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+              <BookingSteps currentStep={currentStep} />
+            </div>
+          </header>
 
-                          {locations.find((location) => location.id === locationId)?.name || "Select location"}
+          <div className="flex-1 p-4 sm:p-7 lg:p-8">
+            {currentStep === 1 && (
+              <ServiceSelect
+                services={services}
+                selectedService={selectedService}
+                onSelectService={(service) => {
+                  if (selectedService?.id !== service.id) {
+                    setAppointment(null);
+                    clearVerification();
+                  }
+                  setSelectedService(service);
+                }}
+                onContinue={() => setCurrentStep(2)}
+              />
+            )}
 
-                          <ChevronDown className="h-3.5 w-3.5 text-slate-400" />
-                        </Button>
-                      </DropdownMenuTrigger>
+            <div className={currentStep === 2 ? "" : "hidden"}>
+              <DateTimeSelect
+                slug={slug}
+                locationId={locationId}
+                serviceId={selectedService?.id}
+                initialAppointment={appointment}
+                onBack={() => setCurrentStep(1)}
+                onContinue={(nextAppointment) => {
+                  setAppointment(nextAppointment);
+                  setFlowError("");
+                  setCurrentStep(3);
+                }}
+              />
+            </div>
 
-                      <DropdownMenuContent align="start">
-                        {locations.map((location) => (
-                          <DropdownMenuItem
-                            key={location.id}
-                            onClick={() => {
-                              const newLocationId = location.id;
+            {currentStep === 3 && (
+              <GuestDetails
+                value={contact}
+                onChange={setContact}
+                onBack={() => setCurrentStep(2)}
+                onSubmit={startEmailVerification}
+                loading={actionLoading}
+                error={flowError}
+              />
+            )}
 
-                              setLocationId(newLocationId);
+            {currentStep === 4 && (
+              <EmailVerification
+                email={contact.email}
+                mode={verificationMode}
+                mockCode={mockCode}
+                onBack={() => {
+                  setFlowError("");
+                  setCurrentStep(3);
+                }}
+                onVerify={verifyEmail}
+                onResend={resendOtp}
+                loading={actionLoading}
+                error={flowError}
+              />
+            )}
 
-                              router.replace(`/book/${slug}?locationId=${newLocationId}`);
-                            }}
-                            className="cursor-pointer"
-                          >
-                            <MapPin className="mr-2 h-3.5 w-3.5 text-slate-400" />
+            {currentStep === 5 && (
+              <PaymentSelect
+                service={selectedService}
+                customerEmail={contact.email}
+                paymentSetup={paymentSetup}
+                loading={actionLoading}
+                error={flowError}
+                onBack={() => {
+                  setFlowError("");
+                  setCurrentStep(4);
+                }}
+                onBeforePayment={saveFlowForPayment}
+                onConfirmBooking={() => confirmBooking()}
+                onPaymentSuccess={confirmBooking}
+              />
+            )}
 
-                            {location.name}
-
-                            {location.id === locationId && <Check className="ml-auto h-4 w-4" />}
-                          </DropdownMenuItem>
-                        ))}
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+            {currentStep === 6 && confirmation && (
+              <section className="mx-auto w-full max-w-xl space-y-5">
+                <div>
+                  <h1 className="text-xl font-bold tracking-tight text-emerald-800">Appointment confirmed</h1>
+                  <p className="mt-1 text-sm text-slate-600">
+                    {confirmation.emailSent
+                      ? `A confirmation email has been sent to ${contact.email}.`
+                      : confirmation.emailError || "Your appointment is confirmed, but the email could not be sent."}
+                  </p>
                 </div>
+                <dl className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
+                  <div className="flex justify-between gap-4"><dt className="text-slate-500">Service</dt><dd className="text-right font-medium">{selectedService?.name}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-slate-500">Date</dt><dd className="text-right font-medium">{appointment?.date}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-slate-500">Time</dt><dd className="text-right font-medium">{appointment?.time}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-slate-500">Professional</dt><dd className="text-right font-medium">{appointment?.professionalName || "To be assigned"}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-slate-500">Location</dt><dd className="text-right font-medium">{location?.name}</dd></div>
+                  <div className="flex justify-between gap-4"><dt className="text-slate-500">Booking reference</dt><dd className="text-right font-mono font-medium">{confirmation.booking?.id}</dd></div>
+                </dl>
+                {!confirmation.emailSent && <p role="alert" className="text-sm text-amber-800">Please contact the business if you need the confirmation email resent.</p>}
+              </section>
+            )}
+          </div>
+        </section>
 
-                {/* Steps */}
-                <BookingSteps currentStep={currentStep} />
-              </div>
-            </header>
-            {/* Content Area */}
-            <div className="p-5 sm:p-7 lg:p-8">
-              {currentStep === 1 && <ServiceSelect services={services} selectedService={selectedService} onSelectService={setSelectedService} onContinue={goNext} />}
-
-              {currentStep === 2 && (
-                <DateTimeSelect
-                  slug={slug}
-                  locationId={locationId}
-                  serviceId={selectedService?.id}
-                  // onBack={handleBack}
-                  onContinue={(appointment) => {
-                    console.log("Selected appointment:", appointment);
-
-                    setBookingDetails((previous) => ({
-                      ...previous,
-                      ...appointment,
-                    }));
-
-                    setCurrentStep("payment");
-                  }}
-                />
-              )}
-
-              {currentStep === 3 && <PaymentSelect selectedService={selectedService} selectedDate={selectedDate} selectedTime={selectedTime} onBack={goBack} />}
-            </div>
-          </section>
-          {/* ================= RIGHT PANEL ================= */}
-          <section className="flex h-screen w-full flex-col max-w-full lg:max-w-[35%] sticky top-0 justify-between overflow-hidden bg-slate-200">
-            <img src="https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=1200&q=85" alt={business?.name || "No Name"} className="absolute inset-0 h-full w-full object-cover" />
-
-            {/* Overlay */}
-            <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/30 to-slate-900/40" />
-
-            {/* Business Badge */}
-            <div className="relative z-10 flex w-full items-center justify-between p-4">
-              <div className="hidden items-center gap-1.5 rounded-full bg-white/80 px-2.5 py-1 text-[11px] font-medium text-slate-800 backdrop-blur-sm sm:inline-flex">
-                <span className={`h-2 w-2 animate-pulse rounded-full ${location?.status?.isOpen ? "bg-emerald-500" : "bg-red-500"}`} />
-
-                {location?.status?.label}
-              </div>
-            </div>
-
-            {/* Bottom Information Card */}
-            <div className="relative z-10 mt-auto backdrop-blur-sm">
-              {/* Foooter */}
-              <div className="mx-auto flex w-full flex-col items-center justify-between gap-3 text-center md:flex-col py-6 md:text-center">
-                <div className="flex flex-wrap items-center justify-center gap-4 text-[14px] font-medium">
-                  <a href="#" className="text-slate-500 transition hover:text-primary">
-                    Cancellation Policy
-                  </a>
-
-                  <a href="#" className="text-slate-500 transition hover:text-primary">
-                    Terms of Service
-                  </a>
-
-                  <a href="#" className="text-slate-500 transition hover:text-primary">
-                    Privacy Notice
-                  </a>
-
-                  <a href="#" className="text-slate-500 transition hover:text-primary">
-                    Contact Studio
-                  </a>
-                </div>
-                <p className="text-sm text-slate-500">© 2026 {business?.name || "Beauty & Wellness"}. Powered by Booksaa.</p>
-              </div>
-            </div>
-          </section>
-        </div>
-      </main>
-    </>
+        <aside className="relative hidden min-h-[320px] w-full overflow-hidden bg-slate-900 lg:block lg:min-h-screen lg:w-[34%]">
+          <img
+            src="https://images.unsplash.com/photo-1600948836101-f9ffda59d250?auto=format&fit=crop&w=1200&q=85"
+            alt=""
+            className="absolute inset-0 h-full w-full object-cover opacity-70"
+          />
+          <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-slate-900/30" />
+          <div className="absolute inset-x-0 bottom-0 p-7 text-white">
+            <p className="text-lg font-semibold">{business.name}</p>
+            {location?.address && <p className="mt-1 text-sm text-white/80">{location.address}</p>}
+            <p className="mt-5 text-xs text-white/70">Powered by Booksaa</p>
+          </div>
+        </aside>
+      </div>
+    </main>
   );
 }

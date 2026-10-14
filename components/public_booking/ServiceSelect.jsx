@@ -46,7 +46,13 @@ export default function ServiceSelect({ services, selectedService, onSelectServi
                       <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{service.duration} MIN</span>
                     </div>
 
-                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">{service.depositValue ? `Deposit required: ${service.depositType === "fixed" ? `$${service.depositValue}` : `${service.depositValue}%`}` : "No Deposit Required"}</p>
+                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
+                      {service.prepaymentType === "full"
+                        ? "Full payment required"
+                        : service.prepaymentType === "deposit"
+                          ? `Deposit required: ${service.depositType === "fixed" ? `$${service.depositValue}` : `${service.depositValue}%`}`
+                          : "No deposit required"}
+                    </p>
                   </div>
                 </div>
 

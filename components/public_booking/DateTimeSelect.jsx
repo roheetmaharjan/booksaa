@@ -1,16 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronLeft, ChevronRight, CalendarDays, LoaderCircle } from "lucide-react";
+import { ChevronDown, ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
 
 import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-
-import { ChevronDown } from "lucide-react";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -45,7 +43,7 @@ function getMinutes(time) {
   return hour * 60 + minute;
 }
 
-export default function DateTimeSelect({ slug, locationId, serviceId, onContinue, onBack }) {
+export default function DateTimeSelect({ slug, locationId, serviceId, initialAppointment, onContinue, onBack }) {
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -64,6 +62,18 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
   const [professionalsError, setProfessionalsError] = useState("");
 
   const selectedProfessional = professionals.find((professional) => professional.id === professionalId);
+
+  useEffect(() => {
+    if (!initialAppointment) return;
+
+    const [year, month, day] = initialAppointment.date.split("-").map(Number);
+    const date = new Date(year, month - 1, day);
+    date.setHours(0, 0, 0, 0);
+    setSelectedDate(date);
+    setWeekStart(getMonday(date));
+    setSelectedTime(initialAppointment.time);
+    setProfessionalId(initialAppointment.professionalId || "");
+  }, [initialAppointment]);
 
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, index) => {
@@ -86,7 +96,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
 
   // Fetch availability for each day displayed in the calendar.
   useEffect(() => {
-    if (!slug || !locationId || !serviceId || !professionalId) {
+    if (!slug || !locationId || !serviceId || professionalsLoading) {
       setAvailability({});
       return;
     }
@@ -100,12 +110,8 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
       try {
         const results = await Promise.all(
           days.map(async (day) => {
-            const query = new URLSearchParams({
-              locationId,
-              serviceId,
-              professionalId,
-              date: day.key,
-            });
+            const query = new URLSearchParams({ locationId, serviceId, date: day.key });
+            if (professionalId) query.set("professionalId", professionalId);
 
             const response = await api.get(`/api/public/bookings/${slug}/availability?${query.toString()}`);
             const body = response;
@@ -147,7 +153,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
     return () => {
       cancelled = true;
     };
-  }, [slug, locationId, serviceId, professionalId, days]);
+  }, [slug, locationId, serviceId, professionalId, professionalsLoading, days]);
 
   useEffect(() => {
     if (!slug || !locationId || !serviceId) {
@@ -204,10 +210,10 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
     };
   }, [slug, locationId, serviceId]);
 
-  // Reset the selected time if the user changes dates.
+  // Reset the selected time when the professional, service, or location changes.
   useEffect(() => {
     setSelectedTime("");
-  }, [selectedDateKey, professionalId, serviceId, locationId]);
+  }, [professionalId, serviceId, locationId]);
 
   const times = useMemo(() => {
     const allTimes = new Set();
@@ -226,6 +232,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
       const next = new Date(previous);
       next.setDate(next.getDate() - 7);
 
+      setSelectedTime("");
       setSelectedDate(next);
       return next;
     });
@@ -236,22 +243,22 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
       const next = new Date(previous);
       next.setDate(next.getDate() + 7);
 
+      setSelectedTime("");
       setSelectedDate(next);
       return next;
     });
   };
 
   const handleContinue = () => {
-    console.log(appointment);
-    if (!selectedSlot || !selectedProfessional) return;
+    if (!selectedSlot || (professionals.length > 0 && !selectedProfessional)) return;
 
     onContinue?.({
       date: selectedDateKey,
       time: selectedTime,
       locationId,
       serviceId,
-      professionalId: selectedProfessional.id,
-      professionalName: selectedProfessional.name,
+      professionalId: selectedProfessional?.id ?? null,
+      professionalName: selectedProfessional?.name ?? null,
     });
   };
 
@@ -294,8 +301,8 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
                     </Avatar>
 
                     <div className="min-w-0 text-left">
-                      <span className="block text-sm font-semibold">{professionalsLoading ? "Loading professionals..." : selectedProfessional?.name ?? "Select professional"}</span>
-                      <span className="block text-xs text-slate-400">Choose your professional</span>
+                      <span className="block text-sm font-semibold">{professionalsLoading ? "Loading professionals..." : selectedProfessional?.name ?? (professionals.length ? "Select professional" : "No preference")}</span>
+                      <span className="block text-xs text-slate-400">{professionals.length ? "Choose your professional" : "No professional selection needed"}</span>
                     </div>
 
                     <ChevronDown className="h-4 w-4 shrink-0" />
@@ -361,7 +368,14 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
 
                         return (
                           <th key={day.key} className="px-1 py-3">
-                            <button type="button" onClick={() => setSelectedDate(day.date)} className={`mx-auto flex min-w-10 flex-col items-center rounded-lg px-2 py-1 ${isSelected ? "bg-primary text-slate-800" : "text-slate-700 hover:bg-slate-100"}`}>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                if (selectedDateKey !== day.key) setSelectedTime("");
+                                setSelectedDate(day.date);
+                              }}
+                              className={`mx-auto flex min-w-10 flex-col items-center rounded-lg px-2 py-1 ${isSelected ? "bg-primary text-slate-800" : "text-slate-700 hover:bg-slate-100"}`}
+                            >
                               <span className="text-sm font-bold">{day.number}</span>
                               <span className="mt-0.5 text-[10px] font-bold uppercase">{day.day}</span>
                             </button>
@@ -449,7 +463,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, onContinue
           Back
         </Button>
 
-        <Button type="button" onClick={handleContinue} disabled={!selectedSlot || !selectedProfessional || loading}>
+        <Button type="button" onClick={handleContinue} disabled={!selectedSlot || (professionals.length > 0 && !selectedProfessional) || loading}>
           Continue
           <ChevronRight className="ml-1 h-4 w-4" />
         </Button>

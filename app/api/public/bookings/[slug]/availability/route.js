@@ -12,11 +12,11 @@ export async function GET(request, { params }) {
     const professionalId = searchParams.get("professionalId");
     const date = searchParams.get("date");
 
-    if (!slug || !locationId || !serviceId || !professionalId || !date) {
+    if (!slug || !locationId || !serviceId || !date) {
       return NextResponse.json(
         {
           success: false,
-          message: "Business, location, service, professional and date are required",
+          message: "Business, location, service and date are required",
         },
         { status: 400 },
       );
@@ -117,7 +117,7 @@ export async function GET(request, { params }) {
     // 4. Get professional
     // -----------------------------------
 
-    const professional = await prisma.professional.findFirst({
+    const professional = professionalId ? await prisma.professional.findFirst({
       where: {
         id: professionalId,
         vendorId: business.id,
@@ -127,9 +127,9 @@ export async function GET(request, { params }) {
         id: true,
         name: true,
       },
-    });
+    }) : null;
 
-    if (!professional) {
+    if (professionalId && !professional) {
       return NextResponse.json(
         {
           success: false,
@@ -172,7 +172,7 @@ export async function GET(request, { params }) {
     const bookings = await prisma.bookings.findMany({
       where: {
         locationId,
-        professionalId,
+        professionalId: professionalId || null,
         scheduledAt: {
           gte: startOfDay,
           lte: endOfDay,
@@ -205,10 +205,7 @@ export async function GET(request, { params }) {
       success: true,
       data: {
         date,
-        professional: {
-          id: professional.id,
-          name: professional.name,
-        },
+        professional: professional ? { id: professional.id, name: professional.name } : null,
         service: {
           id: service.id,
           name: service.name,
