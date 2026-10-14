@@ -67,6 +67,7 @@ export async function GET(request, { params }) {
             duration: true,
             depositValue: true,
             depositType: true,
+            prepaymentType: true,
           },
         },
       },

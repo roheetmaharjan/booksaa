@@ -12,11 +12,11 @@ export async function GET(request, { params }) {
     const professionalId = searchParams.get("professionalId");
     const date = searchParams.get("date");
 
-    if (!slug || !locationId || !serviceId || !professionalId || !date) {
+    if (!slug || !locationId || !serviceId || !date) {
       return NextResponse.json(
         {
           success: false,
-          message: "Business, location, service, professional and date are required",
+          message: "Business, location, service and date are required",
         },
         { status: 400 },
       );
@@ -117,7 +117,7 @@ export async function GET(request, { params }) {
     // 4. Get professional
     // -----------------------------------
 
-    const professional = await prisma.professional.findFirst({
+    const professional = professionalId ? await prisma.professional.findFirst({
       where: {
         id: professionalId,
         vendorId: business.id,
@@ -127,9 +127,9 @@ export async function GET(request, { params }) {
         id: true,
         name: true,
       },
-    });
+    }) : null;
 
-    if (!professional) {
+    if (professionalId && !professional) {
       return NextResponse.json(
         {
           success: false,
@@ -171,10 +171,9 @@ export async function GET(request, { params }) {
 
     const bookings = await prisma.bookings.findMany({
       where: {
-        vendorId: business.id,
         locationId,
-        professionalId,
-        dateTime: {
+        professionalId: professionalId || null,
+        scheduledAt: {
           gte: startOfDay,
           lte: endOfDay,
         },
@@ -183,8 +182,10 @@ export async function GET(request, { params }) {
         },
       },
       select: {
-        dateTime: true,
-        duration: true,
+        scheduledAt: true,
+        scheduledEnd: true,
+        startTime: true,
+        endTime: true,
       },
     });
 
@@ -204,10 +205,7 @@ export async function GET(request, { params }) {
       success: true,
       data: {
         date,
-        professional: {
-          id: professional.id,
-          name: professional.name,
-        },
+        professional: professional ? { id: professional.id, name: professional.name } : null,
         service: {
           id: service.id,
           name: service.name,
@@ -222,9 +220,67 @@ export async function GET(request, { params }) {
     return NextResponse.json(
       {
         success: false,
-        message: "Something went wrong",
+        message: error.message || "Something went wrong",
+        error: error.stack || null,
       },
       { status: 500 },
     );
   }
+}
+
+function generateSlots({ date, openTime, closeTime, duration, bookings, interval = 15 }) {
+  const slots = [];
+
+  const [openHour, openMinute] = openTime.split(":").map(Number);
+  const [closeHour, closeMinute] = closeTime.split(":").map(Number);
+
+  const openMinutes = openHour * 60 + openMinute;
+  const closeMinutes = closeHour * 60 + closeMinute;
+
+  for (let startMinutes = openMinutes; startMinutes + duration <= closeMinutes; startMinutes += interval) {
+    const endMinutes = startMinutes + duration;
+
+    const start = createNepalDate(date, startMinutes);
+    const end = createNepalDate(date, endMinutes);
+
+    const isBooked = bookings.some((booking) => {
+      const existingStart = new Date(booking.scheduledAt);
+      const existingEnd = booking.scheduledEnd ? new Date(booking.scheduledEnd) : new Date(existingStart.getTime() + duration * 60 * 1000);
+
+      return start < existingEnd && end > existingStart;
+    });
+
+    slots.push({
+      time: formatTime(startMinutes),
+      available: !isBooked,
+    });
+  }
+
+  return slots;
+}
+
+function createNepalDate(date, minutes) {
+  const hour = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+
+  return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+05:45`);
+}
+// function parseTimeToMinutes(timeString) {
+//   if (!timeString || typeof timeString !== "string") return Number.NaN;
+
+//   const [hours, minutes] = timeString.split(":").map(Number);
+
+//   if (Number.isNaN(hours) || Number.isNaN(minutes)) return Number.NaN;
+
+//   return hours * 60 + minutes;
+// }
+
+function formatTime(minutes) {
+  const hour24 = Math.floor(minutes / 60);
+  const minute = minutes % 60;
+
+  const period = hour24 >= 12 ? "PM" : "AM";
+  const hour12 = hour24 % 12 || 12;
+
+  return `${hour12}:${String(minute).padStart(2, "0")} ${period}`;
 }

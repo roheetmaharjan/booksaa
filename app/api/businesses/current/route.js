@@ -136,12 +136,13 @@ export async function GET() {
 
     const latestSubscription = vendor.subscriptions?.[0];
 
-    const expiryDate =
-      latestSubscription?.expiryDate ??
-      vendor.subscriptionExpiresAt;
-
-    const subscriptionState =
-      getSubscriptionState(expiryDate);
+    const subscriptionState = getSubscriptionState({
+      subscriptionStatus: latestSubscription?.status ?? vendor.status,
+      trialEndsAt: vendor.trialEndsAt,
+      subscriptionExpiresAt: latestSubscription?.expiryDate ?? vendor.subscriptionExpiresAt,
+      subscriptionCreatedAt: latestSubscription?.createdAt,
+      billingCycle: vendor.plan.billing_cycle,
+    });
 
     const subscription = calculateBusinessSubscription({
       plan: vendor.plan,
@@ -149,7 +150,7 @@ export async function GET() {
       professionals: vendor.professionals,
       professionalLimit,
       locationLimit,
-      subscriptionStatus:    latestSubscription?.status ?? null,
+      subscriptionStatus:    latestSubscription?.status ?? vendor.status,
       trialEndsAt:           vendor.trialEndsAt,
       subscriptionExpiresAt:
       latestSubscription?.expiryDate ??
