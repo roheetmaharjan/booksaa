@@ -6,37 +6,37 @@ const industries = {
   hair: {
     title: "Hair Salons & Barbershops",
     description: "Make appointment scheduling and salon management effortless.",
-    image: "/feature-5.jpg",
+    image: "/hair.jpg",
     items: ["Online appointment booking", "Stylist and barber scheduling", "Service menus and pricing", "Client profiles and visit history", "Automated appointment reminders"],
   },
   beauty: {
     title: "Beauty & Aesthetic Clinics",
     description: "Deliver a seamless client experience while keeping your business organized.",
-    image: "/feature-1.jpg",
+    image: "/beauty.jpg",
     items: ["Treatment and service booking", "Staff and room scheduling", "Client records and preferences", "Flexible service durations", "Business performance insights"],
   },
   spas: {
     title: "Spas & Wellness Centers",
     description: "Create a relaxing experience from the moment clients book.",
-    image: "/feature-3.jpg",
+    image: "/spas.jpg",
     items: ["Massage and wellness bookings", "Therapist availability management", "Multiple treatment scheduling", "Client appointment history", "Centralized booking management"],
   },
-  nail: {
+  nails: {
     title: "Nail Salons & Lash Studios",
     description: "Keep your bookings flowing and your team organized.",
-    image: "/feature-4.jpg",
+    image: "/nails.jpg",
     items: ["Nail, lash, and beauty service menus", "Staff-specific appointment booking", "Appointment calendar management", "Client preferences and history", "Convenient online booking"],
   },
   fitness: {
     title: "Fitness & Personal Training",
     description: "Spend less time coordinating sessions and more time helping clients reach their goals.",
-    image: "/feature-2.jpg",
+    image: "/fitness.jpg",
     items: ["Personal training appointments", "Trainer availability and schedules", "Session booking and management", "Client profiles", "Recurring session coordination"],
   },
-  independent: {
+  indepentent: {
     title: "Independent Professionals",
     description: "Give your independent service business the tools to run professionally.",
-    image: "/feature-2.jpg",
+    image: "/professional.jpg",
     items: ["Personal booking page", "Service and availability management", "Client management", "Appointment notifications", "Business overview and reporting"],
   },
 };
@@ -56,7 +56,7 @@ export default function TargetAudience() {
         </div>
 
         <Tabs defaultValue="startup" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 justify-stretch h-auto rounded-xl bg-slate-50 border">
+          <TabsList className="grid w-full lg:grid-cols-3 xl:grid-cols-6 mb-8 justify-stretch h-auto rounded-xl bg-slate-50 border">
             <TabsTrigger value="hair" className="py-3 rounded-xl font-semibold text-base">Hair Salons & Barbershops </TabsTrigger>
             <TabsTrigger value="beauty" className="py-3 rounded-xl font-semibold text-base">Beauty & Aesthetic Clinics</TabsTrigger>
             <TabsTrigger value="spas" className="py-3 rounded-xl font-semibold text-base">Spas & Wellness Centers</TabsTrigger>
