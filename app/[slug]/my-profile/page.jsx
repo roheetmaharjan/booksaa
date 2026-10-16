@@ -22,6 +22,7 @@ import { toast } from "sonner";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import GalleryGrid from "@/components/photos/GalleryGrid";
 import { ASSET_TYPES } from "@/constants/storage";
+import Payment from "@/components/my_profile/Payment"
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -443,6 +444,7 @@ export default function BusinessProfilePage() {
                 <TabsTrigger value="photos">Photos</TabsTrigger>
                 <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
                 <TabsTrigger value="location">Business Location</TabsTrigger>
+                <TabsTrigger value="payment">Payment</TabsTrigger>
               </TabsList>
 
               <TabsContent value="detail">
@@ -630,6 +632,9 @@ export default function BusinessProfilePage() {
                     </div>
                   )}
                 </div>
+              </TabsContent>
+              <TabsContent value="payment">
+                <Payment/>
               </TabsContent>
             </Tabs>
 

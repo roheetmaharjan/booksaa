@@ -47,7 +47,7 @@ export function VendorSidebar({ startTransition }) {
       { title: "Services", url: `${businessBasePath}/services`, icon: Scissors },
       { title: "Professionals", url: `${businessBasePath}/professionals`, icon: Users },
       { title: "Customers", url: `${businessBasePath}/customers`, icon: Contact },
-      { title: "Reports", url: `${businessBasePath}/reports`, icon: BarChart3 },
+      // { title: "Reports", url: `${businessBasePath}/reports`, icon: BarChart3 },
     ],
     [businessBasePath]
   );
@@ -238,12 +238,12 @@ export function VendorSidebar({ startTransition }) {
         </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 sidebar-footer">
         <SidebarMenu>
           <SidebarMenuItem>
             <Popover open={profileOpen} onOpenChange={setProfileOpen}>
               <PopoverTrigger asChild>
-                <SidebarMenuButton tooltip="Owner profile" className="h-11 justify-start">
+                <SidebarMenuButton tooltip="Owner profile" className="h-11 group-data-[collapsible=icon]:!p-0 justify-start">
                   <OwnerAvatar owner={owner} ownerName={ownerName} ownerInitial={ownerInitial} />
                   <span className="min-w-0 flex-1 truncate">{ownerName}</span>
                 </SidebarMenuButton>

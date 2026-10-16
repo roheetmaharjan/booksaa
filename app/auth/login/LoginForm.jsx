@@ -55,76 +55,83 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex flex-col justify-center items-center flex-1 h-[100vh]">
-      <div className="w-full xl:max-w-[450px] px-8 max-w-[380px]">
-        <div className="mb-8">
+    <div className="flex flex-col justify-center items-center flex-1 h-[100vh] bg-[#062B3D] relative">
+      <div className="absolute inset-0 opacity-5 z-0">
+        <div className="absolute top-0 left-20 w-80 h-80 border-[60px] border-white rounded-full" />
+        <div className="absolute top-24 right-32 w-52 h-52 bg-white" />
+        <div className="absolute bottom-0 right-0 w-[500px] h-[500px] border-[60px] border-white rounded-full" />
+      </div>
+      <div className="xl:max-w-[550px] px-8 max-w-[380px] mx-auto w-full relative z-10">
+        <div className="mb-10 flex w-full items-center justify-center">
           <div className="logo">
-            <Image src="/logo.png" width={100} height={30} alt="bookaroo" />
+            <Image src="/logo_white.png" width={140} height={40} alt="bookaroo" />
           </div>
         </div>
-        <div className="mb-5">
-          <h2 className="mb-2 font-bold text-3xl">Welcome back!</h2>
-          <p className="font-semibold heading-text">
-            Please enter your credentials to Log in!
-          </p>
-        </div>
-        <div>
-          <form onSubmit={handleLogin}>
-            <div className="form-container vertical text-gray-500">
-              <div className="flex flex-col mb-4">
-                <label className="font-semibold flex">Username or Email</label>
-                <input
-                  className="w-full h-12 border rounded px-3 focus:ring-primary focus:border-primary"
-                  placeholder="Username or Email"
-                  autoComplete="off"
-                  type="text"
-                  name="identifier"
-                  required
-                />
-              </div>
-              <div className="flex flex-col mb-4">
-                <label className="font-semibold flex">Password</label>
-                <input
-                  className="w-full h-12 border rounded px-3 focus:ring-primary focus:border-primary"
-                  placeholder="Password"
-                  autoComplete="off"
-                  type="password"
-                  name="password"
-                  required
-                />
-              </div>
-              {redirectUrl !== "/admin" && (
-                <div className="mb-7 mt-2 text-right">
-                  <a
-                    className="hover:underline font-semibold heading-text underline"
-                    href="/forgot-password"
-                  >
-                    Forgot password?
-                  </a>
+        <div className="w-full rounded-2xl bg-white px-7 py-8 shadow-sm outline-offset-8 overflow-hidden outline-8 outline-slate-100/10">
+          <div className="mb-5">
+            <h2 className="mb-2 font-bold text-3xl">Welcome back!</h2>
+            <p className="font-semibold heading-text">
+              Please enter your credentials to Log in!
+            </p>
+          </div>
+          <div>
+            <form onSubmit={handleLogin}>
+              <div className="form-container vertical text-gray-500">
+                <div className="flex flex-col mb-4">
+                  <label className="flex text-slate-800">Username or Email</label>
+                  <input
+                    className="w-full h-12 border rounded px-3 focus:ring-primary focus:border-primary"
+                    placeholder="Username or Email"
+                    autoComplete="off"
+                    type="text"
+                    name="identifier"
+                    required
+                  />
                 </div>
-              )}
-              {error && (
-                <p className="text-red-600 text-sm mb-4">{error}</p>
-              )}
-              <button
-                className="button flex items-center gap-2 justify-center text-[#062B3D] bg-primary hover:bg-primary-100 text-neutral h-12 rounded-md px-5 py-2 w-full"
-                type="submit"
-                disabled={loading}
-              >
-                {loading ? "Logging in..." : "Log In"}
-                {loading && <Loader2 className="animate-spin h-5 w-5 ml-2" />}
-              </button>
-            </div>
-          </form>
-        </div>
-        {redirectUrl !== "/admin" && (
-          <div className="mt-6 text-center">
-            <span>Don&apos;t have an account yet? </span>
-            <a className="hover:underline font-bold" href="/business-signup">
-              Sign up
-            </a>
+                <div className="flex flex-col mb-4">
+                  <label className="flex text-slate-800">Password</label>
+                  <input
+                    className="w-full h-12 border rounded px-3 focus:ring-primary focus:border-primary"
+                    placeholder="Password"
+                    autoComplete="off"
+                    type="password"
+                    name="password"
+                    required
+                  />
+                </div>
+                {redirectUrl !== "/admin" && (
+                  <div className="mb-7 mt-2 text-right">
+                    <a
+                      className="hover:underline underline text-slate-800"
+                      href="/forgot-password"
+                    >
+                      Forgot password?
+                    </a>
+                  </div>
+                )}
+                {error && (
+                  <p className="text-red-600 text-sm mb-4">{error}</p>
+                )}
+                <button
+                  className="button flex items-center gap-2 justify-center text-slate-800 font-semibold bg-primary hover:bg-primary-100 text-neutral h-12 rounded-md px-5 py-2 w-full"
+                  type="submit"
+                  disabled={loading}
+                >
+                  {loading ? "Logging in..." : "Log In"}
+                  {loading && <Loader2 className="animate-spin h-5 w-5 ml-2" />}
+                </button>
+              </div>
+            </form>
           </div>
-        )}
+          {redirectUrl !== "/admin" && (
+            <div className="mt-6 text-center">
+              <span>Don&apos;t have an account yet? </span>
+              <a className="hover:underline font-bold" href="/business-signup">
+                Sign up
+              </a>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
