@@ -10,11 +10,12 @@ export function VendorLayoutShell({ children }) {
 
   return (
     <SidebarProvider
+      defaultOpen={false}
       className="min-h-screen overflow-hidden bg-[#062B3D]"
       style={{
         "--sidebar-width": "17rem",
         "--sidebar-width-mobile": "18rem",
-        "--sidebar-width-icon": "3.5rem",
+        "--sidebar-width-icon": "4rem",
       }}
     >
       <VendorSidebar startTransition={startTransition} />

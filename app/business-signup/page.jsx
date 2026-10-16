@@ -1,19 +1,18 @@
 "use client";
 
 import dynamic from "next/dynamic";
-import Image from "next/image";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
-import { ArrowLeft, ArrowRight, Building2, Check, CheckCircle2, Loader2, LockKeyhole, MapPin, Sparkles, UserRound } from "lucide-react";
+import {} from "lucide-react";
+import { ArrowLeft, ArrowRight, Check, CheckCircle2, Globe, Copy, Loader2, MapPin } from "lucide-react";
 import { toast } from "sonner";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { slugifyText } from "@/lib/utils";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { PhoneNumberInput } from "@/components/common/PhoneNumber";
 
 const BusinessLocation = dynamic(() => import("@/components/common/BusinessLocation"), { ssr: false });
 
@@ -31,7 +30,7 @@ const initialForm = {
 
 const steps = [
   { title: "Account", subtitle: "User credential" },
-  { title: "Business",subtitle: "Business Name & Addesss" },
+  { title: "Business", subtitle: "Business Name & Addesss" },
   { title: "Location", icon: MapPin },
 ];
 
@@ -72,6 +71,7 @@ export default function BusinessSignupPage() {
   const [submitting, setSubmitting] = useState(false);
   const [emailChecking, setEmailChecking] = useState(false);
   const [step, setStep] = useState(1);
+  const [copied, setCopied] = useState(false);
 
   useEffect(() => {
     async function loadOptions() {
@@ -112,6 +112,10 @@ export default function BusinessSignupPage() {
     const { name, value } = event.target;
     setForm((prev) => ({ ...prev, [name]: value }));
     setErrors((prev) => ({ ...prev, [name]: "" }));
+  };
+  const handlePhoneChange = (value) => {
+    setForm((prev) => ({ ...prev, phone: value }));
+    setErrors((prev) => ({ ...prev, phone: "" }));
   };
 
   const checkEmailAvailability = useCallback(async () => {
@@ -185,6 +189,7 @@ export default function BusinessSignupPage() {
     setErrors({});
     setStep((s) => Math.max(s - 1, 1));
   };
+  const businessBaseUrl = typeof window !== "undefined" ? window.location.origin : "";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -250,101 +255,122 @@ export default function BusinessSignupPage() {
   };
 
   return (
-    <main className="min-h-screen bg-[#062B3D] text-slate-950 p-10">
-      <div className="w-full mx-auto">
-        <div className="mx-auto w-full flex flex-row rounded-lg shadow-sm border-slate-200 overflow-hidden">
-          {/* ── Sidebar ── */}
-          <aside className="flex-row flex lg:flex-col bg-gray-50">
-            <header>
-              <div className="flex flex-row gap-2 items-center justify-center">
-                <Button variant="ghost" size="sm" className="w-7 h-7 border border-white text-white inline-flex justify-center items-center gap-2 p-0 text-sm text-slate-600" onClick={() => router.back()}>
-                  <ArrowLeft className="h-3 w-3" />
-                </Button>
-                <Link href="/" className="mt-5 inline-flex">
-                  {/* <Image src="/logo.png" alt="Booksaa" width={120} height={32} priority /> */}
-                </Link>
-              </div>
-            </header>
-            <div className="space-y-4 rounded-lg">
-              {/* Step indicators */}
-              <div className="border-b px-5 py-5 sm:px-8">
-                <div className="flex flex-row lg:flex-col gap-6 flex-wrap items-start gap-3">
-                  {steps.map((item, index) => {
-                    const stepNumber = index + 1;
-                    const active = step === stepNumber;
-                    const complete = step > stepNumber;
+    <div className="w-full mx-auto max-w-[1100px] z-10 relative">
+      <div className="mx-auto w-full flex flex-row rounded-2xl shadow-sm outline-offset-8 overflow-hidden outline-8 outline-slate-100/10">
+        {/* ── Sidebar ── */}
+        <aside className="flex flex-col bg-gray-50 min-w-[250px] p-4">
+          {/* Step indicators */}
+          <div className="px-3 py-5 sm:px-3">
+            <div className="flex flex-col gap-6 flex-wrap items-start">
+              {steps.map((item, index) => {
+                const stepNumber = index + 1;
+                const active = step === stepNumber;
+                const complete = step > stepNumber;
 
-                    return (
-                      <div key={item.title} className="flex min-w-[132px] flex-1 items-center gap-3">
-                        <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${complete ? "border-emerald-600 bg-emerald-600 text-slate-500" : active ? "border-primary bg-primary text-slate-500" : "border-slate-200 bg-white text-slate-500"}`}>{complete ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">{stepNumber}</span>}</div>
-                        <div>
-                          <p className="text-sm uppercase font-semibold text-slate-500">{item.title}</p>
-                          <p className="text-xs text-slate-500">{item.subtitle}</p>
-                        </div>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            </div>
-          </aside>
-          {/* ── Main form ── */}
-          <section className="h-screen w-full flex-1">
-            <Card className="rounded-none h-full shadow-none">
-              <CardContent className="p-0">
-                <form onSubmit={handleSubmit} className="px-5 py-6 sm:px-8">
-                  {loading ? (
-                    <div className="flex h-80 items-center justify-center">
-                      <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                return (
+                  <div key={item.title} className="flex min-w-[132px] flex-1 items-center gap-3">
+                    <div className={`flex h-9 w-9 items-center justify-center rounded-md border ${complete ? "border-primary bg-primary text-slate-700" : active ? "border-primary bg-primary text-slate-800" : "border-slate-200 bg-white text-slate-800"}`}>{complete ? <Check className="h-4 w-4" /> : <span className="text-sm font-semibold">{stepNumber}</span>}</div>
+                    <div>
+                      <p className="text-xs uppercase font-semibold text-slate-700">{item.title}</p>
+                      <p className="text-xs text-slate-700">{item.subtitle}</p>
                     </div>
-                  ) : (
-                    <>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </aside>
+        {/* ── Main form ── */}
+        <section className="min-h-[calc(100vh-200px)] w-full flex-1">
+          <Card className="rounded-none h-full shadow-none">
+            <CardContent className="p-0 h-full">
+              <form onSubmit={handleSubmit} className="px-5 py-6 sm:px-8 h-full">
+                {loading ? (
+                  <div className="flex h-80 items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-slate-500" />
+                  </div>
+                ) : (
+                  <div className="max-w-3xl mx-auto w-full h-full">
+                    <div className="py-3 flex flex-col w-full h-full">
                       {/* Step 1 */}
                       {step === 1 && (
-                        <div className="py-10">
-                          <div className="space-y-3 max-w-3xl mx-auto">
-                            <div>
-                              <h2 className="text-2xl font-bold">Create an account</h2>
-                              <p className="mt-1 text-sm text-slate-500">A quick setup for a smoother booking experience</p>
-                            </div>
-                            <div className="grid gap-4 sm:grid-cols-2 mt-3">
-                              <Field label="First name" id="firstname" error={errors.firstname}>
-                                <Input id="firstname" name="firstname" value={form.firstname} onChange={handleChange} />
-                              </Field>
-                              <Field label="Last name" id="lastname" error={errors.lastname}>
-                                <Input id="lastname" name="lastname" value={form.lastname} onChange={handleChange} />
-                              </Field>
-                              <Field label="Email" id="email" error={errors.email}>
-                                <Input id="email" name="email" type="email" value={form.email} onBlur={checkEmailAvailability} onChange={handleChange} />
-                                {emailChecking && <p className="text-sm text-slate-500">Checking email...</p>}
-                              </Field>
-                              <Field label="Phone" id="phone">
-                                <Input id="phone" name="phone" value={form.phone} onChange={handleChange} />
-                              </Field>
-                              <Field label="Password" id="password" error={errors.password}>
-                                <Input id="password" name="password" type="password" value={form.password} onChange={handleChange} />
-                              </Field>
-                              <Field label="Confirm password" id="confirmPassword" error={errors.confirmPassword}>
-                                <Input id="confirmPassword" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} />
-                              </Field>
-                            </div>
+                        <div className="space-y-3">
+                          <div className="mb-8">
+                            <h2 className="text-2xl font-bold">Create an account</h2>
+                            <p className="mt-1 text-sm text-slate-500">A quick setup for a smoother booking experience</p>
+                          </div>
+                          <div className="grid gap-4 sm:grid-cols-2 mt-3">
+                            <Field label="First name" id="firstname" error={errors.firstname}>
+                              <Input id="firstname" name="firstname" value={form.firstname} onChange={handleChange} />
+                            </Field>
+                            <Field label="Last name" id="lastname" error={errors.lastname}>
+                              <Input id="lastname" name="lastname" value={form.lastname} onChange={handleChange} />
+                            </Field>
+                            <Field label="Email" id="email" error={errors.email}>
+                              <Input id="email" name="email" type="email" value={form.email} onBlur={checkEmailAvailability} onChange={handleChange} />
+                              {emailChecking && <p className="text-sm text-slate-500">Checking email...</p>}
+                            </Field>
+                            <Field label="Phone" id="phone" error={errors.email}>
+                              <PhoneNumberInput id="phone" name="phone" autoComplete="tel" value={form.phone} onChange={handlePhoneChange} defaultCountry="NP" placeholder="Phone number" />
+
+                              {/* <Input id="phone" name="phone" value={form.phone} onChange={handleChange} /> */}
+                            </Field>
+                            <Field label="Password" id="password" error={errors.password}>
+                              <Input id="password" name="password" type="password" value={form.password} onChange={handleChange} />
+                            </Field>
+                            <Field label="Confirm password" id="confirmPassword" error={errors.confirmPassword}>
+                              <Input id="confirmPassword" name="confirmPassword" type="password" value={form.confirmPassword} onChange={handleChange} />
+                            </Field>
                           </div>
                         </div>
                       )}
 
                       {/* Step 2 */}
                       {step === 2 && (
-                        <div className="py-10">
-                          <div className="space-y-3">
-                            <div>
-                              <h2 className="text-2xl font-bold">Business details</h2>
-                              <p className="mt-1 text-sm text-slate-500">Match the admin business setup, with plan-based trial activation.</p>
+                        <div className="space-y-3">
+                          <div>
+                            <h2 className="text-2xl font-bold">Business details</h2>
+                            <p className="mt-1 text-sm text-slate-500">Match the admin business setup, with plan-based trial activation.</p>
+                          </div>
+                          <div className="grid gap-4">
+                            <Field label="Business name" id="name" error={errors.name}>
+                              <Input id="name" name="name" value={form.name} onChange={handleChange} />
+                            </Field>
+
+                            <div className="space-y-2">
+                              <label className="text-sm font-medium text-slate-700">Your business URL</label>
+
+                              <div className="flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-1.5">
+                                <Globe className="h-4 w-4 shrink-0 text-slate-400" />
+
+                                <>
+                                  <p className="min-w-0 flex-1 break-all text-sm">
+                                    <span className="text-slate-500">{businessBaseUrl}/</span>
+                                    <span className="font-medium text-slate-900">{businessSlugPreview}</span>
+                                  </p>
+
+                                  <button
+                                    type="button"
+                                    onClick={async () => {
+                                      try {
+                                        await navigator.clipboard.writeText(`${businessBaseUrl}/${businessSlugPreview}`);
+                                        setCopied(true);
+                                        setTimeout(() => setCopied(false), 2000);
+                                      } catch (error) {
+                                        console.error("Failed to copy business URL:", error);
+                                      }
+                                    }}
+                                    className="shrink-0 rounded-md p-2 text-slate-500 hover:bg-slate-200"
+                                    aria-label={copied ? "Copied business URL" : "Copy business URL"}
+                                  >
+                                    {copied ? <Check className="h-4 w-4 text-green-600" /> : <Copy className="h-4 w-4" />}
+                                  </button>
+                                </>
+                              </div>
+
+                              <p className="text-xs text-slate-500">Customers can use this link to book your services.</p>
                             </div>
-                            <div className="grid gap-4">
-                              <Field label="Business name" id="name" error={errors.name}>
-                                <Input id="name" name="name" value={form.name} onChange={handleChange} />
-                                {businessSlugPreview ? <p className="text-sm text-slate-500">Slug preview: {businessSlugPreview}</p> : <p className="text-sm text-slate-400">Slug will be generated automatically.</p>}
-                              </Field>
+                            <div className="grid grid-cols-1 lg:grid-cols-2 gap-3">
                               <Field label="Category" id="categoryId" error={errors.categoryId}>
                                 <Select value={form.categoryId} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
                                   <SelectTrigger id="categoryId">
@@ -380,7 +406,7 @@ export default function BusinessSignupPage() {
 
                       {/* Step 3 */}
                       {step === 3 && (
-                        <div className="space-y-5">
+                        <div className="space-y-3">
                           <div>
                             <h2 className="text-2xl font-bold">Primary location</h2>
                             <p className="mt-1 text-sm text-slate-500">Search your address and confirm where customers can book you.</p>
@@ -391,7 +417,7 @@ export default function BusinessSignupPage() {
                       )}
 
                       {/* Navigation */}
-                      <div className="mt-auto flex gap-3 flex-col">
+                      <div className="mt-auto flex flex-row gap-3 w-full justify-between">
                         <Button type="button" variant="outline" onClick={previousStep} disabled={step === 1 || submitting}>
                           <ArrowLeft className="h-4 w-4" />
                           Previous
@@ -408,15 +434,15 @@ export default function BusinessSignupPage() {
                           </Button>
                         )}
                       </div>
-                    </>
-                  )}
-                </form>
-              </CardContent>
-            </Card>
-          </section>
-        </div>
+                    </div>
+                  </div>
+                )}
+              </form>
+            </CardContent>
+          </Card>
+        </section>
       </div>
-    </main>
+    </div>
   );
 }
 
@@ -457,10 +483,10 @@ export default function BusinessSignupPage() {
 
 function Field({ label, id, error, children }) {
   return (
-    <div className="space-y-2">
+    <div className="space-y-1">
       <Label htmlFor={id}>{label}</Label>
       {children}
-      {error && <p className="text-sm text-red-600">{error}</p>}
+      {error && <p className="text-xs text-red-600">* {error}</p>}
     </div>
   );
 }
