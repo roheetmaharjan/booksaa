@@ -48,12 +48,11 @@ const Header = () => {
               </Link>
             </div>
             {/* Nav */}
-            <nav className={`hidden text-md md:flex ml-5 items-center gap-6 text-white  ${sticky ? "py-2" : "py-5"} `}>
-              <Link href="#">Features</Link>
+            <nav className={`hidden text-md md:flex ml-5 items-center gap-6 text-white w-full ${sticky ? "py-2" : "py-5"} `}>
+              <Link href="/industries">Industries</Link>
+              <Link href="/features">Features</Link>
               <Link href="/pricing">Pricing</Link>
-              <Link href="#">Industries</Link>
-              <Link href="#">Resources</Link>
-              <Link href="#">Contact</Link>
+              <Link href="/why-booksaa">Why Booksaa</Link>
             </nav>
             <div className="flex w-full items-center justify-end px-4">
               <div className="hidden items-center justify-end pr-16 sm:flex lg:pr-0">

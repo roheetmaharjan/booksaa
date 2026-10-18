@@ -55,8 +55,8 @@ export default function TargetAudience() {
           <p className="text-center max-w-3xl mx-auto mb-10 text-muted-foreground">We helps service-based businesses manage appointments, staff, clients, and day-to-day operations</p>
         </div>
 
-        <Tabs defaultValue="startup" className="w-full">
-          <TabsList className="grid w-full lg:grid-cols-3 xl:grid-cols-6 mb-8 justify-stretch h-auto rounded-xl bg-slate-50 border">
+        <Tabs defaultValue="hair" className="w-full">
+          <TabsList className="grid w-full lg:grid-cols-3 xl:grid-cols-6 mb-8 justify-stretch h-auto rounded-xl bg-transparent border">
             <TabsTrigger value="hair" className="py-3 rounded-xl font-semibold text-base">Hair Salons & Barbershops </TabsTrigger>
             <TabsTrigger value="beauty" className="py-3 rounded-xl font-semibold text-base">Beauty & Aesthetic Clinics</TabsTrigger>
             <TabsTrigger value="spas" className="py-3 rounded-xl font-semibold text-base">Spas & Wellness Centers</TabsTrigger>
@@ -68,9 +68,9 @@ export default function TargetAudience() {
           {Object.entries(industries).map(([key, industry]) => (
             <TabsContent key={key} value={key}>
               <div className="rounded-2xl border bg-background overflow-hidden">
-                <div className="grid lg:grid-cols-2 gap-8 p-6">
+                <div className="grid lg:grid-cols-2 gap-8 p-4">
                   <div>
-                    <img src={industry.image} alt={industry.title} className="w-full h-[400px] object-cover rounded-xl" />
+                    <img src={industry.image} alt={industry.title} placeholder="blur" className="w-full h-[400px] object-cover rounded-xl" />
                   </div>
 
                   <div className="flex flex-col justify-center">

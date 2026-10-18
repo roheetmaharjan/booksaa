@@ -26,7 +26,7 @@ export default function HeroSection() {
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
             <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>
 
-            <button className="bg-white/10 backdrop-blur text-white px-7 py-4 rounded-xl border border-white/10 hover:bg-white/15 transition">
+            <button className="bg-white/10 backdrop-blur text-white px-7 py-3 rounded-xl border border-white/10 hover:bg-white/15 transition">
               Watch Demo
             </button>
           </div>

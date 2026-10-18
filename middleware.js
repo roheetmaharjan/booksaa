@@ -24,12 +24,14 @@ function isPublicPath(pathname) {
     pathname.startsWith("/auth") ||
     pathname.startsWith("/business-signup") ||
     pathname.startsWith("/book") ||
-    pathname.startsWith("/forgot-password") ||
     pathname.startsWith("/pay") ||
     pathname === "/home" ||
     pathname.startsWith("/home/") ||
     pathname.startsWith("/pricing") ||
     pathname.startsWith("/contact") ||
+    pathname.startsWith("/why-booksaa") ||
+    pathname.startsWith("/features") ||
+    pathname.startsWith("/industries") ||
     pathname.startsWith("/api/auth") ||
     pathname.startsWith("/api/public")
   );

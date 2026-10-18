@@ -14,7 +14,7 @@ export default function StartFreeTrialButton({
   return (
     <Link
       href={href}
-      className={`inline-flex items-center justify-center bg-primary text-slate-900 font-semibold px-7 py-4 rounded-xl hover:opacity-90 transition ${className}`}
+      className={`inline-flex items-center justify-center bg-primary text-slate-900 font-semibold px-7 py-3 rounded-xl hover:opacity-90 transition ${className}`}
     >
       {children}
     </Link>
