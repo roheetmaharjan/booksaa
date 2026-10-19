@@ -51,13 +51,6 @@ export function VendorSidebar({ startTransition }) {
     ],
     [businessBasePath]
   );
-  const secondaryItems = useMemo(
-    () => [
-      { title: "Settings", url: `${businessBasePath}/settings`, icon: Settings },
-      { title: "Support", url: `${businessBasePath}/support`, icon: HelpCircle },
-    ],
-    [businessBasePath]
-  );
 
   const locations = business?.locations || [];
   const owner = business?.owner || {};
@@ -220,17 +213,6 @@ export function VendorSidebar({ startTransition }) {
           <SidebarGroupContent>
             <SidebarMenu>
               {primaryItems.map((item) => (
-                <VendorSidebarItem key={item.title} item={item} isActive={pathname === item.url} onNavigate={handleNav(withSelectedLocation(item.url))} />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Manage</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryItems.map((item) => (
                 <VendorSidebarItem key={item.title} item={item} isActive={pathname === item.url} onNavigate={handleNav(withSelectedLocation(item.url))} />
               ))}
             </SidebarMenu>
