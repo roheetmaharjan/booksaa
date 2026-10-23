@@ -8,9 +8,8 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { SidebarTrigger } from "@/components/ui/sidebar";
 
-export default function Payment() {
+export default function Settings() {
   const [publishableKey, setPublishableKey] = useState("");
   const [secretKey, setSecretKey] = useState("");
   const [showSecret, setShowSecret] = useState(false);
@@ -83,7 +82,6 @@ export default function Payment() {
   }
 
   return (
-    <>
       <Card className="border-slate-200">
         <CardHeader className="border-b border-slate-100 bg-slate-50/50">
           <div className="flex items-center gap-3">
@@ -92,7 +90,9 @@ export default function Payment() {
             </div>
             <div>
               <CardTitle className="text-lg">Stripe Integration</CardTitle>
-              <CardDescription>Connect your own Stripe account to accept credit/debit card payments online.</CardDescription>
+              <CardDescription>
+                Connect your own Stripe account to accept credit/debit card payments online.
+              </CardDescription>
             </div>
           </div>
         </CardHeader>
@@ -102,19 +102,29 @@ export default function Payment() {
               <Alert className="border-emerald-200 bg-emerald-50 text-emerald-900">
                 <CheckCircle2 className="h-4 w-4 text-emerald-600" />
                 <AlertTitle className="font-bold">Stripe Connected</AlertTitle>
-                <AlertDescription className="text-emerald-800">Your business is currently ready to process card checkouts and send payment links to customers.</AlertDescription>
+                <AlertDescription className="text-emerald-800">
+                  Your business is currently ready to process card checkouts and send payment links to customers.
+                </AlertDescription>
               </Alert>
             ) : (
               <Alert className="border-amber-200 bg-amber-50 text-amber-900">
                 <AlertTriangle className="h-4 w-4 text-amber-600" />
                 <AlertTitle className="font-bold">Not Connected</AlertTitle>
-                <AlertDescription className="text-amber-800">You must connect your Stripe Publishable and Secret keys to collect upfront payments for services.</AlertDescription>
+                <AlertDescription className="text-amber-800">
+                  You must connect your Stripe Publishable and Secret keys to collect upfront payments for services.
+                </AlertDescription>
               </Alert>
             )}
 
             <div className="space-y-2">
               <Label htmlFor="publishableKey">Stripe Publishable Key</Label>
-              <Input id="publishableKey" value={publishableKey} onChange={(e) => setPublishableKey(e.target.value)} placeholder="pk_test_..." className="border-slate-200 bg-white" />
+              <Input
+                id="publishableKey"
+                value={publishableKey}
+                onChange={(e) => setPublishableKey(e.target.value)}
+                placeholder="pk_test_..."
+                className="border-slate-200 bg-white"
+              />
             </div>
 
             <div className="space-y-2">
@@ -133,7 +143,11 @@ export default function Payment() {
                   placeholder="sk_test_..."
                   className="border-slate-200 bg-white pr-10"
                 />
-                <button type="button" onClick={() => setShowSecret(!showSecret)} className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600">
+                <button
+                  type="button"
+                  onClick={() => setShowSecret(!showSecret)}
+                  className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                >
                   {showSecret ? <EyeOff className="h-5 w-5" /> : <Eye className="h-5 w-5" />}
                 </button>
               </div>
@@ -156,6 +170,5 @@ export default function Payment() {
           </CardFooter>
         </form>
       </Card>
-    </>
   );
 }

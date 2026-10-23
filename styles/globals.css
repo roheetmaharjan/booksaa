@@ -109,7 +109,7 @@ body {
     @apply !px-0 !py-1;
   }
   .card-value {
-    @apply !px-5 !py-3 !gap-2 !grid !grid-cols-[1fr_2fr] !justify-between items-center;
+    @apply !px-5 !py-3 !gap-2 !grid !grid-cols-[0.5fr_2fr] !justify-between items-start;
   }
   .page-content {
     @apply space-y-6;
