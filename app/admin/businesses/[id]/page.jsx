@@ -38,7 +38,7 @@ export default function VendorDetail() {
 
   const handleResend = async (email) => {
     try {
-      const res = await fetch("/api/businesses/resend-activation", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/resend-activation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email }),
@@ -61,8 +61,8 @@ export default function VendorDetail() {
     if (!vendorId) return;
 
     const url = selectedLocationId
-      ? `/api/businesses/${vendorId}?locationId=${selectedLocationId}`
-      : `/api/businesses/${vendorId}`;
+      ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}?locationId=${selectedLocationId}`
+      : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}`;
     fetch(url)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
@@ -332,7 +332,7 @@ export default function VendorDetail() {
                 locationId={selectedLocationId}
                 initialHours={vendor.businessHours || []}
                 onSaved={() => {
-                  fetch(`/api/businesses/${vendor.id}?locationId=${selectedLocationId}`)
+                  fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendor.id}?locationId=${selectedLocationId}`)
                     .then((res) => res.json())
                     .then((data) => setVendor(data));
                 }}

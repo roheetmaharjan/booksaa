@@ -102,7 +102,7 @@ export default function EditVendor() {
   useEffect(() => {
     const fetchCategories = async () => {
       try {
-        const res = await fetch("/api/categories");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
         if (!res.ok) throw new Error("Failed to fetch categories");
         const data = await res.json();
         setCategories(data.categories || data);
@@ -114,7 +114,7 @@ export default function EditVendor() {
 
     const fetchPlans = async () => {
       try {
-        const res = await fetch("/api/plans");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/plans`);
         if (!res.ok) throw new Error("Failed to fetch plans");
         const data = await res.json();
         setPlans(data.plans || data);
@@ -127,7 +127,7 @@ export default function EditVendor() {
     const fetchRoles = async () => {
       try {
         setRolesLoading(true);
-        const res = await fetch("/api/professional-roles");
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/professional-roles`);
         if (!res.ok) throw new Error("Failed to fetch roles");
         const data = await res.json();
         setRoles(data.roles || data);
@@ -146,7 +146,7 @@ export default function EditVendor() {
 
   // ── Fetch business ─────────────────────────────────────────────────────────
   useEffect(() => {
-    const url = selectedLocationId ? `/api/businesses/${id}?locationId=${selectedLocationId}` : `/api/businesses/${id}`;
+    const url = selectedLocationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${id}?locationId=${selectedLocationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${id}`;
 
     setLoading(true);
     fetch(url)
@@ -171,7 +171,7 @@ export default function EditVendor() {
 
   // ── Helpers ────────────────────────────────────────────────────────────────
   const refreshBusiness = (locationId = selectedLocationId) => {
-    fetch(`/api/businesses/${form.id}?locationId=${locationId}`)
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${form.id}?locationId=${locationId}`)
       .then((res) => res.json())
       .then((data) => setForm(normalizeBusinessForm(data)));
   };
@@ -190,7 +190,7 @@ export default function EditVendor() {
 
   const handleResend = async (vendorId) => {
     try {
-      const res = await fetch("/api/resend-activation", {
+      const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/resend-activation`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ vendorId }),
@@ -210,7 +210,7 @@ export default function EditVendor() {
 
     if (Object.keys(errors).length > 0) return;
 
-    const res = await fetch(`/api/businesses/${id}`, {
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${id}`, {
       method: "PUT",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),

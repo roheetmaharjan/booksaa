@@ -3,35 +3,41 @@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const industries = {
-  startup: {
-    title: "Helping startups turn bold ideas into impactful digital products.",
-    description: "We help founders validate ideas, launch MVPs, and scale products with confidence.",
-    image: "/feature-5.jpg",
-    items: ["MVP & Prototype Design", "Product Discovery & UX Strategy", "Brand Identity", "Rapid Iteration & Validation", "Design Systems for Scaling Teams"],
+  hair: {
+    title: "Hair Salons & Barbershops",
+    description: "Make appointment scheduling and salon management effortless.",
+    image: "/hair.jpg",
+    items: ["Online appointment booking", "Stylist and barber scheduling", "Service menus and pricing", "Client profiles and visit history", "Automated appointment reminders"],
   },
-  saas: {
-    title: "Designing intuitive and scalable SaaS experiences.",
-    description: "Creating powerful software experiences that are easy to use and built to grow.",
-    image: "/feature-1.jpg",
-    items: ["User Onboarding", "Dashboard Design", "Role-Based Access", "Analytics & Reporting", "Subscription & Billing Flows"],
+  beauty: {
+    title: "Beauty & Aesthetic Clinics",
+    description: "Deliver a seamless client experience while keeping your business organized.",
+    image: "/beauty.jpg",
+    items: ["Treatment and service booking", "Staff and room scheduling", "Client records and preferences", "Flexible service durations", "Business performance insights"],
   },
-  fintech: {
-    title: "Building trust-driven financial experiences.",
-    description: "Secure, compliant, and intuitive interfaces for financial products.",
-    image: "/feature-3.jpg",
-    items: ["Financial Workflows", "Mobile Banking UX", "Transaction Visualization", "Security-Focused Interfaces", "Compliance-Friendly Design"],
+  spas: {
+    title: "Spas & Wellness Centers",
+    description: "Create a relaxing experience from the moment clients book.",
+    image: "/spas.jpg",
+    items: ["Massage and wellness bookings", "Therapist availability management", "Multiple treatment scheduling", "Client appointment history", "Centralized booking management"],
   },
-  ecommerce: {
-    title: "Designing conversion-focused shopping experiences.",
-    description: "Helping brands increase conversions and improve customer journeys.",
-    image: "/feature-4.jpg",
-    items: ["Product Pages", "Checkout Optimization", "Shopping Cart Experience", "Mobile Commerce", "Brand Consistency"],
+  nails: {
+    title: "Nail Salons & Lash Studios",
+    description: "Keep your bookings flowing and your team organized.",
+    image: "/nails.jpg",
+    items: ["Nail, lash, and beauty service menus", "Staff-specific appointment booking", "Appointment calendar management", "Client preferences and history", "Convenient online booking"],
   },
-  healthcare: {
-    title: "Designing human-centered healthcare experiences.",
-    description: "Improving patient and provider experiences through thoughtful design.",
-    image: "/feature-2.jpg",
-    items: ["Patient Portals", "Appointment Scheduling", "Healthcare Dashboards", "Accessibility", "Privacy & Security"],
+  fitness: {
+    title: "Fitness & Personal Training",
+    description: "Spend less time coordinating sessions and more time helping clients reach their goals.",
+    image: "/fitness.jpg",
+    items: ["Personal training appointments", "Trainer availability and schedules", "Session booking and management", "Client profiles", "Recurring session coordination"],
+  },
+  indepentent: {
+    title: "Independent Professionals",
+    description: "Give your independent service business the tools to run professionally.",
+    image: "/professional.jpg",
+    items: ["Personal booking page", "Service and availability management", "Client management", "Appointment notifications", "Business overview and reporting"],
   },
 };
 
@@ -46,15 +52,17 @@ export default function TargetAudience() {
             Complete <span className="text-primary">Business Management</span> Platform for Service Providers
           </h2>
 
-          <p className="text-center max-w-3xl mx-auto mb-10 text-muted-foreground">We design digital products that are purposeful, scalable, and user-centric.</p>
+          <p className="text-center max-w-3xl mx-auto mb-10 text-muted-foreground">We helps service-based businesses manage appointments, staff, clients, and day-to-day operations</p>
         </div>
 
         <Tabs defaultValue="startup" className="w-full">
-          <TabsList className="grid w-full grid-cols-4 mb-8 justify-stretch h-auto rounded-xl bg-slate-50 border">
-            <TabsTrigger value="beauty" className="py-3 rounded-xl font-semibold text-base">Beauty</TabsTrigger>
-            <TabsTrigger value="wellness" className="py-3 rounded-xl font-semibold text-base">Wellness</TabsTrigger>
-            <TabsTrigger value="fitness" className="py-3 rounded-xl font-semibold text-base">Fitness</TabsTrigger>
-            <TabsTrigger value="ecommerce" className="py-3 rounded-xl font-semibold text-base">Health Care</TabsTrigger>
+          <TabsList className="grid w-full lg:grid-cols-3 xl:grid-cols-6 mb-8 justify-stretch h-auto rounded-xl bg-slate-50 border">
+            <TabsTrigger value="hair" className="py-3 rounded-xl font-semibold text-base">Hair Salons & Barbershops </TabsTrigger>
+            <TabsTrigger value="beauty" className="py-3 rounded-xl font-semibold text-base">Beauty & Aesthetic Clinics</TabsTrigger>
+            <TabsTrigger value="spas" className="py-3 rounded-xl font-semibold text-base">Spas & Wellness Centers</TabsTrigger>
+            <TabsTrigger value="nails" className="py-3 rounded-xl font-semibold text-base">Nail Salons & Lash Studios</TabsTrigger>
+            <TabsTrigger value="fitness" className="py-3 rounded-xl font-semibold text-base">Fitness & Personal Training</TabsTrigger>
+            <TabsTrigger value="indepentent" className="py-3 rounded-xl font-semibold text-base">Independent Professionals</TabsTrigger>
           </TabsList>
 
           {Object.entries(industries).map(([key, industry]) => (

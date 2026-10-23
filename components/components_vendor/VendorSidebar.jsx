@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users,Contact,ScanLine  } from "lucide-react";
+import { BarChart3, CalendarClock, Check, ChevronDown, HelpCircle, Home, MapPin, Scissors, Settings, Store, Users, Contact, ScanLine } from "lucide-react";
 import { BellIcon, CreditCardIcon, RocketLaunchIcon, SignOutIcon, UserCircleIcon } from "@phosphor-icons/react";
 import { signOut } from "@/lib/auth-client";
 import { Sidebar, SidebarContent, SidebarFooter, SidebarGroup, SidebarGroupContent, SidebarGroupLabel, SidebarHeader, SidebarMenu, SidebarMenuButton, SidebarMenuItem, SidebarRail } from "@/components/ui/sidebar";
@@ -13,7 +13,7 @@ async function resolveBusinessImage(imageKey) {
   if (!imageKey.startsWith("vendors/")) return imageKey;
 
   try {
-    const response = await fetch("/api/storage/view", {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -47,16 +47,8 @@ export function VendorSidebar({ startTransition }) {
       { title: "Services", url: `${businessBasePath}/services`, icon: Scissors },
       { title: "Professionals", url: `${businessBasePath}/professionals`, icon: Users },
       { title: "Customers", url: `${businessBasePath}/customers`, icon: Contact },
-      { title: "Reports", url: `${businessBasePath}/reports`, icon: BarChart3 },
     ],
-    [businessBasePath]
-  );
-  const secondaryItems = useMemo(
-    () => [
-      { title: "Settings", url: `${businessBasePath}/settings`, icon: Settings },
-      { title: "Support", url: `${businessBasePath}/support`, icon: HelpCircle },
-    ],
-    [businessBasePath]
+    [businessBasePath],
   );
 
   const locations = business?.locations || [];
@@ -225,25 +217,14 @@ export function VendorSidebar({ startTransition }) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
-
-        <SidebarGroup>
-          <SidebarGroupLabel>Manage</SidebarGroupLabel>
-          <SidebarGroupContent>
-            <SidebarMenu>
-              {secondaryItems.map((item) => (
-                <VendorSidebarItem key={item.title} item={item} isActive={pathname === item.url} onNavigate={handleNav(withSelectedLocation(item.url))} />
-              ))}
-            </SidebarMenu>
-          </SidebarGroupContent>
-        </SidebarGroup>
       </SidebarContent>
 
-      <SidebarFooter className="p-2">
+      <SidebarFooter className="p-2 sidebar-footer">
         <SidebarMenu>
           <SidebarMenuItem>
             <Popover open={profileOpen} onOpenChange={setProfileOpen}>
               <PopoverTrigger asChild>
-                <SidebarMenuButton tooltip="Owner profile" className="h-11 justify-start">
+                <SidebarMenuButton tooltip="Owner profile" className="h-11 group-data-[collapsible=icon]:!p-0 justify-start">
                   <OwnerAvatar owner={owner} ownerName={ownerName} ownerInitial={ownerInitial} />
                   <span className="min-w-0 flex-1 truncate">{ownerName}</span>
                 </SidebarMenuButton>
@@ -258,18 +239,44 @@ export function VendorSidebar({ startTransition }) {
                 </div>
 
                 <div className="grid gap-1 p-2">
-                  <ProfileMenuButton icon={UserCircleIcon} label="My Profile" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/my-profile`))} />
-                  <ProfileMenuButton icon={CreditCardIcon} label="Billing & Usage" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/billing-usage`))} />
-                  <ProfileMenuButton icon={BellIcon} label="Notifications" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/notifications`))} />
+                  <ProfileMenuButton
+                    icon={Settings}
+                    label="Settings"
+                    onClick={() => {
+                      const url = new URL(withSelectedLocation(`${businessBasePath}/settings`), window.location.origin);
+
+                      url.searchParams.set("tab", "business-profile");
+
+                      navigateTo(`${url.pathname}${url.search}`);
+                    }}
+                  />
+                  <ProfileMenuButton
+                    icon={UserCircleIcon}
+                    label="Billing & Usage"
+                    onClick={() => {
+                      const url = new URL(withSelectedLocation(`${businessBasePath}/settings`), window.location.origin);
+
+                      url.searchParams.set("tab", "billing");
+
+                      navigateTo(`${url.pathname}${url.search}`);
+                    }}
+                  />
+                  <ProfileMenuButton
+                    icon={BellIcon}
+                    label="Notifications"
+                    onClick={() => {
+                      const url = new URL(withSelectedLocation(`${businessBasePath}/settings`), window.location.origin);
+
+                      url.searchParams.set("tab", "notifications");
+
+                      navigateTo(`${url.pathname}${url.search}`);
+                    }}
+                  />
                   <ProfileMenuButton icon={RocketLaunchIcon} label="Get Started" onClick={openGetStarted} />
                 </div>
 
                 <div className="border-t border-slate-200 p-3">
-                  <button
-                    type="button"
-                    onClick={() => signOut({ callbackUrl: "/auth/login" })}
-                    className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-sm font-semibold text-slate-900 hover:bg-slate-50"
-                  >
+                  <button type="button" onClick={() => signOut({ callbackUrl: "/auth/login" })} className="flex h-10 w-full items-center justify-center gap-2 rounded-md border border-slate-200 bg-white text-sm font-semibold text-slate-900 hover:bg-slate-50">
                     <SignOutIcon className="size-5" weight="regular" />
                     Log Out
                   </button>
@@ -288,11 +295,7 @@ function OwnerAvatar({ owner, ownerName, ownerInitial, size = "md" }) {
   const sizeClass = size === "lg" ? "size-11 text-base" : "size-8 text-sm";
 
   return (
-    <span
-      aria-label={`${ownerName} profile`}
-      className={`flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 font-semibold text-slate-800`}
-      style={owner?.image ? { backgroundImage: `url(${owner.image})`, backgroundPosition: "center", backgroundSize: "cover" } : undefined}
-    >
+    <span aria-label={`${ownerName} profile`} className={`flex ${sizeClass} shrink-0 items-center justify-center overflow-hidden rounded-full border border-slate-200 bg-slate-100 font-semibold text-slate-800`} style={owner?.image ? { backgroundImage: `url(${owner.image})`, backgroundPosition: "center", backgroundSize: "cover" } : undefined}>
       {!owner?.image && ownerInitial}
     </span>
   );
@@ -310,13 +313,7 @@ function ProfileMenuButton({ icon: Icon, label, onClick }) {
 function BusinessIdentity({ business, businessImageUrl, selectedLocation, businessInitial }) {
   return (
     <>
-      <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900">
-        {businessImageUrl ? (
-          <img src={businessImageUrl} width={36} height={36} alt={`${business.name} logo`} className="size-full object-cover" />
-        ) : (
-          businessInitial
-        )}
-      </span>
+      <span className="flex size-9 shrink-0 items-center justify-center overflow-hidden rounded-md border border-slate-200 bg-slate-50 text-sm font-semibold text-slate-900">{businessImageUrl ? <img src={businessImageUrl} width={36} height={36} alt={`${business.name} logo`} className="size-full object-cover" /> : businessInitial}</span>
       <span className="flex min-w-0 flex-col leading-tight">
         <span className="truncate font-semibold">{business?.name || "Business"}</span>
         <span className="truncate text-xs text-slate-500">{selectedLocation?.name || selectedLocation?.address || "Vendor panel"}</span>

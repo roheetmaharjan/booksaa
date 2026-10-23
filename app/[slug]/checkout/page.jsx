@@ -99,7 +99,7 @@ export default function CheckoutPage() {
     if (locationId) {
       requestParams.set("locationId", locationId);
     }
-    return `/api/bookings?${requestParams.toString()}`;
+    return `${process.env.NEXT_PUBLIC_API_URL}/api/bookings?${requestParams.toString()}`;
   }, [locationId, selectedDate]);
   
   const { data, loading, error, refetch } = useFetch(url);
@@ -119,7 +119,7 @@ export default function CheckoutPage() {
   const revenue = list.filter((item) => item.paid).reduce((sum, item) => sum + Number(item.paid.total || 0), 0);
   const move = async (appointment, stage, message) => {
     try {
-      const response = await fetch(`/api/bookings/${appointment.id}/checkout`, {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings/${appointment.id}/checkout`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ stage, bookingIds: appointment.bookingIds }),
@@ -150,7 +150,7 @@ export default function CheckoutPage() {
   };
   const complete = async (id, total, method, _tip, bookingIds = [id]) => {
     try {
-      const response = await fetch(`/api/bookings/${id}/checkout`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: total, paymentMethod: method, bookingIds }) });
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings/${id}/checkout`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: total, paymentMethod: method, bookingIds }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to complete checkout");
       toast.success(`Checked out — ${currency(total)}`);

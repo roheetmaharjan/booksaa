@@ -139,7 +139,7 @@ export default function BookingsPage() {
           toast.error("Failed to load business");
           return;
         }
-        const url = effectiveLocationId ? `/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}` : `/api/businesses/${currentData.vendor.id}`;
+        const url = effectiveLocationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}?locationId=${effectiveLocationId}` : `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${currentData.vendor.id}`;
         const vendorRes = await fetch(url, { cache: "no-store" });
         const vendorData = await vendorRes.json();
         if (!vendorRes.ok) {
@@ -172,7 +172,7 @@ export default function BookingsPage() {
           end: end.toISOString(),
         });
         if (effectiveLocationId) params.set("locationId", effectiveLocationId);
-        const res = await fetch(`/api/bookings?${params.toString()}`, { cache: "no-store" });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings?${params.toString()}`, { cache: "no-store" });
         const data = await res.json();
         if (!res.ok) {
           toast.error(data.error || "Failed to load appointments");

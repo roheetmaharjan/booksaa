@@ -49,7 +49,7 @@ export default function BusinessPricingCalculator() {
   useEffect(() => {
     let active = true;
 
-    fetch("/api/auth/business-signup")
+    fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/auth/business-signup`)
       .then((res) => (res.ok ? res.json() : null))
       .then((data) => {
         if (!active) return;

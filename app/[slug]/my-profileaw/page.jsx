@@ -22,6 +22,9 @@ import { toast } from "sonner";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import GalleryGrid from "@/components/photos/GalleryGrid";
 import { ASSET_TYPES } from "@/constants/storage";
+import Payment from "@/components/settings/Payment"
+import BillingUsage from "@/components/settings/BillingUsage";
+import Notifications from "@/components/settings/Notifications";
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -92,8 +95,8 @@ export default function BusinessProfilePage() {
   const ownerName = [form?.user?.firstname, form?.user?.lastname].filter(Boolean).join(" ") || "Not assigned";
   const selectedLocationPhone = selectedLocation?.phone || form.phone || "-";
 
-  const { mutate: updateBusiness, loading: savingBusiness } = useMutation(vendorId ? `/api/businesses/${vendorId}` : "", { method: "PUT" });
-  const { mutate: updateLocation, loading: savingLocation } = useMutation(selectedLocationId ? `/api/locations/${selectedLocationId}` : "", { method: "PATCH" });
+  const { mutate: updateBusiness, loading: savingBusiness } = useMutation(vendorId ? `${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${vendorId}` : "", { method: "PUT" });
+  const { mutate: updateLocation, loading: savingLocation } = useMutation(selectedLocationId ? `${process.env.NEXT_PUBLIC_API_URL}/api/locations/${selectedLocationId}` : "", { method: "PATCH" });
   const locations = form.locations || [];
 
   const validationRules = {
@@ -134,7 +137,7 @@ export default function BusinessProfilePage() {
   useEffect(() => {
     const fetchLookups = async () => {
       try {
-        const [categoriesRes, plansRes] = await Promise.all([fetch("/api/categories", { cache: "no-store" }), fetch("/api/plans", { cache: "no-store" })]);
+        const [categoriesRes, plansRes] = await Promise.all([fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, { cache: "no-store" }), fetch("/api/plans", { cache: "no-store" })]);
         const [categoriesData, plansData] = await Promise.all([categoriesRes.json(), plansRes.json()]);
         setCategories(categoriesRes.ok ? categoriesData.categories || categoriesData : []);
         setPlans(plansRes.ok ? plansData.plans || plansData : []);
@@ -150,7 +153,7 @@ export default function BusinessProfilePage() {
   const refreshBusiness = async (locationId = selectedLocationFromSidebar) => {
     if (!vendorId) return;
     const locationQuery = locationId ? `?locationId=${encodeURIComponent(locationId)}` : "";
-    const res = await fetch(`/api/businesses/${encodeURIComponent(vendorId)}${locationQuery}`, { cache: "no-store" });
+    const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/${encodeURIComponent(vendorId)}${locationQuery}`, { cache: "no-store" });
     const data = await res.json();
     if (!res.ok) throw new Error(data.error || "Unable to load business profile.");
     setForm(normalizeBusinessForm(data));
@@ -170,7 +173,7 @@ export default function BusinessProfilePage() {
     }
 
     try {
-      const response = await fetch("/api/storage/view", {
+      const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -198,7 +201,7 @@ export default function BusinessProfilePage() {
     setUploadingProfileImage(true);
 
     try {
-      const uploadResponse = await fetch("/api/storage/upload", {
+      const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/upload`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -224,7 +227,7 @@ export default function BusinessProfilePage() {
         throw new Error("Failed to upload profile image.");
       }
 
-      const completeResponse = await fetch("/api/storage/complete", {
+      const completeResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/complete`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -252,7 +255,7 @@ export default function BusinessProfilePage() {
 
   try {
     const res = await fetch(
-      `/api/storage/list?vendorId=${encodeURIComponent(vendorId)}`,
+      `${process.env.NEXT_PUBLIC_API_URL}/api/storage/list?vendorId=${encodeURIComponent(vendorId)}`,
       { cache: "no-store" }
     );
 
@@ -269,7 +272,7 @@ export default function BusinessProfilePage() {
       return;
     }
 
-    const viewRes = await fetch("/api/storage/view", {
+    const viewRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       credentials: "include",
@@ -443,6 +446,9 @@ export default function BusinessProfilePage() {
                 <TabsTrigger value="photos">Photos</TabsTrigger>
                 <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
                 <TabsTrigger value="location">Business Location</TabsTrigger>
+                <TabsTrigger value="payment">Payment</TabsTrigger>
+                <TabsTrigger value="billing">Billing & Usage</TabsTrigger>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </TabsList>
 
               <TabsContent value="detail">
@@ -631,8 +637,16 @@ export default function BusinessProfilePage() {
                   )}
                 </div>
               </TabsContent>
+              <TabsContent value="payment">
+                <Payment/>
+              </TabsContent>
+              <TabsContent value="billing">
+                <BillingUsage/>
+              </TabsContent>
+              <TabsContent value="notifications">
+                <Notifications/>
+              </TabsContent>
             </Tabs>
-
             <AddLocation open={openAddLocation} setAddLocationOpen={setOpenAddLocation} vendorId={form.id} vendor={form} onAdded={(created) => refreshBusiness(created?.id || selectedLocationId)} />
           </>
         )}
