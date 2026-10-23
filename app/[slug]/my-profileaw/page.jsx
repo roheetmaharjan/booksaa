@@ -22,7 +22,9 @@ import { toast } from "sonner";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import GalleryGrid from "@/components/photos/GalleryGrid";
 import { ASSET_TYPES } from "@/constants/storage";
-import Payment from "@/components/my_profile/Payment"
+import Payment from "@/components/settings/Payment"
+import BillingUsage from "@/components/settings/BillingUsage";
+import Notifications from "@/components/settings/Notifications";
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -445,6 +447,8 @@ export default function BusinessProfilePage() {
                 <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
                 <TabsTrigger value="location">Business Location</TabsTrigger>
                 <TabsTrigger value="payment">Payment</TabsTrigger>
+                <TabsTrigger value="billing">Billing & Usage</TabsTrigger>
+                <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </TabsList>
 
               <TabsContent value="detail">
@@ -636,8 +640,13 @@ export default function BusinessProfilePage() {
               <TabsContent value="payment">
                 <Payment/>
               </TabsContent>
+              <TabsContent value="billing">
+                <BillingUsage/>
+              </TabsContent>
+              <TabsContent value="notifications">
+                <Notifications/>
+              </TabsContent>
             </Tabs>
-
             <AddLocation open={openAddLocation} setAddLocationOpen={setOpenAddLocation} vendorId={form.id} vendor={form} onAdded={(created) => refreshBusiness(created?.id || selectedLocationId)} />
           </>
         )}
