@@ -239,12 +239,22 @@ export function VendorSidebar({ startTransition }) {
                 </div>
 
                 <div className="grid gap-1 p-2">
-                  <ProfileMenuButton icon={Settings} label="Settings" onClick={() => navigateTo(withSelectedLocation(`${businessBasePath}/my-profile`))} />
+                  <ProfileMenuButton
+                    icon={Settings}
+                    label="Settings"
+                    onClick={() => {
+                      const url = new URL(withSelectedLocation(`${businessBasePath}/settings`), window.location.origin);
+
+                      url.searchParams.set("tab", "business-profile");
+
+                      navigateTo(`${url.pathname}${url.search}`);
+                    }}
+                  />
                   <ProfileMenuButton
                     icon={UserCircleIcon}
                     label="Billing & Usage"
                     onClick={() => {
-                      const url = new URL(withSelectedLocation(`${businessBasePath}/my-profile`), window.location.origin);
+                      const url = new URL(withSelectedLocation(`${businessBasePath}/settings`), window.location.origin);
 
                       url.searchParams.set("tab", "billing");
 
@@ -255,7 +265,7 @@ export function VendorSidebar({ startTransition }) {
                     icon={BellIcon}
                     label="Notifications"
                     onClick={() => {
-                      const url = new URL(withSelectedLocation(`${businessBasePath}/my-profile`), window.location.origin);
+                      const url = new URL(withSelectedLocation(`${businessBasePath}/settings`), window.location.origin);
 
                       url.searchParams.set("tab", "notifications");
 

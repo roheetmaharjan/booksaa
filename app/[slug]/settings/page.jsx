@@ -14,7 +14,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useMutation } from "@/hooks/useMutation";
 import { validateForm } from "@/utils/formValidator";
 import { CameraIcon } from "@phosphor-icons/react";
-import { Loader2, MapPin,PenIcon  } from "lucide-react";
+import { Loader2, MapPin, PenIcon } from "lucide-react";
 import { useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -68,8 +68,7 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [categories, setCategories] = useState([]);
-  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "detail");
-  const [isEditingDetails, setIsEditingDetails] = useState(false);
+  const [activeTab, setActiveTab] = useState(searchParams.get("tab") || "business-profile");
   const [formErrors, setFormErrors] = useState({});
   const [photos, setPhotos] = useState([]);
   const [dateFilter, setDateFilter] = useState("all");
@@ -334,9 +333,9 @@ export default function SettingsPage() {
         ) : (
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-2 items-start">
-              <TabsList className="mb-5 flex h-auto flex-wrap">
-                <TabsTrigger value="detail">Business Profile</TabsTrigger>
-                <TabsTrigger value="profile">Profile</TabsTrigger>
+              <TabsList className="mb-5 flex h-auto flex-wrap items-start">
+                <TabsTrigger value="business-profile">Business Profile</TabsTrigger>
+                <TabsTrigger value="profile">My Profile</TabsTrigger>
                 <TabsTrigger value="photos">Photos</TabsTrigger>
                 <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
                 <TabsTrigger value="locations">Business Locations</TabsTrigger>
@@ -345,113 +344,79 @@ export default function SettingsPage() {
                 <TabsTrigger value="notifications">Notifications</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="detail">
-                {!isEditingDetails ? (
-                  <Card className="card">
-                    <CardHeader className="card-header">
-                      <CardTitle className="card-title">Business Details</CardTitle>
-                      <Button variant="outline" onClick={() => setIsEditingDetails(true)}>
-                        <PenIcon />
-                        Edit
+              <TabsContent value="business-profile">
+                <form onSubmit={handleDetailSubmit}>
+                  <div className="card-value">
+                    <Label>
+                      Business Logo <span className="astrick">*</span>
+                    </Label>
+                    <div className="relative w-fit">
+                      {profileImageUrl ? (
+                        <figure className="h-20 w-20 overflow-hidden rounded-md">
+                          <img src={profileImageUrl} alt={`${form.name} image`} className="h-full w-full object-cover" />
+                        </figure>
+                      ) : (
+                        <span className="flex h-20 w-20 items-center justify-center rounded-md border border-primary bg-primary/10 text-3xl font-bold uppercase">{form.name?.charAt(0) || "B"}</span>
+                      )}
+                      <Button type="button" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none" onClick={() => profileImageInputRef.current?.click()} disabled={uploadingProfileImage} aria-label="Change profile image" title="Change profile image">
+                        {uploadingProfileImage ? <Loader2 className="size-4 animate-spin" /> : <CameraIcon />}
                       </Button>
-                    </CardHeader>
-                    <CardContent className="!card-body">
-                      <DetailValue label="Business Name" value={form.name} />
-                      <DetailValue label="Category" value={categories.find((category) => category.id === form.categoryId)?.name || form.category?.name} />
-                      <DetailValue label="Description" value={form.description} multiline />
-                      <DetailValue label="Cancellation Policy" value={form.cancellation_policy} multiline />
-                    </CardContent>
-                  </Card>
-                ) : (
-                  <form onSubmit={handleDetailSubmit}>
-                    <Card>
-                      <CardHeader className="card-header">
-                        <CardTitle className="card-title">Business Details</CardTitle>
-                      </CardHeader>
-                      <CardContent className="space-y-4 pt-5">
-                        <div className="card-value">
-                          <Label>
-                            Business Name <span className="astrick">*</span>
-                          </Label>
-                          <Input name="name" value={form.name || ""} onChange={handleChange} placeholder="Business Name" />
-                          {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
-                        </div>
-                        <div className="card-value">
-                          <Label>
-                            Category <span className="astrick">*</span>
-                          </Label>
-                          <Select value={form.categoryId || ""} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select Category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {categories.map((category) => (
-                                <SelectItem key={category.id} value={category.id}>
-                                  {category.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          {formErrors.categoryId && <p className="text-sm text-red-500">{formErrors.categoryId}</p>}
-                        </div>
-                        <div className="card-value">
-                          <Label>Description</Label>
-                          <Textarea name="description" value={form.description || ""} onChange={handleChange} className="h-40" />
-                        </div>
-                        <div className="card-value">
-                          <Label>Cancellation Policy</Label>
-                          <Textarea name="cancellation_policy" value={form.cancellation_policy || ""} onChange={handleChange} className="h-40" />
-                        </div>
-                      </CardContent>
-                      <CardFooter className="gap-2">
-                        <Button type="submit" disabled={savingBusiness}>
-                          {savingBusiness ? "Saving..." : "Save"}
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => setIsEditingDetails(false)}>
-                          Cancel
-                        </Button>
-                      </CardFooter>
-                    </Card>
-                  </form>
-                )}
+                      <input ref={profileImageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleProfileImageChange} />
+                    </div>
+                  </div>
+                  <div className="card-value">
+                    <Label>
+                      Business Name <span className="astrick">*</span>
+                    </Label>
+                    <Input name="name" value={form.name || ""} onChange={handleChange} placeholder="Business Name" />
+                    {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+                  </div>
+                  <div className="card-value">
+                    <Label>
+                      Category <span className="astrick">*</span>
+                    </Label>
+                    <Select value={form.categoryId || ""} onValueChange={(value) => setForm((prev) => ({ ...prev, categoryId: value }))}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select Category" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {categories.map((category) => (
+                          <SelectItem key={category.id} value={category.id}>
+                            {category.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                    {formErrors.categoryId && <p className="text-sm text-red-500">{formErrors.categoryId}</p>}
+                  </div>
+                  <div className="card-value">
+                    <Label>Description</Label>
+                    <Textarea name="description" value={form.description || ""} onChange={handleChange} className="h-40" />
+                  </div>
+                  <div className="card-value">
+                    <Label>Cancellation Policy</Label>
+                    <Textarea name="cancellation_policy" value={form.cancellation_policy || ""} onChange={handleChange} className="h-40" />
+                  </div>
+                  <div className="flex flex-row gap-2">
+                    <Button type="submit" disabled={savingBusiness}>
+                      {savingBusiness ? "Saving..." : "Save"}
+                    </Button>
+                    <Button type="button" variant="outline" onClick={() => setIsEditingDetails(false)}>
+                      Cancel
+                    </Button>
+                  </div>
+                </form>
               </TabsContent>
               <TabsContent value="profile">
-                <div className="flex flex-col gap-5 md:flex-row md:items-center">
-                  <div className="relative w-fit">
-                    {profileImageUrl ? (
-                      <figure className="h-32 w-32 overflow-hidden rounded-md">
-                        <img src={profileImageUrl} alt={`${form.name} image`} className="h-full w-full object-cover" />
-                      </figure>
-                    ) : (
-                      <span className="flex h-32 w-32 items-center justify-center rounded-md border border-primary bg-primary/10 text-3xl font-bold uppercase">{form.name?.charAt(0) || "B"}</span>
-                    )}
-                    <Button type="button" className="absolute -bottom-1 -right-1 h-8 w-8 rounded-full border-2 border-white p-0 shadow-none" onClick={() => profileImageInputRef.current?.click()} disabled={uploadingProfileImage} aria-label="Change profile image" title="Change profile image">
-                      {uploadingProfileImage ? <Loader2 className="size-4 animate-spin" /> : <CameraIcon />}
-                    </Button>
-                    <input ref={profileImageInputRef} type="file" accept="image/jpeg,image/png,image/webp" className="hidden" onChange={handleProfileImageChange} />
-                  </div>
-
-                  <div className="flex-1">
-                    <div className="mb-4 flex flex-wrap items-start justify-between gap-3">
-                      <div>
-                        <h4 className="text-2xl font-bold">{form.name}</h4>
-                        <p className="text-base text-gray-500">{ownerEmail || "-"}</p>
-                      </div>
-                      {selectedLocation && (
-                        <Badge variant="outline" className="gap-1">
-                          <MapPin className="size-3.5" />
-                          {getLocationLabel(selectedLocation)}
-                        </Badge>
-                      )}
-                    </div>
-                    <div className="grid grid-cols-12 gap-3">
-                      <HeaderValue label="Joined Date" value={form.joinedAt || "-"} />
-                      <HeaderValue label="Trial Ends On" value={form.trialEndsAt || "-"} />
-                      <HeaderValue label="Profile Completed" value={form.isComplete || form.isCompleted ? "Yes" : "No"} />
-                      <HeaderValue label="Status" value={form.status || "-"} />
-                      <HeaderValue label="User" value={ownerName} />
-                      <HeaderValue label="Phone" value={selectedLocationPhone} />
-                    </div>
+                <div className="flex-1">
+                  <div className="grid grid-cols-12 gap-3">
+                    <HeaderValue label="Email" value={ownerEmail || "-"} />
+                    <HeaderValue label="Joined Date" value={form.joinedAt || "-"} />
+                    <HeaderValue label="Trial Ends On" value={form.trialEndsAt || "-"} />
+                    <HeaderValue label="Profile Completed" value={form.isComplete || form.isCompleted ? "Yes" : "No"} />
+                    <HeaderValue label="Status" value={form.status || "-"} />
+                    <HeaderValue label="Name" value={ownerName} />
+                    <HeaderValue label="Phone" value={selectedLocationPhone} />
                   </div>
                 </div>
               </TabsContent>
@@ -504,36 +469,5 @@ function HeaderValue({ label, value }) {
       <p className="text-muted-foreground">{label}</p>
       <p>{value || "-"}</p>
     </div>
-  );
-}
-
-function DetailValue({ label, value, multiline = false }) {
-  return (
-    <div className="card-value">
-      <Label>{label}</Label>
-      <p className={multiline ? "whitespace-pre-wrap" : ""}>{value || "-"}</p>
-    </div>
-  );
-}
-
-function LocationSummaryCard({ location, fallbackPhone, isSelected }) {
-  const serviceOptions = [location.offerAtBusiness ? "At business" : "", location.offerAtClient ? "At client's place" : ""].filter(Boolean).join(", ");
-
-  return (
-    <Card className={`col-span-12 md:col-span-6 ${isSelected ? "border-primary" : ""}`}>
-      <CardHeader>
-        <CardTitle className="flex flex-wrap items-center gap-2 text-base">
-          {getLocationLabel(location)}
-          {location.isDefault && <Badge>Default</Badge>}
-          {isSelected && <Badge variant="outline">Selected</Badge>}
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-1 text-sm text-muted-foreground">
-        <p className="text-foreground">{location.address || "-"}</p>
-        <p>Phone: {location.phone || fallbackPhone || "-"}</p>
-        <p>Service Options: {serviceOptions || "-"}</p>
-        <p>{location.isActive ? "Active" : "Inactive"}</p>
-      </CardContent>
-    </Card>
   );
 }
