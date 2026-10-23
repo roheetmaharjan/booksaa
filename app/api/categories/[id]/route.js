@@ -1,8 +1,6 @@
 import { NextResponse } from "next/server";
+import { getCurrentSession } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { randomUUID } from "crypto";
-import fs from "fs";
-import path from "path";
 
 export async function DELETE(req, {params}) {
   const { id } = await params;
@@ -12,6 +10,14 @@ export async function DELETE(req, {params}) {
   }
 
   try {
+    const session = await getCurrentSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Only admins can delete categories" }, { status: 403 });
+    }
+
     const deletedCategory = await prisma.category.delete({
       where: { id: id },
     });
@@ -25,39 +31,35 @@ export async function DELETE(req, {params}) {
 }
 
 export async function PATCH(req, context) {
-  const { id } = context.params;
+  const { id } = await context.params;
 
   if (!id) {
     return NextResponse.json({ error: "Category ID missing" }, { status: 400 });
   }
 
   try {
-    const formData = await req.formData();
-
-    const name = formData.get("name");
-    const image = formData.get("image"); // this is a File object
-
-    if (!name) {
-      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    const session = await getCurrentSession();
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
+    }
+    if (session.role !== "ADMIN") {
+      return NextResponse.json({ error: "Only admins can update categories" }, { status: 403 });
     }
 
-    let imageFileName;
-
-    // Handle file upload if a new image is provided
-    if (image && typeof image === "object" && image.size > 0) {
-      const buffer = Buffer.from(await image.arrayBuffer());
-      const ext = image.name.split(".").pop();
-      imageFileName = `${randomUUID()}.${ext}`;
-      const uploadPath = path.join(process.cwd(), "public/uploads", imageFileName);
-
-      await fs.promises.writeFile(uploadPath, buffer);
+    const { name, image } = await req.json();
+    const normalizedName = typeof name === "string" ? name.trim() : "";
+    if (!normalizedName) {
+      return NextResponse.json({ error: "Name is required" }, { status: 400 });
+    }
+    if (image !== undefined && (typeof image !== "string" || !image.startsWith("categories/"))) {
+      return NextResponse.json({ error: "Invalid category image key" }, { status: 400 });
     }
 
     const updatedCategory = await prisma.category.update({
       where: { id },
       data: {
-        name,
-        ...(imageFileName && { image: imageFileName }), // only update image if provided
+        name: normalizedName,
+        ...(image !== undefined && { image }),
       },
     });
 

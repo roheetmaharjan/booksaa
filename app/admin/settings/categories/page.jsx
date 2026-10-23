@@ -3,22 +3,15 @@ import { SettingsLayout } from "@/app/admin/layout";
 import { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import {
-  Dialog,
-  DialogClose,
-  DialogContent,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
+import { Dialog, DialogClose, DialogContent, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import ConfirmAlert from "@/components/common/ConfirmAlert";
 import { TrashIcon, PencilLineIcon } from "@phosphor-icons/react";
+import { ASSET_TYPES } from "@/constants/storage";
 
 export default function Users() {
   const [categories, setCategories] = useState([]);
-  const [imageUrl, setImageUrl] = useState("");
   const [error, setError] = useState("");
   const [form, setForm] = useState({
     id: "",
@@ -33,19 +26,83 @@ export default function Users() {
   const [openAlert, setAlertOpen] = useState(false);
   const [newImage, setNewImage] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    async function fetchCategories() {
-      try {
-        const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`);
-        const data = await response.json();
-        setCategories(data);
-      } catch (error) {
-        console.error("Error Fetching categories", error);
-      } finally {
-        setIsLoading(false);
-      }
+  const [isSaving, setIsSaving] = useState(false);
+
+  const refreshCategories = async () => {
+    const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`, { cache: "no-store" });
+    const categoryData = await response.json();
+    if (!response.ok) {
+      throw new Error(categoryData.error || "Failed to load categories.");
     }
-    fetchCategories();
+
+    const storageKeys = categoryData
+      .filter((category) => category.image?.startsWith("categories/"))
+      .map((category) => category.image);
+    let imageUrls = new Map();
+    if (storageKeys.length > 0) {
+      const imagesResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/view`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        cache: "no-store",
+        body: JSON.stringify({ keys: storageKeys }),
+      });
+      const imagesData = await imagesResponse.json();
+      if (!imagesResponse.ok) {
+        throw new Error(imagesData.error || "Failed to load category images.");
+      }
+      imageUrls = new Map((imagesData.images || []).map((image) => [image.key, image.url]));
+    }
+
+    setCategories(categoryData.map((category) => ({
+      ...category,
+      imageUrl: category.image?.startsWith("categories/")
+        ? imageUrls.get(category.image) || ""
+        : category.image?.startsWith("http") || category.image?.startsWith("/")
+          ? category.image
+          : category.image
+            ? `/uploads/${category.image}`
+            : "",
+    })));
+  };
+
+  const uploadCategoryImage = async (file) => {
+    if (file.size > 2 * 1024 * 1024) {
+      throw new Error("Image too large. Maximum size is 2MB.");
+    }
+
+    const uploadResponse = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/storage/upload`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        fileName: file.name,
+        contentType: file.type,
+        type: ASSET_TYPES.CATEGORY,
+      }),
+    });
+    const uploadData = await uploadResponse.json();
+    if (!uploadResponse.ok) {
+      throw new Error(uploadData.error || "Failed to prepare category image upload.");
+    }
+
+    const storageResponse = await fetch(uploadData.uploadUrl, {
+      method: "PUT",
+      headers: { "Content-Type": file.type },
+      body: file,
+    });
+    if (!storageResponse.ok) {
+      throw new Error("Failed to upload category image.");
+    }
+
+    return uploadData.key;
+  };
+
+  useEffect(() => {
+    refreshCategories()
+      .catch((loadError) => {
+        console.error("Error fetching categories:", loadError);
+        toast.error(loadError.message || "Failed to load categories.");
+      })
+      .finally(() => setIsLoading(false));
   }, []);
 
   const handleChange = (e) => {
@@ -57,53 +114,41 @@ export default function Users() {
     setError("");
 
     try {
-      const imageFile = e.target.image.files[0];
-
-      if (!imageFile) {
+      if (!newImage) {
         setError("Please select an image.");
         return;
       }
 
-      const formData = new FormData();
-      formData.append("file", imageFile); // 🔑 use key "file"
-
-      // 1. Upload the image
-      const uploadRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/upload`, {
-        method: "POST",
-        body: formData,
-      });
-
-      const uploadData = await uploadRes.json();
-      if (!uploadRes.ok) {
-        setError(uploadData.error || "Image upload failed");
+      if (!form.name.trim()) {
+        setError("Category name is required.");
         return;
       }
 
-      // Creating category using image URL
+      setIsSaving(true);
+      const imageKey = await uploadCategoryImage(newImage);
+
       const categoryRes = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/create`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name: form.name, image: uploadData.url }),
+        body: JSON.stringify({ name: form.name, image: imageKey }),
       });
 
       const categoryData = await categoryRes.json();
       if (!categoryRes.ok) {
-        setError(categoryData.error || "Category creation failed");
-        return;
+        throw new Error(categoryData.error || "Category creation failed.");
       }
 
-      // If its success reset form and refresh category list
       setForm({ id: "", name: "", image: "" });
-      setImageUrl("");
+      setNewImage(null);
       setError("");
       setOpen(false);
       toast.success("Category has been created.");
-
-      const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`).then((res) => res.json());
-      setCategories(updated);
+      await refreshCategories();
     } catch (err) {
       console.error("Submit error:", err);
-      setError("Something went wrong.");
+      setError(err.message || "Something went wrong.");
+    } finally {
+      setIsSaving(false);
     }
   };
   const handleDeleteClick = (categoryId) => {
@@ -118,10 +163,7 @@ export default function Users() {
       const data = await res.json();
       if (res.ok) {
         toast.success("Category deleted successfully");
-        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`).then((res) =>
-          res.json()
-        );
-        setCategories(updated);
+        await refreshCategories();
       } else {
         toast.error(data.error || "failed to delete user");
       }
@@ -133,6 +175,7 @@ export default function Users() {
   const handleEditClick = (category) => {
     setSelectedCategory(category);
     setNewName(category?.name || "");
+    setNewImage(null);
     setEditOpen(true);
   };
   const handleUpdate = async () => {
@@ -140,31 +183,33 @@ export default function Users() {
       toast.error("Name cannot be empty");
       return;
     }
-    const formData = new FormData();
-    formData.append("name", newName);
-    if (newImage) {
-      formData.append("image", newImage); // newImage should be a File object
-    }
     const categoryId = selectedCategory?.id;
     try {
+      if (newImage && newImage.size > 2 * 1024 * 1024) {
+        toast.error("Image too large. Maximum size is 2MB.");
+        return;
+      }
+      setIsSaving(true);
+      const image = newImage ? await uploadCategoryImage(newImage) : undefined;
       const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories/${categoryId}`, {
         method: "PATCH",
-        body: formData,
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ name: newName.trim(), ...(image && { image }) }),
       });
       const data = await res.json();
       if (res.ok) {
         toast.success("Category updated successfully");
         setEditOpen(false);
-        const updated = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/categories`).then((res) =>
-          res.json()
-        );
-        setCategories(updated);
+        setNewImage(null);
+        await refreshCategories();
       } else {
         toast.error(data.error || "failed to update user");
       }
-    } catch {
-      console.error("Update error", error);
-      toast.error("An error occured");
+    } catch (err) {
+      console.error("Update error:", err);
+      toast.error(err.message || "Failed to update category.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -172,10 +217,17 @@ export default function Users() {
     <SettingsLayout>
       <div className="flex flex-row justify-between w-full">
         <h4 className="page-title">Categories</h4>
-        <Button className="ml-auto" onClick={() => setOpen(true)}>
+        <Button className="ml-auto" onClick={() => {
+          setNewImage(null);
+          setError("");
+          setOpen(true);
+        }}>
           Add Category
         </Button>
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={(nextOpen) => {
+          setOpen(nextOpen);
+          if (!nextOpen) setNewImage(null);
+        }}>
           <DialogContent className="sm:max-w-[425px]">
             <DialogHeader>
               <DialogTitle>Add Category</DialogTitle>
@@ -184,17 +236,12 @@ export default function Users() {
             <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-3">
-                  <Label htmlFor="image">Image</Label>
-                  <input type="file" name="image" id="image" accept="image/*" />
+                  <Label htmlFor="new-category-image">Image</Label>
+                  <input type="file" name="image" id="new-category-image" accept="image/jpeg,image/png,image/webp" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
                 </div>
                 <div className="grid gap-3">
                   <Label htmlFor="name">Name</Label>
-                  <Input
-                    id="name"
-                    name="name"
-                    value={form.name}
-                    onChange={handleChange}
-                  />
+                  <Input id="name" name="name" value={form.name} onChange={handleChange} />
                 </div>
               </div>
               <DialogFooter>
@@ -203,52 +250,41 @@ export default function Users() {
                     Cancel
                   </Button>
                 </DialogClose>
-                <Button type="submit">Add</Button>
+                <Button type="submit" disabled={isSaving}>{isSaving ? "Uploading..." : "Add"}</Button>
               </DialogFooter>
             </form>
           </DialogContent>
         </Dialog>
-        <Dialog open={editOpen} onOpenChange={setEditOpen}>
+        <Dialog open={editOpen} onOpenChange={(nextOpen) => {
+          setEditOpen(nextOpen);
+          if (!nextOpen) setNewImage(null);
+        }}>
           <DialogContent>
             <DialogHeader>
               <DialogTitle>Edit Category</DialogTitle>
             </DialogHeader>
             <div className="grid gap-4">
               <div className="grid gap-3">
-                <Label htmlFor="image">Image</Label>
-                <input
-                  type="file"
-                  name="image"
-                  id="image"
-                  accept="image/*"
-                  onChange={(e) => setNewImage(e.target.files[0])}
-                />
+                <Label htmlFor="edit-category-image">Image</Label>
+                <input type="file" name="image" id="edit-category-image" accept="image/jpeg,image/png,image/webp" onChange={(e) => setNewImage(e.target.files?.[0] || null)} />
               </div>
               <div className="grid gap-3">
                 <Label htmlFor="name">Name</Label>
-                <Input
-                  value={newName}
-                  onChange={(e) => setNewName(e.target.value)}
-                  placeholder="Category name"
-                />
+                <Input value={newName} onChange={(e) => setNewName(e.target.value)} placeholder="Category name" />
               </div>
             </div>
             <DialogFooter className="mt-4">
               <Button variant="secondary" onClick={() => setEditOpen(false)}>
                 Cancel
               </Button>
-              <Button onClick={handleUpdate}>Update</Button>
+              <Button onClick={handleUpdate} disabled={isSaving}>{isSaving ? "Uploading..." : "Update"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
       </div>
       <div className="flex">
         <div className="flex">
-          <input
-            type="search"
-            className="bg-gray-50 border rounded focus:border-blue-500"
-            placeholder="Search..."
-          />
+          <input type="search" className="bg-gray-50 border rounded focus:border-blue-500" placeholder="Search..." />
         </div>
       </div>
       <div className="table-responsive">
@@ -281,11 +317,7 @@ export default function Users() {
                   <td className="p-2 text-base text-center">{idx + 1}</td>
                   <td className="P-2">
                     <figure className="w-16 h-16 bg-gray-300 border rounded-md flex overflow-hidden">
-                      <img
-                        src={`/uploads/${category.image}`}
-                        alt=""
-                        className="object-cover w-full h-full"
-                      />
+                      <img src={category.imageUrl} alt={category.name || "Category"} className="object-cover w-full h-full" />
                     </figure>
                   </td>
                   <td className="p-2 text-base">
@@ -294,18 +326,10 @@ export default function Users() {
                   <td>{category._count?.vendors || 0}</td>
                   <td>
                     <div className="flex gap-2">
-                      <a
-                        href="#"
-                        className="text-gray-500"
-                        onClick={() => handleEditClick(category)}
-                      >
+                      <a href="#" className="text-gray-500" onClick={() => handleEditClick(category)}>
                         <PencilLineIcon size={20} weight="duotone" />
                       </a>
-                      <a
-                        href="#"
-                        className="text-red-500"
-                        onClick={() => handleDeleteClick(category.id)}
-                      >
+                      <a href="#" className="text-red-500" onClick={() => handleDeleteClick(category.id)}>
                         <TrashIcon size={20} weight="duotone" />
                       </a>
                     </div>
