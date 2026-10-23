@@ -1,0 +1,2 @@
+ALTER TABLE "Service"
+ADD COLUMN IF NOT EXISTS "allowPayAtBusiness" BOOLEAN NOT NULL DEFAULT false;
