@@ -309,10 +309,18 @@ export default function SettingsPage() {
         user: form.user,
       });
       await refreshBusiness(selectedLocationId);
-      setIsEditingDetails(false);
       toast.success("Business profile updated.");
     } catch (err) {
       toast.error(err.message || "Failed to update business profile.");
+    }
+  };
+
+  const handleCancelDetails = async () => {
+    setFormErrors({});
+    try {
+      await refreshBusiness(selectedLocationId);
+    } catch (err) {
+      toast.error(err.message || "Failed to discard business profile changes.");
     }
   };
 
@@ -401,7 +409,7 @@ export default function SettingsPage() {
                     <Button type="submit" disabled={savingBusiness}>
                       {savingBusiness ? "Saving..." : "Save"}
                     </Button>
-                    <Button type="button" variant="outline" onClick={() => setIsEditingDetails(false)}>
+                    <Button type="button" variant="outline" onClick={handleCancelDetails}>
                       Cancel
                     </Button>
                   </div>
