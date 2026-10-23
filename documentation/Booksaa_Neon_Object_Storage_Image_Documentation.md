@@ -110,6 +110,7 @@ vendors/{vendorId}/services/{serviceId}/{uuid}.{ext}
 vendors/{vendorId}/professionals/{professionalId}/{uuid}.{ext}
 vendors/{vendorId}/gallery/{uuid}.{ext}
 customers/{customerId}/profile/{uuid}.{ext}
+categories/{uuid}.{ext}
 ```
 
 Example:
@@ -315,6 +316,7 @@ For future implementation, prefer direct/presigned uploads where appropriate:
 ```
 
 This avoids unnecessarily passing large image files through the Next.js server.
+Admin-managed category images use the `categories/{uuid}.{ext}` namespace and the same presigned upload flow. They are not scoped to a vendor; upload and signed-view access are restricted to admins.
 
 ## 13. Image replacement/deletion
 
@@ -539,6 +541,7 @@ Check whether the storage response includes `lastModified`. If not, don't calcul
 | Professional path | `vendors/{vendorId}/professionals/{professionalId}/...` |
 | Gallery path | `vendors/{vendorId}/gallery/...` |
 | Customer profile path | `customers/{customerId}/profile/...` |
+| Category image path | `categories/{uuid}.{ext}` (admin-managed) |
 | Future provider | MinIO/other S3-compatible storage possible |
 
 ## 21. Core rule

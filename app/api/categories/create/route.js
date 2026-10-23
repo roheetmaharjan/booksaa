@@ -1,17 +1,27 @@
 // app/api/categories/create/route.js
 import { NextResponse } from 'next/server';
+import { getCurrentSession } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 
 export async function POST(req) {
   try {
-    const { name, image } = await req.json();
+    const session = await getCurrentSession();
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+    if (session.role !== 'ADMIN') {
+      return NextResponse.json({ error: 'Only admins can create categories' }, { status: 403 });
+    }
 
-    if (!name || !image) {
+    const { name, image } = await req.json();
+    const normalizedName = typeof name === 'string' ? name.trim() : '';
+
+    if (!normalizedName || typeof image !== 'string' || !image.startsWith('categories/')) {
       return NextResponse.json({ error: 'Name and image are required' }, { status: 400 });
     }
 
     const exists = await prisma.category.findUnique({
-      where: { name },
+      where: { name: normalizedName },
     });
 
     if (exists) {
@@ -19,7 +29,7 @@ export async function POST(req) {
     }
 
     const category = await prisma.category.create({
-      data: { name, image },
+      data: { name: normalizedName, image },
     });
 
     return NextResponse.json(category, { status: 201 });
