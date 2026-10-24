@@ -1,6 +1,7 @@
 "use client";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import Image from "next/image";
 
 const industries = {
   hair: {
@@ -55,14 +56,26 @@ export default function TargetAudience() {
           <p className="text-center max-w-3xl mx-auto mb-10 text-muted-foreground">We helps service-based businesses manage appointments, staff, clients, and day-to-day operations</p>
         </div>
 
-        <Tabs defaultValue="startup" className="w-full">
+        <Tabs defaultValue="hair" className="w-full">
           <TabsList className="grid w-full lg:grid-cols-3 xl:grid-cols-6 mb-8 justify-stretch h-auto rounded-xl bg-slate-50 border">
-            <TabsTrigger value="hair" className="py-3 rounded-xl font-semibold text-base">Hair Salons & Barbershops </TabsTrigger>
-            <TabsTrigger value="beauty" className="py-3 rounded-xl font-semibold text-base">Beauty & Aesthetic Clinics</TabsTrigger>
-            <TabsTrigger value="spas" className="py-3 rounded-xl font-semibold text-base">Spas & Wellness Centers</TabsTrigger>
-            <TabsTrigger value="nails" className="py-3 rounded-xl font-semibold text-base">Nail Salons & Lash Studios</TabsTrigger>
-            <TabsTrigger value="fitness" className="py-3 rounded-xl font-semibold text-base">Fitness & Personal Training</TabsTrigger>
-            <TabsTrigger value="indepentent" className="py-3 rounded-xl font-semibold text-base">Independent Professionals</TabsTrigger>
+            <TabsTrigger value="hair" className="py-3 rounded-xl font-semibold text-base">
+              Hair Salons & Barbershops{" "}
+            </TabsTrigger>
+            <TabsTrigger value="beauty" className="py-3 rounded-xl font-semibold text-base">
+              Beauty & Aesthetic Clinics
+            </TabsTrigger>
+            <TabsTrigger value="spas" className="py-3 rounded-xl font-semibold text-base">
+              Spas & Wellness Centers
+            </TabsTrigger>
+            <TabsTrigger value="nails" className="py-3 rounded-xl font-semibold text-base">
+              Nail Salons & Lash Studios
+            </TabsTrigger>
+            <TabsTrigger value="fitness" className="py-3 rounded-xl font-semibold text-base">
+              Fitness & Personal Training
+            </TabsTrigger>
+            <TabsTrigger value="indepentent" className="py-3 rounded-xl font-semibold text-base">
+              Independent Professionals
+            </TabsTrigger>
           </TabsList>
 
           {Object.entries(industries).map(([key, industry]) => (
@@ -70,7 +83,7 @@ export default function TargetAudience() {
               <div className="rounded-2xl border bg-background overflow-hidden">
                 <div className="grid lg:grid-cols-2 gap-8 p-6">
                   <div>
-                    <img src={industry.image} alt={industry.title} className="w-full h-[400px] object-cover rounded-xl" />
+                    <Image src={industry.image} alt={industry.title} width={400} height={400} sizes="(max-width: 768px) 100vw, 33vw" loading="lazy" className="h-[400px] w-full rounded-xl object-cover" />
                   </div>
 
                   <div className="flex flex-col justify-center">

@@ -59,6 +59,9 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mapPosition, setMapPosition] = useState(null);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState("");
+  const suggestionTimerRef = useRef(null);
+  const suggestionControllerRef = useRef(null);
   const isEditing = Boolean(location);
   const locationLimit = Number(
     vendor?.subscriptionLocationLimit ?? vendor?.billingSummary?.activeLocationCount ?? vendor?.plan?.location ?? 0
@@ -98,7 +101,12 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
   );
 
   useEffect(() => {
-    if (!open) return;
+    if (!open) {
+      clearTimeout(suggestionTimerRef.current);
+      suggestionControllerRef.current?.abort();
+      setSuggestionsLoading(false);
+      return;
+    }
 
     const nextForm = location
       ? {
@@ -154,30 +162,50 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
     setFormErrors({});
   }, [open, location, resetForm]);
 
-  // Debounce function for suggestions
-  function debounce(fn, delay) {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
-  }
+  useEffect(() => () => {
+    clearTimeout(suggestionTimerRef.current);
+    suggestionControllerRef.current?.abort();
+  }, []);
 
-  const fetchSuggestions = debounce(async (value) => {
-    if (value.length > 2) {
-      setSuggestionsLoading(true);
-      const { OpenStreetMapProvider } = await import("leaflet-geosearch");
-      const provider = new OpenStreetMapProvider();
-      const results = await provider.search({ query: value });
-      setSuggestions(results);
-      setShowSuggestions(true);
-      setSuggestionsLoading(false);
-    } else {
+  const fetchSuggestions = (value) => {
+    clearTimeout(suggestionTimerRef.current);
+    suggestionControllerRef.current?.abort();
+    setSuggestionsError("");
+
+    const query = value.trim();
+    if (query.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
       setSuggestionsLoading(false);
+      return;
     }
-  }, 400);
+
+    setSuggestions([]);
+    setShowSuggestions(true);
+    setSuggestionsLoading(true);
+    suggestionTimerRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      suggestionControllerRef.current = controller;
+
+      try {
+        const response = await fetch(`/api/location-search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+          cache: "force-cache",
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Address search failed.");
+
+        if (!controller.signal.aborted) setSuggestions(data.results || []);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Address search failed:", error);
+          setSuggestionsError(error.message || "Address search is temporarily unavailable.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setSuggestionsLoading(false);
+      }
+    }, 600);
+  };
 
   // Add location submit handler
   const handleLocationSubmit = async (e) => {
@@ -214,8 +242,8 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
   return (
     <Dialog open={open} onOpenChange={setAddLocationOpen}>
       <form id={formId} onSubmit={handleLocationSubmit}>
-        <DialogContent className="sm:max-w-[650px]">
-          <DialogHeader>
+        <DialogContent className="sm:max-w-[650px] max-h-[85dvh] overflow-y-auto py-0">
+          <DialogHeader className="sticky top-0 z-[1] bg-white pt-5 mr-3">
             <DialogTitle>{isEditing ? "Edit Business Location" : "Add Business Location"}</DialogTitle>
           </DialogHeader>
           {(isEditing ? updateError : addError) && (
@@ -236,7 +264,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
             </Alert>
           )}
           {/* --- Service Options --- */}
-          <div className="flex flex-col space-y-3">
+          <div className="flex flex-col space-y-3 mb-3">
             <Label className="text-md">
               Where does this business offer services?
             </Label>
@@ -333,6 +361,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
               {!showMap && formErrors?.address && (
                 <p className="text-sm text-red-500">{formErrors.address}</p>
               )}
+              {suggestionsError && <p className="text-sm text-red-500">{suggestionsError}</p>}
               {showSuggestions && (
                 <div className="bg-white border rounded shadow mt-1 absolute top-9 z-[111111] w-full max-h-80 overflow-y-auto">
                   {suggestionsLoading && (
@@ -345,6 +374,10 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
                         key={idx}
                         className="px-3 py-2 cursor-pointer hover:bg-gray-100"
                         onClick={() => {
+                          clearTimeout(suggestionTimerRef.current);
+                          suggestionControllerRef.current?.abort();
+                          setSuggestionsLoading(false);
+                          setSuggestionsError("");
                           setSearchQuery(item.label);
                           setSearchedLocation({
                             lat: item.y,
@@ -536,8 +569,7 @@ export default function AddLocation({ open, setAddLocationOpen, vendorId, vendor
               </div>
             </div>
           )}
-
-          <DialogFooter className="mt-4">
+          <DialogFooter className="mt-4 sticky bottom-0 z-10 bg-white pb-5">
             <Button
               type="button"
               variant="secondary"
