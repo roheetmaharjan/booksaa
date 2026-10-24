@@ -1,5 +1,0 @@
--- Legacy payment data cannot be reconstructed because the current
--- Bookings table no longer contains the legacy payment columns
--- (paidAmount, paymentMethod, paymentStatus).
---
--- No database changes are required by this migration.
