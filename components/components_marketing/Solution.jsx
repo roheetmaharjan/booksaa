@@ -1,3 +1,4 @@
+import {  Calendar, Users, MapPin, ShieldAlert, BarChart3, SlidersHorizontal } from "lucide-react";
 export default function Solution() {
   return (
     <section className="py-[50px] md:py-[80px] lg:py-[100px] bg-slate-100">
@@ -14,8 +15,9 @@ export default function Solution() {
           <div className="space-y-14">
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9">
               <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <span className="ns-shape-3 text-[52px] text-secondary dark:text-accent inline-block"></span>
-
+                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
+                  <Calendar className="w-6 h-6" />
+                </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">Online Booking</h3>
                   <p className="text-base">Let customers book appointments anytime, anywhere through your website, booking page, or mobile device.</p>
@@ -23,8 +25,9 @@ export default function Solution() {
               </div>
 
               <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <span className="ns-shape-35 text-[52px] text-secondary dark:text-accent inline-block"></span>
-
+                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
+                  <ShieldAlert className="w-6 h-6" />
+                </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">Customer Management</h3>
                   <p className="text-base">Store customer information, booking history, notes, and preferences in one centralized place.</p>
@@ -32,21 +35,27 @@ export default function Solution() {
               </div>
 
               <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <span className="ns-shape-1 text-[52px] text-secondary dark:text-accent inline-block"></span>
+                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
+                  <SlidersHorizontal className="w-6 h-6" />
+                </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">Smart Scheduling</h3>
                   <p className="text-base">Manage appointments, staff availability, resources, and calendars without conflicts or double bookings.</p>
                 </div>
               </div>
               <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <span className="ns-shape-1 text-[52px] text-secondary dark:text-accent inline-block"></span>
+                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
+                  <Users className="w-6 h-6" />
+                </div>
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">Team Management</h3>
                   <p className="text-base">Assign staff, track performance, manage schedules, and keep your team organized.</p>
                 </div>
               </div>
               <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <span className="ns-shape-1 text-[52px] text-secondary dark:text-accent inline-block"></span>
+                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
+                  <MapPin className="w-6 h-6" />
+                </div>
 
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">Multi-Location Support</h3>
@@ -54,7 +63,9 @@ export default function Solution() {
                 </div>
               </div>
               <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <span className="ns-shape-1 text-[52px] text-secondary dark:text-accent inline-block"></span>
+                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
+                  <BarChart3 className="w-6 h-6" />
+                </div>
 
                 <div className="space-y-2">
                   <h3 className="text-2xl font-semibold">Reports & Insights</h3>
