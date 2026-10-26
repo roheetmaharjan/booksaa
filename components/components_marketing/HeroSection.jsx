@@ -1,3 +1,4 @@
+import Image from "next/image";
 import StartFreeTrialButton from "@/components/common/StartFreeTrialButton";
 
 export default function HeroSection() {
@@ -27,7 +28,7 @@ export default function HeroSection() {
             <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>
 
             <button className="bg-white/10 backdrop-blur text-white px-7 py-4 rounded-xl border border-white/10 hover:bg-white/15 transition">
-              Watch Demo
+              Contact Sales
             </button>
           </div>
 
@@ -43,10 +44,14 @@ export default function HeroSection() {
         <div className="grid lg:grid-cols-[2.3fr_1fr] gap-6 mt-20">
           {/* Large Image Card */}
           <div className="relative overflow-hidden rounded-3xl bg-[#5C87B0] min-h-[420px]">
-            <img
-              src="./hero_banner.jpg"
+            <Image
+              src="/hero_banner.jpg"
               alt="Business Management"
-              className="absolute inset-0 w-full h-full object-cover"
+              width={1920}
+              height={1080}
+              priority
+              sizes="100vw"
+              className="absolute inset-0 h-full w-full object-cover"
             />
 
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />

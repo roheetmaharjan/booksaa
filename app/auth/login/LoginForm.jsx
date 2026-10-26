@@ -64,7 +64,7 @@ export default function LoginPage() {
       <div className="xl:max-w-[550px] px-8 max-w-[380px] mx-auto w-full relative z-10">
         <div className="mb-10 flex w-full items-center justify-center">
           <div className="logo">
-            <Image src="/logo_white.png" width={140} height={40} alt="bookaroo" />
+            <Image src="/logo_white.png" width={140} height={40} alt="booksaa" className="!w-auto h-[26px]" />
           </div>
         </div>
         <div className="w-full rounded-2xl bg-white px-7 py-8 shadow-sm outline-offset-8 overflow-hidden outline-8 outline-slate-100/10">

@@ -341,7 +341,7 @@ export default function SettingsPage() {
         ) : (
           <>
             <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-2 items-start">
-              <TabsList className="mb-5 flex h-auto flex-wrap items-start">
+              <TabsList className="mb-5 flex h-auto flex-wrap items-start" variant="line">
                 <TabsTrigger value="business-profile">Business Profile</TabsTrigger>
                 <TabsTrigger value="profile">My Profile</TabsTrigger>
                 <TabsTrigger value="photos">Photos</TabsTrigger>
