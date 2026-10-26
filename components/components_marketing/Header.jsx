@@ -29,22 +29,12 @@ const Header = () => {
 
   return (
     <>
-      <header className={`left-0 top-0 z-40 flex w-full items-center bg-[#062B3D] py-3 ${sticky ? "shadow-nav fixed z-[999] backdrop-blur-[5px] dark:border-dark-3/20 dark:bg-dark/10" : "pb-2"}`}>
+      <header className={`left-0 top-0 z-40 flex w-full items-center bg-[#062B3D] py-3 ${sticky ? "shadow-2xl fixed z-[999] backdrop-blur-[5px] dark:border-dark-3/20 dark:bg-dark/10" : "pb-2"}`}>
         <div className="container">
           <div className="relative -mx-4 flex items-center justify-between w-full">
-            <div className="w-54 max-w-full px-4">
-              <Link href="/" className={`navbar-logo block w-full ${sticky ? "py-2" : "py-5"} `}>
-                {pathUrl !== "/" ? (
-                  <>
-                      <Image src={`/logo_white.png`} alt="logo" width={100} height={20} className="header-logo w-full dark:hidden" />
-                      <Image src={`/logo_white.png`} alt="logo" width={100} height={20} className="header-logo hidden w-full dark:block" />
-                  </>
-                ) : (
-                  <>
-                    <Image src="/logo_white.png" alt="logo" width={100} height={20} className="header-logo w-full dark:hidden" />
-                    <Image src="/logo_white.png" alt="logo" width={100} height={20} className="header-logo hidden w-full dark:block" />
-                  </>
-                )}
+            <div className="max-w-full px-4">
+              <Link href="/" className="block w-full">
+                <Image src={`/logo_white.png`} alt="booksaa" width={140} height={40} className="!w-auto h-[40px] object-contain" />
               </Link>
             </div>
             {/* Nav */}

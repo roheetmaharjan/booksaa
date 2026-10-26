@@ -28,7 +28,7 @@ export default function HeroSection() {
             <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>
 
             <button className="bg-white/10 backdrop-blur text-white px-7 py-4 rounded-xl border border-white/10 hover:bg-white/15 transition">
-              Watch Demo
+              Contact Sales
             </button>
           </div>
 
