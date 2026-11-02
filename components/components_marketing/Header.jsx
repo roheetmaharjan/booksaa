@@ -5,6 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import StartFreeTrialButton from "@/components/common/StartFreeTrialButton";
+import { IndustriesMegaMenu } from "@/components/components_marketing/industries-mega-menu";
 
 const Header = () => {
   const { data: session } = useSession();
@@ -41,8 +42,8 @@ const Header = () => {
             <nav className={`hidden text-md md:flex ml-5 items-center gap-6 text-white  ${sticky ? "py-2" : "py-5"} `}>
               <Link href="#">Features</Link>
               <Link href="/pricing">Pricing</Link>
-              <Link href="#">Industries</Link>
-              <Link href="#">Resources</Link>
+              <IndustriesMegaMenu/>
+              {/* <Link href="#">Resources</Link> */}
               <Link href="#">Contact</Link>
             </nav>
             <div className="flex w-full items-center justify-end px-4">
