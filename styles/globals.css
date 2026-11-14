@@ -318,3 +318,6 @@ body {
 .light-header .dark-logo{
   display: block;
 }
+.inner-header .dark-logo{
+  display: block
+}

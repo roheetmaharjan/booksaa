@@ -18,6 +18,7 @@ const Header = () => {
   const { data: session } = useSession();
 
   const pathUrl = usePathname();
+  const isHomePage = pathUrl === "/";
 
   // Sticky Navbar
   const [sticky, setSticky] = useState(false);
@@ -38,7 +39,7 @@ const Header = () => {
 
   return (
     <>
-      <header className={`left-0 top-0 z-40 w-full py-3 ${sticky ? "light-header" : "dark-header"}`}>
+      <header className={`left-0 top-0 z-40 w-full py-3 ${isHomePage ? (sticky ? "light-header" : "dark-header") : (sticky ? "inner-header light-header" : "inner-header")}`}>
         <div className="container-fluid !p-0 !px-5 relative z-20">
           <div className="relative flex w-full items-center justify-between">
             <div className="shrink-0 px-2 sm:px-4">
