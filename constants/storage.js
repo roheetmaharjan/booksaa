@@ -4,4 +4,5 @@ export const ASSET_TYPES = {
   SERVICE: "service",
   PROFESSIONAL: "professional",
   CUSTOMER: "customer",
+  CATEGORY: "category",
 };

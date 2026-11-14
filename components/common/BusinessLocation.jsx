@@ -40,6 +40,9 @@ export default function BusinessLocation({
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [mapPosition, setMapPosition] = useState(null);
   const [suggestionsLoading, setSuggestionsLoading] = useState(false);
+  const [suggestionsError, setSuggestionsError] = useState("");
+  const suggestionTimerRef = useRef(null);
+  const suggestionControllerRef = useRef(null);
   const [travelFee,setTravelFee] = useState("");
   const [selectedDistance,setSelectedDistance]= useState(maxDistance);
 
@@ -77,30 +80,50 @@ export default function BusinessLocation({
     // loading: addLoading,
     error: addError,
   } = useMutation(`${process.env.NEXT_PUBLIC_API_URL}/api/locations/create`, { method: "POST" });
-  // Debounce function for suggestions
-  function debounce(fn, delay) {
-    let timer;
-    return (...args) => {
-      clearTimeout(timer);
-      timer = setTimeout(() => fn(...args), delay);
-    };
-  }
+  useEffect(() => () => {
+    clearTimeout(suggestionTimerRef.current);
+    suggestionControllerRef.current?.abort();
+  }, []);
 
-  const fetchSuggestions = debounce(async (value) => {
-    if (value.length > 2) {
-      setSuggestionsLoading(true);
-      const { OpenStreetMapProvider } = await import("leaflet-geosearch");
-      const provider = new OpenStreetMapProvider();
-      const results = await provider.search({ query: value });
-      setSuggestions(results);
-      setShowSuggestions(true);
-      setSuggestionsLoading(false);
-    } else {
+  const fetchSuggestions = (value) => {
+    clearTimeout(suggestionTimerRef.current);
+    suggestionControllerRef.current?.abort();
+    setSuggestionsError("");
+
+    const query = value.trim();
+    if (query.length < 3) {
       setSuggestions([]);
       setShowSuggestions(false);
       setSuggestionsLoading(false);
+      return;
     }
-  }, 400);
+
+    setSuggestions([]);
+    setShowSuggestions(true);
+    setSuggestionsLoading(true);
+    suggestionTimerRef.current = setTimeout(async () => {
+      const controller = new AbortController();
+      suggestionControllerRef.current = controller;
+
+      try {
+        const response = await fetch(`/api/location-search?q=${encodeURIComponent(query)}`, {
+          signal: controller.signal,
+          cache: "force-cache",
+        });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Address search failed.");
+
+        if (!controller.signal.aborted) setSuggestions(data.results || []);
+      } catch (error) {
+        if (error.name !== "AbortError") {
+          console.error("Address search failed:", error);
+          setSuggestionsError(error.message || "Address search is temporarily unavailable.");
+        }
+      } finally {
+        if (!controller.signal.aborted) setSuggestionsLoading(false);
+      }
+    }, 600);
+  };
   return (
     <>
       {addError && (
@@ -171,6 +194,7 @@ export default function BusinessLocation({
               autoComplete="off"
             />
           </div>
+          {suggestionsError && <p className="text-sm text-red-500">{suggestionsError}</p>}
           {showSuggestions && (
             <div className="bg-white border rounded shadow mt-1 absolute top-9 z-[111111] w-full max-h-80 overflow-y-auto">
               {suggestionsLoading && (
@@ -183,6 +207,10 @@ export default function BusinessLocation({
                     key={idx}
                     className="px-3 py-2 cursor-pointer hover:bg-gray-100"
                     onClick={() => {
+                      clearTimeout(suggestionTimerRef.current);
+                      suggestionControllerRef.current?.abort();
+                      setSuggestionsLoading(false);
+                      setSuggestionsError("");
                       setSearchQuery(item.label);
                       setSearchedLocation({
                         lat: item.y,

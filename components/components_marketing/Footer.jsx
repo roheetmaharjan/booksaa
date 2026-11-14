@@ -1,5 +1,6 @@
 import { Send, Facebook, Instagram, Linkedin } from "lucide-react";
 import StartFreeTrialButton from "@/components/common/StartFreeTrialButton";
+import Image from "next/image";
 
 export default function BooksaaFooter() {
   return (
@@ -40,7 +41,7 @@ export default function BooksaaFooter() {
               {/* Brand */}
               <div>
                 <h3 className="text-3xl font-bold">
-                  <span className="text-primary">Booksaa</span>
+                  <Image src={`/logo.png`} alt="Booksaa" width={140} height={20} className="dark:hidden !w-auto h-[27px]" />
                 </h3>
 
                 <p className="mt-4 text-slate-700">Modern booking and business management software for service companies.</p>

@@ -18,33 +18,32 @@ export async function POST(request) {
       return Response.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (sessionUser.role !== "VENDOR") {
-      return Response.json({ error: "Only vendors can view assets" }, { status: 403 });
-    }
-
-    const vendor = await prisma.vendors.findUnique({
-      where: {
-        userId: sessionUser.id,
-      },
-      select: {
-        id: true,
-      },
-    });
-
-    if (!vendor) {
-      return Response.json({ error: "Vendor not found" }, { status: 404 });
-    }
-
     const { keys } = await request.json();
 
     if (!Array.isArray(keys)) {
       return Response.json({ error: "keys must be an array" }, { status: 400 });
     }
 
-    const allowedPrefixes = [
-      `vendors/${vendor.id}/gallery/`,
-      `vendors/${vendor.id}/branding/`,
-    ];
+    let allowedPrefixes;
+    if (sessionUser.role === "ADMIN") {
+      allowedPrefixes = ["categories/"];
+    } else if (sessionUser.role === "VENDOR") {
+      const vendor = await prisma.vendors.findUnique({
+        where: { userId: sessionUser.id },
+        select: { id: true },
+      });
+
+      if (!vendor) {
+        return Response.json({ error: "Vendor not found" }, { status: 404 });
+      }
+
+      allowedPrefixes = [
+        `vendors/${vendor.id}/gallery/`,
+        `vendors/${vendor.id}/branding/`,
+      ];
+    } else {
+      return Response.json({ error: "You do not have access to view these assets" }, { status: 403 });
+    }
 
     const validKeys = keys.filter(
       (key) => typeof key === "string" && allowedPrefixes.some((prefix) => key.startsWith(prefix)),

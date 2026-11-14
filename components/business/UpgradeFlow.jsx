@@ -19,7 +19,7 @@ function getSafeReturnPath(returnTo, businessSlug) {
       return `${destination.pathname}${destination.search}${destination.hash}`;
     }
   }
-  return businessSlug ? `/${businessSlug}/billing-usage` : "/";
+  return businessSlug ? `/${businessSlug}` : "/";
 }
 
 const STEP_SELECT_PLAN = "select-plan";
