@@ -1,14 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ChevronDown, ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
+import { ChevronLeft, ChevronRight, LoaderCircle } from "lucide-react";
 
 import { api } from "@/utils/api";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 function formatDate(date) {
   const year = date.getFullYear();
@@ -43,7 +40,7 @@ function getMinutes(time) {
   return hour * 60 + minute;
 }
 
-export default function DateTimeSelect({ slug, locationId, serviceId, initialAppointment, onContinue, onBack }) {
+export default function DateTimeSelect({ slug, locationId, serviceId, professionalId, professionalName, initialAppointment, onContinue, onBack }) {
   const [selectedDate, setSelectedDate] = useState(() => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
@@ -56,13 +53,6 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
 
-  const [professionals, setProfessionals] = useState([]);
-  const [professionalId, setProfessionalId] = useState("");
-  const [professionalsLoading, setProfessionalsLoading] = useState(false);
-  const [professionalsError, setProfessionalsError] = useState("");
-
-  const selectedProfessional = professionals.find((professional) => professional.id === professionalId);
-
   useEffect(() => {
     if (!initialAppointment) return;
 
@@ -72,7 +62,6 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
     setSelectedDate(date);
     setWeekStart(getMonday(date));
     setSelectedTime(initialAppointment.time);
-    setProfessionalId(initialAppointment.professionalId || "");
   }, [initialAppointment]);
 
   const days = useMemo(() => {
@@ -96,8 +85,9 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
 
   // Fetch availability for each day displayed in the calendar.
   useEffect(() => {
-    if (!slug || !locationId || !serviceId || professionalsLoading) {
+    if (!slug || !locationId || !serviceId || !professionalId) {
       setAvailability({});
+      setLoading(false);
       return;
     }
 
@@ -153,67 +143,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
     return () => {
       cancelled = true;
     };
-  }, [slug, locationId, serviceId, professionalId, professionalsLoading, days]);
-
-  useEffect(() => {
-    if (!slug || !locationId || !serviceId) {
-      setProfessionals([]);
-      setProfessionalId("");
-      return;
-    }
-
-    let cancelled = false;
-
-    async function fetchProfessionals() {
-      setProfessionalsLoading(true);
-      setProfessionalsError("");
-
-      try {
-        const query = new URLSearchParams({
-          locationId,
-          serviceId,
-        });
-
-        const response = await api.get(`/api/public/bookings/${slug}/professionals?${query.toString()}`);
-
-        const body = response;
-
-        if (!body.success) {
-          throw new Error(body.message || "Unable to load professionals");
-        }
-
-        if (!cancelled) {
-          const list = body.data?.professionals ?? [];
-
-          setProfessionals(list);
-
-          setProfessionalId((currentId) => (list.some((item) => item.id === currentId) ? currentId : list[0]?.id ?? ""));
-        }
-      } catch (error) {
-        if (!cancelled) {
-          setProfessionals([]);
-          setProfessionalId("");
-          setProfessionalsError(error.message || "Unable to load professionals");
-          console.error("Failed to load professionals:", error);
-        }
-      } finally {
-        if (!cancelled) {
-          setProfessionalsLoading(false);
-        }
-      }
-    }
-
-    fetchProfessionals();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [slug, locationId, serviceId]);
-
-  // Reset the selected time when the professional, service, or location changes.
-  useEffect(() => {
-    setSelectedTime("");
-  }, [professionalId, serviceId, locationId]);
+  }, [slug, locationId, serviceId, professionalId, days]);
 
   const times = useMemo(() => {
     const allTimes = new Set();
@@ -228,37 +158,35 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
   const selectedSlot = selectedSlots.find((slot) => slot.time === selectedTime && slot.available);
 
   const handlePreviousWeek = () => {
+    setSelectedTime("");
     setWeekStart((previous) => {
       const next = new Date(previous);
       next.setDate(next.getDate() - 7);
-
-      setSelectedTime("");
       setSelectedDate(next);
       return next;
     });
   };
 
   const handleNextWeek = () => {
+    setSelectedTime("");
     setWeekStart((previous) => {
       const next = new Date(previous);
       next.setDate(next.getDate() + 7);
-
-      setSelectedTime("");
       setSelectedDate(next);
       return next;
     });
   };
 
   const handleContinue = () => {
-    if (!selectedSlot || (professionals.length > 0 && !selectedProfessional)) return;
+    if (!selectedSlot || !professionalId) return;
 
     onContinue?.({
       date: selectedDateKey,
       time: selectedTime,
       locationId,
       serviceId,
-      professionalId: selectedProfessional?.id ?? null,
-      professionalName: selectedProfessional?.name ?? null,
+      professionalId,
+      professionalName,
     });
   };
 
@@ -282,49 +210,11 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
         <p className="mt-1 text-sm text-slate-500">Choose an available appointment slot.</p>
       </div>
 
-      {professionalsError && (
-        <p role="alert" className="mt-2 text-sm text-red-600">
-          {professionalsError}
-        </p>
-      )}
-
       <div className="space-y-3">
         <Card className="w-full border-none shadow-none">
           <CardContent className="!p-0">
             {/* Calendar header */}
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
-                  <Button type="button" variant="outline" disabled={professionalsLoading || professionals.length === 0} className="h-auto gap-3 rounded-xl border-slate-200 bg-white px-3 py-2">
-                    <Avatar className="h-8 w-8">
-                      <AvatarFallback>{selectedProfessional?.name?.charAt(0) ?? "P"}</AvatarFallback>
-                    </Avatar>
-
-                    <div className="min-w-0 text-left">
-                      <span className="block text-sm font-semibold">{professionalsLoading ? "Loading professionals..." : selectedProfessional?.name ?? (professionals.length ? "Select professional" : "No preference")}</span>
-                      <span className="block text-xs text-slate-400">{professionals.length ? "Choose your professional" : "No professional selection needed"}</span>
-                    </div>
-
-                    <ChevronDown className="h-4 w-4 shrink-0" />
-                  </Button>
-                </DropdownMenuTrigger>
-
-                <DropdownMenuContent align="start" className="w-64">
-                  {professionals.map((professional) => (
-                    <DropdownMenuItem key={professional.id} onSelect={() => setProfessionalId(professional.id)} className="gap-3 py-2">
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback>{professional.name.charAt(0)}</AvatarFallback>
-                      </Avatar>
-
-                      <span>{professional.name}</span>
-
-                      {professional.id === professionalId && <span className="ml-auto text-primary">✓</span>}
-                    </DropdownMenuItem>
-                  ))}
-
-                  {!professionalsLoading && professionals.length === 0 && <DropdownMenuItem disabled>No professionals available</DropdownMenuItem>}
-                </DropdownMenuContent>
-              </DropdownMenu>
               <div className="flex items-center gap-3">
                 <span className="text-xs font-bold text-slate-700">{weekLabel}</span>
 
@@ -463,8 +353,8 @@ export default function DateTimeSelect({ slug, locationId, serviceId, initialApp
           Back
         </Button>
 
-        <Button type="button" onClick={handleContinue} disabled={!selectedSlot || (professionals.length > 0 && !selectedProfessional) || loading}>
-          Continue
+        <Button type="button" onClick={handleContinue} disabled={!selectedSlot || !professionalId || loading}>
+          Select time
           <ChevronRight className="ml-1 h-4 w-4" />
         </Button>
       </div>

@@ -7,6 +7,7 @@ import { Check, ChevronDown, MapPin } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import BookingSteps from "@/components/public_booking/BookingSteps";
 import DateTimeSelect from "@/components/public_booking/DateTimeSelect";
 import EmailVerification from "@/components/public_booking/EmailVerification";
@@ -16,6 +17,13 @@ import ServiceSelect from "@/components/public_booking/ServiceSelect";
 
 const flowStorageKey = "booksaa-guest-booking-flow";
 const bookingStateKey = "booksaa-booking-state";
+const serviceChargeRate = 0.1;
+const taxRate = 0.05;
+
+const formatCurrency = (amount) => new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: "USD",
+}).format(amount);
 
 async function requestJson(url, options) {
   const response = await fetch(url, {
@@ -41,6 +49,10 @@ export default function BookingServiceSelection() {
   const [location, setLocation] = useState(null);
   const [services, setServices] = useState([]);
   const [selectedService, setSelectedService] = useState(null);
+  const [professionals, setProfessionals] = useState([]);
+  const [professionalId, setProfessionalId] = useState("");
+  const [professionalsLoading, setProfessionalsLoading] = useState(false);
+  const [professionalsError, setProfessionalsError] = useState("");
   const [locationId, setLocationId] = useState(initialLocationId || "");
   const [loading, setLoading] = useState(true);
   const [pageError, setPageError] = useState("");
@@ -109,7 +121,7 @@ export default function BookingServiceSelection() {
               setConfirmation(state.confirmation || null);
               const restoredStep = Number(state.currentStep || 1);
               setCurrentStep(restoredStep);
-              setDateTimeOpen(restoredStep === 2);
+              setProfessionalId(state.appointment?.professionalId || "");
               return;
             }
           } catch {
@@ -136,7 +148,7 @@ export default function BookingServiceSelection() {
           }
         }
 
-        setSelectedService((current) => (data.services || []).find((service) => service.id === current?.id) || data.services?.[0] || null);
+        setSelectedService((current) => (data.services || []).find((service) => service.id === current?.id) || null);
       } catch (error) {
         if (!cancelled) setPageError(error.message || "Unable to load services.");
       } finally {
@@ -149,6 +161,45 @@ export default function BookingServiceSelection() {
       cancelled = true;
     };
   }, [slug, locationId]);
+
+  useEffect(() => {
+    if (!slug || !locationId || !selectedService?.id) {
+      setProfessionals([]);
+      setProfessionalId("");
+      setProfessionalsLoading(false);
+      setProfessionalsError("");
+      return;
+    }
+
+    let cancelled = false;
+
+    async function fetchProfessionals() {
+      setProfessionalsLoading(true);
+      setProfessionalsError("");
+
+      try {
+        const query = new URLSearchParams({ locationId, serviceId: selectedService.id });
+        const result = await requestJson(`/api/public/bookings/${slug}/professionals?${query.toString()}`);
+        if (cancelled) return;
+
+        setProfessionals(result.data?.professionals || []);
+        setProfessionalId((current) => (result.data?.professionals || []).some((item) => item.id === current) ? current : "");
+      } catch (error) {
+        if (!cancelled) {
+          setProfessionals([]);
+          setProfessionalId("");
+          setProfessionalsError(error.message || "Unable to load professionals.");
+        }
+      } finally {
+        if (!cancelled) setProfessionalsLoading(false);
+      }
+    }
+
+    fetchProfessionals();
+    return () => {
+      cancelled = true;
+    };
+  }, [locationId, selectedService?.id, slug]);
 
   const persistBookingState = (overrides = {}) => {
     sessionStorage.setItem(bookingStateKey, JSON.stringify({
@@ -317,12 +368,31 @@ export default function BookingServiceSelection() {
     if (nextLocationId === locationId) return;
     setLocationId(nextLocationId);
     setSelectedService(null);
+    setProfessionals([]);
+    setProfessionalId("");
     setAppointment(null);
     setCurrentStep(1);
     sessionStorage.removeItem(bookingStateKey);
     clearVerification();
     router.replace(`/book/${slug}?locationId=${nextLocationId}`);
   };
+
+  const canBook = Boolean(
+    locationId &&
+    selectedService &&
+    professionalId &&
+    !professionalsLoading &&
+    professionals.some((professional) => professional.id === professionalId) &&
+    appointment?.date &&
+    appointment?.time &&
+    appointment.locationId === locationId &&
+    appointment.serviceId === selectedService.id &&
+    appointment.professionalId === professionalId
+  );
+  const serviceSubtotal = Number(selectedService?.price || 0);
+  const serviceCharge = serviceSubtotal * serviceChargeRate;
+  const taxes = serviceSubtotal * taxRate;
+  const totalAmount = serviceSubtotal + serviceCharge + taxes;
 
   const showLoading = loading || !business;
 
@@ -437,17 +507,82 @@ export default function BookingServiceSelection() {
                 selectedService={selectedService}
                 onSelectService={(service) => {
                   if (selectedService?.id !== service.id) {
+                    setProfessionalId("");
+                    setProfessionals([]);
                     setAppointment(null);
                     clearVerification();
                   }
                   setSelectedService(service);
                 }}
-                onContinue={() => {
-                  setCurrentStep(2);
-                  setDateTimeOpen(true);
-                  persistBookingState({ currentStep: 2 });
-                }}
               />
+              <div className="mt-5 space-y-2">
+                <label htmlFor="booking-professional" className="block text-xs font-bold uppercase tracking-wide text-slate-700">Professional</label>
+                <Select
+                  value={professionalId || undefined}
+                  onValueChange={(nextProfessionalId) => {
+                    setProfessionalId(nextProfessionalId);
+                    setAppointment(null);
+                    clearVerification();
+                  }}
+                  disabled={!selectedService || professionalsLoading || professionals.length === 0}
+                >
+                  <SelectTrigger id="booking-professional" className="h-auto min-h-11 w-full rounded-xl border-slate-200 px-3 py-3 text-left">
+                    <SelectValue placeholder={professionalsLoading ? "Loading professionals..." : selectedService ? "Select a professional" : "Choose a service first"} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {professionals.map((professional) => (
+                      <SelectItem key={professional.id} value={professional.id}>{professional.name}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                {professionalsError && <p role="alert" className="text-sm text-red-600">{professionalsError}</p>}
+                {selectedService && !professionalsLoading && !professionalsError && professionals.length === 0 && (
+                  <p className="text-sm text-slate-500">No professionals are available for this service.</p>
+                )}
+              </div>
+              <div className="mt-5 space-y-2">
+                <label className="block text-xs font-bold uppercase tracking-wide text-slate-700">Date &amp; time</label>
+                <Button
+                  type="button"
+                  variant="outline"
+                  className="h-auto min-h-11 w-full justify-start rounded-xl border-slate-200 px-3 py-3 text-left text-sm"
+                  disabled={!locationId || !selectedService || !professionalId}
+                  onClick={() => setDateTimeOpen(true)}
+                >
+                  {appointment ? `${appointment.date} at ${appointment.time}` : "Select date and time"}
+                </Button>
+              </div>
+              <div className="mt-5 space-y-2 border-t border-slate-200 pt-4 text-sm">
+                <div className="flex items-center justify-between gap-4 text-slate-600">
+                  <span>Service price</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(serviceSubtotal)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-slate-600">
+                  <span>Service charge (10%)</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(serviceCharge)}</span>
+                </div>
+                <div className="flex items-center justify-between gap-4 text-slate-600">
+                  <span>Taxes &amp; fees (VAT 5%)</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(taxes)}</span>
+                </div>
+                <div className="flex items-baseline justify-between gap-4 border-t border-dashed border-slate-200 pt-3">
+                  <div>
+                    <span className="font-bold text-slate-900">Total amount</span>
+                    <p className="text-[11px] text-slate-400">Includes taxes and service charge</p>
+                  </div>
+                  <span className="text-xl font-black text-slate-900">{formatCurrency(totalAmount)}</span>
+                </div>
+              </div>
+              <div className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5">
+                <Button
+                  type="button"
+                  className="w-full"
+                  disabled={!canBook}
+                  onClick={() => goToStep(3, { appointment })}
+                >
+                  Book Now
+                </Button>
+              </div>
             </div>
           </aside>
         </div>
@@ -459,17 +594,17 @@ export default function BookingServiceSelection() {
               slug={slug}
               locationId={locationId}
               serviceId={selectedService?.id}
+              key={`${locationId}-${selectedService?.id || ""}-${professionalId}`}
+              professionalId={professionalId}
+              professionalName={professionals.find((item) => item.id === professionalId)?.name}
               initialAppointment={appointment}
               onBack={() => {
                 setDateTimeOpen(false);
-                setCurrentStep(1);
-                persistBookingState({ currentStep: 1 });
               }}
               onContinue={(nextAppointment) => {
                 setAppointment(nextAppointment);
                 setFlowError("");
                 setDateTimeOpen(false);
-                goToStep(3, { appointment: nextAppointment });
               }}
             />
           </DialogContent>
@@ -498,7 +633,7 @@ export default function BookingServiceSelection() {
           <GuestDetails
             value={contact}
             onChange={setContact}
-            onBack={() => goToStep(2)}
+            onBack={() => goToStep(1)}
             onSubmit={startEmailVerification}
             loading={actionLoading}
             error={flowError}
