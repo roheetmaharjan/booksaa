@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getStorageImageUrl } from "@/lib/storage-view";
 
 export async function GET(request, { params }) {
   try {
@@ -18,16 +19,6 @@ export async function GET(request, { params }) {
       );
     }
 
-    if (!locationId) {
-      return NextResponse.json(
-        {
-          success: false,
-          message: "Location is required",
-        },
-        { status: 400 },
-      );
-    }
-
     const business = await prisma.vendors.findFirst({
       where: {
         slug,
@@ -37,6 +28,7 @@ export async function GET(request, { params }) {
         name: true,
         slug: true,
         image: true,
+        photos: true,
         description: true,
         phone: true,
 
@@ -45,31 +37,42 @@ export async function GET(request, { params }) {
             id: true,
             name: true,
             address: true,
+            photos: true,
+            businessHours: {
+              select: {
+                day: true,
+                isOpen: true,
+                openTime: true,
+                closeTime: true,
+              },
+            },
           },
           orderBy: {
             createdAt: "asc",
           },
         },
 
-        services: {
-          where: {
-            location: {
-              is: {
-                id: locationId,
+        services: locationId
+          ? {
+              where: {
+                location: {
+                  is: {
+                    id: locationId,
+                  },
+                },
               },
-            },
-          },
-          select: {
-            id: true,
-            name: true,
-            vendorId: true,
-            price: true,
-            duration: true,
-            depositValue: true,
-            depositType: true,
-            prepaymentType: true,
-          },
-        },
+              select: {
+                id: true,
+                name: true,
+                vendorId: true,
+                price: true,
+                duration: true,
+                depositValue: true,
+                depositType: true,
+                prepaymentType: true,
+              },
+            }
+          : false,
       },
     });
 
@@ -83,10 +86,9 @@ export async function GET(request, { params }) {
       );
     }
 
-    const location = business.locations[0];
-    const businessStatus = getBusinessStatus(location?.businessHours || []);
+    const location = locationId ? business.locations.find((item) => item.id === locationId) : null;
 
-    if (!location) {
+    if (locationId && !location) {
       return NextResponse.json(
         {
           success: false,
@@ -96,6 +98,19 @@ export async function GET(request, { params }) {
       );
     }
 
+    const businessStatus = location ? getBusinessStatus(location.businessHours || []) : null;
+
+    let galleryKeys = [];
+    try {
+      const parsedPhotos = JSON.parse(business.photos || "[]");
+      if (Array.isArray(parsedPhotos)) galleryKeys = parsedPhotos.filter((key) => typeof key === "string" && key.startsWith(`vendors/${business.id}/gallery/`));
+    } catch {
+      galleryKeys = [];
+    }
+    const signImage = (key) => getStorageImageUrl(key).catch(() => null);
+    const gallery = (await Promise.all(galleryKeys.map(async (key) => ({ key, url: await signImage(key) })))).filter((photo) => photo.url);
+    const profileImage = business.image?.startsWith(`vendors/${business.id}/branding/`) ? await signImage(business.image) : business.image;
+
     return NextResponse.json({
       success: true,
       data: {
@@ -104,16 +119,15 @@ export async function GET(request, { params }) {
           name: business.name,
           slug: business.slug,
           image: business.image,
+          imageUrl: profileImage,
           description: business.description,
           phone: business.phone,
+          gallery,
         },
         locations: business.locations,
-        location: {
-          ...location,
-          status: businessStatus,
-        },
+        location: location ? { ...location, status: businessStatus } : null,
 
-        services: business.services,
+        services: business.services || [],
       },
     });
   } catch (error) {

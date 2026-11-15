@@ -2,6 +2,7 @@
 
 import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
 export default function ServiceSelect({ services, selectedService, onSelectService, onContinue }) {
   return (
@@ -15,56 +16,28 @@ export default function ServiceSelect({ services, selectedService, onSelectServi
         </div>
       </div>
 
-      {/* Services */}
-      <div className="h-full space-y-1 overflow-y-auto pr-1">
-        {services.length === 0 ? (
-          <div className="flex min-h-[200px] items-center justify-center rounded-md border border-dashed border-slate-200 bg-slate-50 px-4 text-center">
-            <p className="text-sm text-slate-500">No services available at this location.</p>
-          </div>
-        ) : (
-          services.map((service) => {
-            const selected = selectedService?.id === service.id;
-
-            return (
-              <label
-                key={service.id}
-                className={`
-                  group relative flex cursor-pointer
-                  items-center justify-between gap-3
-                  rounded-md p-3.5 transition-all
-                  ${selected ? "border border-indigo-600 bg-indigo-50/70 shadow-sm" : "border border-slate-200 bg-white hover:border-indigo-400 hover:bg-slate-50"}
-                `}
-              >
-                {/* Left */}
-                <div className="flex min-w-0 items-center gap-3">
-                  <input type="radio" name="service" checked={selected} onChange={() => onSelectService(service)} className="h-4 w-4 border-slate-300 text-indigo-600 focus:ring-indigo-500" />
-
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-semibold text-slate-900">{service.name}</span>
-
-                      <span className="rounded bg-slate-200 px-2 py-0.5 text-[10px] font-semibold text-slate-600">{service.duration} MIN</span>
-                    </div>
-
-                    <p className="mt-0.5 line-clamp-1 text-xs text-slate-500">
-                      {service.prepaymentType === "full"
-                        ? "Full payment required"
-                        : service.prepaymentType === "deposit"
-                          ? `Deposit required: ${service.depositType === "fixed" ? `$${service.depositValue}` : `${service.depositValue}%`}`
-                          : "No deposit required"}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Price */}
-                <div className="shrink-0 pl-2 text-right">
-                  <span className="text-base font-bold text-slate-900">${service.price}</span>
-                </div>
-              </label>
-            );
-          })
-        )}
-      </div>
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button type="button" variant="outline" className="h-auto w-full justify-between rounded-xl border-slate-200 px-4 py-4 text-left" disabled={!services.length}>
+            <span className="min-w-0">
+              <span className="block text-xs font-medium uppercase tracking-wide text-slate-500">Choose a service</span>
+              <span className="mt-1 block truncate text-sm font-semibold text-slate-900">{selectedService?.name || (services.length ? "Select a service" : "No services available at this location")}</span>
+            </span>
+            <ChevronRight className="h-4 w-4 shrink-0 rotate-90" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="max-h-80 w-[min(34rem,calc(100vw-2rem))] overflow-y-auto">
+          {services.map((service) => (
+            <DropdownMenuItem key={service.id} onSelect={() => onSelectService(service)} className="flex cursor-pointer items-center justify-between gap-4 py-3">
+              <span className="min-w-0">
+                <span className="block truncate text-sm font-semibold">{service.name}</span>
+                <span className="text-xs text-slate-500">{service.duration} min · {service.prepaymentType === "full" ? "Full payment required" : service.prepaymentType === "deposit" ? `Deposit required (${service.depositType === "fixed" ? `$${service.depositValue}` : `${service.depositValue}%`})` : "Pay at business"}</span>
+              </span>
+              <span className="shrink-0 text-sm font-bold">${service.price}</span>
+            </DropdownMenuItem>
+          ))}
+        </DropdownMenuContent>
+      </DropdownMenu>
 
       {/* Bottom */}
       <div className="mt-5 flex flex-col gap-4 border-t border-slate-200 pt-5 sm:flex-row sm:items-center sm:justify-between">
@@ -75,7 +48,7 @@ export default function ServiceSelect({ services, selectedService, onSelectServi
         </div>
 
         <Button type="button" disabled={!selectedService} onClick={onContinue}>
-          Continue
+          Book Now
           <ChevronRight size={14} />
         </Button>
       </div>
