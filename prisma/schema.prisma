@@ -21,9 +21,21 @@ model Users {
   status    UserStatus
   joinedAt  DateTime   @default(now())
   roleId    String
-  bookings  Bookings[]
-  role      Role       @relation(fields: [roleId], references: [id])
-  vendors   Vendors?
+  bookings            Bookings[]
+  role                Role                @relation(fields: [roleId], references: [id])
+  vendors             Vendors?
+  passwordResetTokens PasswordResetToken[]
+}
+
+model PasswordResetToken {
+  id        String   @id @default(uuid())
+  userId    String
+  tokenHash String   @unique
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      Users    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
 }
 
 model Vendors {
