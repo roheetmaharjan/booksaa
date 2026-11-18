@@ -26,6 +26,23 @@ model Users {
   vendors   Vendors?
 }
 
+model DemoRequest {
+  id            String   @id @default(uuid())
+  firstName     String
+  lastName      String
+  businessEmail String
+  phone         String
+  businessName  String
+  industry      String
+  locations     String
+  software      String?
+  staffCount    String
+  notes         String?
+  createdAt     DateTime @default(now())
+
+  @@index([createdAt])
+}
+
 model Vendors {
   id                    String                       @id @default(uuid())
   name                  String

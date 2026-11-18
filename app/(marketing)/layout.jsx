@@ -4,9 +4,9 @@ import Footer from "@/components/components_marketing/Footer";
 export default function MarketingLayout({ children }) {
   return (
     <>
-        <Header/>
-        {children}
-        <Footer/>
+      <Header />
+      {children}
+      <Footer />
     </>
   );
 }

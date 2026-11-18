@@ -47,10 +47,10 @@ export default function TargetAudience() {
     <section className="py-10 xl:py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-center uppercase text-primary font-semibold mb-3">Industries We Work With</p>
+          <p className="text-center uppercase text-primary font-semibold mb-3">Solution</p>
 
           <h2 className="section-heading">
-            Complete <span className="text-primary">Business Management</span> Platform for Service Providers
+            Built for every kind of service
           </h2>
 
           <p className="text-center max-w-3xl mx-auto mb-10 text-muted-foreground">We helps service-based businesses manage appointments, staff, clients, and day-to-day operations</p>

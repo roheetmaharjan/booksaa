@@ -2,6 +2,7 @@ import Image from "next/image";
 import { SquaresFourIcon, GearIcon, UsersIcon,ChartBarIcon,QuestionIcon } from "@phosphor-icons/react";
 import { signOut } from "@/lib/auth-client";
 import { useRouter } from "next/navigation";
+import { ClipboardList } from "lucide-react";
 
 export default function AdminHeader({startTransition}) {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function AdminHeader({startTransition}) {
         <nav className="hidden md:flex flex-row gap-3">
           <button className="flex gap-2 items-center" onClick={handleNav("/admin")}><SquaresFourIcon size={25} weight="duotone"/>Dashboard</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/users")}><UsersIcon size={25} weight="duotone" /> Users</button>
+          <button className="flex gap-2 items-center" onClick={handleNav("/admin/demo-requests")}><ClipboardList size={21} /> Demo Requests</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/settings")}><GearIcon size={25} weight="duotone" /> Settings</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/reports")}><ChartBarIcon size={25} weight="duotone" /> Reports</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/support")}><QuestionIcon size={25} weight="duotone" /> Support</button>

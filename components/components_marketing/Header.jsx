@@ -39,10 +39,10 @@ const Header = () => {
 
   return (
     <>
-      <header className={`left-0 top-0 z-40 w-full py-3 ${isHomePage ? (sticky ? "light-header" : "dark-header") : (sticky ? "inner-header light-header" : "inner-header")}`}>
+      <header className={`left-0 top-0 z-40 w-full py-3 ${isHomePage ? (sticky ? "light-header" : "dark-header") : sticky ? "inner-header light-header" : "inner-header"}`}>
         <div className="container-fluid !p-0 !px-5 relative z-20">
           <div className="relative flex w-full items-center justify-between">
-            <div className="shrink-0 px-2 sm:px-4">
+            <div className="shrink-0 px-2 sm:px-4 w-70">
               <Link href="/" className="block w-full">
                 <Image src={`/logo_white.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[25px] object-contain light-logo" />
                 <Image src={`/logo.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[25px] object-contain dark-logo" />
@@ -90,13 +90,13 @@ const Header = () => {
                   </Link>
                 </NavigationMenuItem>
                 <NavigationMenuItem>
-                  <Link href="/contact" className="py-2 px-4">
-                    Contact Us
+                  <Link href="/contact-sales" className="py-2 px-4">
+                    Contact Sales
                   </Link>
                 </NavigationMenuItem>
               </NavigationMenuList>
             </NavigationMenu>
-            <div className="flex items-center justify-end gap-2 px-2 sm:px-4">
+            <div className="flex items-center justify-end gap-2 px-2 sm:px-4 w-70">
               <div className="hidden items-center justify-end lg:flex">
                 {session?.user ? (
                   <>
@@ -153,8 +153,8 @@ const Header = () => {
                 <Link onClick={() => setMobileMenuOpen(false)} href="/pricing" className="rounded px-3 py-3 hover:bg-white/10">
                   Pricing
                 </Link>
-                <Link onClick={() => setMobileMenuOpen(false)} href="/contact" className="rounded px-3 py-3 hover:bg-white/10">
-                  Contact Us
+                <Link onClick={() => setMobileMenuOpen(false)} href="/contact-sales" className="rounded px-3 py-3 hover:bg-white/10">
+                  Contact Sales
                 </Link>
                 {session?.user ? (
                   <>
