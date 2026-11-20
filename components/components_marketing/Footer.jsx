@@ -15,10 +15,8 @@ export default function BooksaaFooter() {
       {/* CTA */}
       <section className="relative z-10 pt-24 pb-48">
         <div className="max-w-4xl mx-auto text-center px-6">
-          <h2 className="mt-6 text-5xl md:text-6xl font-bold text-white leading-tight">
-            Manage bookings.
-            <br />
-            Grow your business.
+          <h2 className="mt-6 text-3xl md:text-4xl font-bold text-white leading-tight">
+            Manage bookings. Grow your business.
           </h2>
 
           <p className="mt-6 text-white text-lg max-w-2xl mx-auto">Booksaa helps service businesses manage bookings, staff, customers, schedules, and locations from one platform.</p>

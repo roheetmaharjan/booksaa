@@ -1,84 +1,37 @@
-import {  Calendar, Users, MapPin, ShieldAlert, BarChart3, SlidersHorizontal } from "lucide-react";
+import featureContent from "@/data/features.json";
+import FeatureStackCard, {
+  FeatureListItem,
+} from "@/components/components_marketing/FeatureStackCard";
+
 export default function Features() {
   return (
-    <section className="py-[50px] md:py-[80px] lg:py-[100px] bg-slate-100">
+    <section className="py-[50px] md:py-[80px] lg:py-[100px]">
       <div className="container">
         <div className="space-y-[35px] md:space-y-[70px]">
           <div className="space-y-3 max-w-3xl mx-auto text-center">
-            <p className="text-center uppercase text-primary font-semibold mb-3">Features</p>
+            <p className="text-center uppercase font-semibold mb-3 text-sm text-slate-500 tracking-[0.18em]">Features</p>
             <h2 className="section-heading">
-              Replace <span className="text-primary">Multiple Tools</span> with One Powerful Platform
+              Replace Multiple Tools with <br /> One Powerful Platform
             </h2>
             <p className="text-center max-w-xl mx-auto mb-10 text-muted-foreground">Booksaa helps businesses streamline operations, automate scheduling, improve customer experiences, and gain visibility into performance—all from a single platform.</p>
           </div>
 
-          <div className="space-y-14">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-9">
-              <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
-                  <Calendar className="w-6 h-6" />
+          <div className="flex flex-col gap-6">
+            {featureContent.sections.slice(0, 3).map((section, index) => (
+              <FeatureStackCard key={section.id} id={section.id} category={section.category} title={section.title} description={section.description} icon={section.icon} index={index}>
+                <div className="grid grid-cols-1 gap-x-8 md:grid-cols-2">
+                  {section.cards.map((feature) => (
+                    <FeatureListItem key={feature.title} feature={feature} />
+                  ))}
                 </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Online Booking</h3>
-                  <p className="text-base">Let customers book appointments anytime, anywhere through your website, booking page, or mobile device.</p>
-                </div>
-              </div>
+              </FeatureStackCard>
+            ))}
+          </div>
 
-              <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
-                  <ShieldAlert className="w-6 h-6" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Customer Management</h3>
-                  <p className="text-base">Store customer information, booking history, notes, and preferences in one centralized place.</p>
-                </div>
-              </div>
-
-              <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
-                  <SlidersHorizontal className="w-6 h-6" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Smart Scheduling</h3>
-                  <p className="text-base">Manage appointments, staff availability, resources, and calendars without conflicts or double bookings.</p>
-                </div>
-              </div>
-              <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
-                  <Users className="w-6 h-6" />
-                </div>
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Team Management</h3>
-                  <p className="text-base">Assign staff, track performance, manage schedules, and keep your team organized.</p>
-                </div>
-              </div>
-              <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
-                  <MapPin className="w-6 h-6" />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Multi-Location Support</h3>
-                  <p className="text-base">Manage multiple branches, teams, and services from a single dashboard.</p>
-                </div>
-              </div>
-              <div className="max-w-[405px] w-full p-8 bg-white rounded-[20px] space-y-6">
-                <div className="w-12 h-12 rounded-xl bg-lime-100 group-hover:bg-lime-500 flex items-center justify-center text-lime-700 group-hover:text-slate-950 transition-all mb-5">
-                  <BarChart3 className="w-6 h-6" />
-                </div>
-
-                <div className="space-y-2">
-                  <h3 className="text-2xl font-semibold">Reports & Insights</h3>
-                  <p className="text-base">Track bookings, revenue, staff performance, and business growth with real-time reporting</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="text-center w-full">
-              <a href="#" className="btn-primary">
-                <span>View all Features</span>
-              </a>
-            </div>
+          <div className="text-center w-full">
+            <a href="/features" className="btn-primary">
+              <span>View all Features</span>
+            </a>
           </div>
         </div>
       </div>

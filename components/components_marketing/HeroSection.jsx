@@ -10,26 +10,19 @@ export default function HeroSection() {
       </div>
 
       {/* Hero */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 lg:px-10 pt-36 pb-16">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 pt-16 pb-16">
         <div className="max-w-4xl mx-auto text-center">
-
           <h1 className="text-white text-5xl md:text-6xl font-medium leading-[1.05] tracking-tight">
             Run your entire business from <br /> <span className="text-primary">one platform</span>
           </h1>
 
-          <p className="mt-8 text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">
-            Scheduling, payments, team management, customer communication,
-            and business insights—all connected in one powerful system
-            designed to help you grow faster.
-          </p>
+          <p className="mt-8 text-lg text-slate-300 max-w-3xl mx-auto leading-relaxed">Scheduling, payments, team management, customer communication, and business insights—all connected in one powerful system designed to help you grow faster.</p>
 
           {/* CTA */}
           <div className="flex flex-col sm:flex-row items-center justify-center gap-4 mt-10">
             <StartFreeTrialButton>Start Free Trial →</StartFreeTrialButton>
 
-            <button className="bg-white/10 backdrop-blur text-white px-7 py-4 rounded-xl border border-white/10 hover:bg-white/15 transition">
-              Contact Sales
-            </button>
+            <button className="bg-white/10 backdrop-blur text-white px-7 py-4 rounded-xl border border-white/10 hover:bg-white/15 transition">Contact Sales</button>
           </div>
 
           {/* Trust Indicators */}
@@ -44,28 +37,14 @@ export default function HeroSection() {
         <div className="grid lg:grid-cols-[2.3fr_1fr] gap-6 mt-20">
           {/* Large Image Card */}
           <div className="relative overflow-hidden rounded-3xl bg-[#5C87B0] min-h-[420px]">
-            <Image
-              src="/hero_banner.jpg"
-              alt="Business Management"
-              width={1920}
-              height={1080}
-              priority
-              sizes="100vw"
-              className="absolute inset-0 h-full w-full object-cover"
-            />
+            <Image src="/hero_banner.jpg" alt="Business Management" width={1920} height={1080} priority sizes="100vw" className="absolute inset-0 h-full w-full object-cover" />
 
             <div className="absolute inset-0 bg-gradient-to-r from-black/40 via-black/10 to-transparent" />
 
             <div className="absolute top-8 left-8 max-w-sm">
-              <h3 className="text-white text-3xl font-semibold mb-4">
-                Everything connected in one place.
-              </h3>
+              <h3 className="text-white text-3xl font-semibold mb-4">Everything connected in one place.</h3>
 
-              <p className="text-white/90 leading-relaxed">
-                Manage bookings, staff schedules, payments, customer
-                communication, marketing, and reporting from a single
-                platform built for service businesses.
-              </p>
+              <p className="text-white/90 leading-relaxed">Manage bookings, staff schedules, payments, customer communication, marketing, and reporting from a single platform built for service businesses.</p>
             </div>
           </div>
 
@@ -74,20 +53,12 @@ export default function HeroSection() {
             <div className="text-[#B5E86A] text-7xl leading-none">"</div>
 
             <div className="h-full flex flex-col">
-              <p className="text-white text-lg">
-                Booksaa replaced multiple tools and helped us streamline
-                bookings, staff management, and customer communication from
-                day one.
-              </p>
+              <p className="text-white text-lg">Booksaa replaced multiple tools and helped us streamline bookings, staff management, and customer communication from day one.</p>
 
               <div className="mt-auto">
-                <h4 className="text-white font-semibold">
-                  Sarah Thompson
-                </h4>
+                <h4 className="text-white font-semibold">Sarah Thompson</h4>
 
-                <p className="text-white/60 text-sm">
-                  Owner, Elite Wellness Studio
-                </p>
+                <p className="text-white/60 text-sm">Owner, Elite Wellness Studio</p>
               </div>
             </div>
           </div>

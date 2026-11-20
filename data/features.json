@@ -1,7 +1,7 @@
 {
   "hero": {
     "title": "Every feature you need to run & scale your business.",
-    "description": "From 24/7 self-serve booking and smart client cards to AI receptionist, instant POS payouts, and team management— all included under one simple flat monthly plan."
+    "description": "Explore the tools for managing bookings, client information, payments, marketing, and day-to-day business operations."
   },
   "sections": [
     {
@@ -9,70 +9,42 @@
       "category": "booking",
       "module": "01",
       "icon": "CalendarDays",
-      "title": "Booking & Smart Scheduling",
-      "description": "Zero friction booking for your clients 24 hours a day, calibrated with exact padding, rules, and intelligent auto-fill logic.",
+      "title": "Booking & Scheduling",
+      "description": "Tools to share booking options, list your services, and keep your appointments organized.",
       "cards": [
         {
           "icon": "MonitorSmartphone",
           "title": "Online Booking 24/7",
-          "description": "Clients can view live availability and conveniently book appointments anytime, anywhereâ€”on the Booksy client app, web directory, Instagram profile, or Google Search.",
-          "badge": "Flagship Engine",
+          "description": "Let clients view your available times and request an appointment online whenever it suits them.",
+          "badge": "",
           "label": "Learn about online booking"
         },
         {
-          "icon": "Bot",
-          "title": "AI Phone Receptionist",
-          "description": "Automated smart receptionist picks up incoming calls, understands speech, and completes bookings directly into your calendar without interrupting appointments.",
-          "badge": "New 2025",
+          "icon": "CreditCard",
+          "title": "Payments & POS",
+          "description": "Keep track of payments and point-of-sale activity for your business.",
+          "badge": "",
           "label": "Learn about AI Receptionist"
         },
         {
           "icon": "Images",
           "title": "Service Listings + Photos",
-          "description": "List services with crystal-clear descriptions and visual gallery examples to show off your signature offerings and help clients pick the right service.",
+          "description": "Keep your services together with clear descriptions and photos to help clients choose.",
           "badge": "",
           "label": ""
         },
         {
-          "icon": "BadgeCheck",
-          "title": "Verified Client Reviews",
-          "description": "Automatically collect authentic client feedback, star ratings, and treatment photos post-appointment to build social proof on your profile.",
+          "icon": "CalendarCheck",
+          "title": "Calendar & Scheduling",
+          "description": "View and manage your appointments in a calendar, with their scheduled dates and times.",
           "badge": "",
           "label": ""
         },
         {
-          "icon": "Palette",
-          "title": "In-App Portfolio",
-          "description": "Showcase high-resolution photos of your work directly on your profile, linked seamlessly to specific service offerings for 1-click booking.",
-          "badge": "",
-          "label": ""
-        },
-        {
-          "icon": "SlidersHorizontal",
-          "title": "Booking Rules & Lead Times",
-          "description": "Set the exact amount of lead time required for clients to schedule, reschedule, or cancel their appointments so you never encounter surprises.",
-          "badge": "",
-          "label": "Learn about Calendar Rules"
-        },
-        {
-          "icon": "CalendarRange",
-          "title": "Customizable Calendar & iOS Widget",
-          "description": "Color-code your services, customize day/week views, drag-and-drop bookings, and use the iOS Home Screen Widget for at-a-glance access.",
-          "badge": "",
-          "label": "Learn about Calendar Settings"
-        },
-        {
-          "icon": "Hourglass",
-          "title": "Automated Waitlist",
-          "description": "Fill unexpected openings automatically. Clients sign up to receive instant push alerts the moment a time slot opens within their desired timeframe.",
-          "badge": "",
-          "label": ""
-        },
-        {
-          "icon": "CalendarX",
-          "title": "Time Off & Health Rules",
-          "description": "Block off days for vacation, business maintenance, or scheduled breaks with single taps. Ensure complete compliance with customizable health and safety rules.",
-          "badge": "",
+          "icon": "Link",
+          "title": "Send Booking Link",
+          "description": "Share a direct link that clients can use to book an appointment with your business.",
+          "badge": "Coming Soon",
           "label": ""
         }
       ]
@@ -81,51 +53,58 @@
       "id": "crm-section",
       "category": "crm",
       "module": "02",
-      "icon": "Users",
+      "icon": "UsersRound",
       "title": "Client Management & CRM",
-      "description": "Deep customer intelligence that turns one-time appointments into lifelong regulars with automated alerts and private formulas.",
+      "description": "Keep client details, notes, and appointment information organized in one place.",
       "cards": [
         {
           "icon": "ContactRound",
           "title": "Smart Client Cards",
-          "description": "View client details, past service history, upcoming appointments, formula records, and total lifetime spend instantly from any booking block.",
-          "badge": "Central Database",
+          "description": "See key client details and appointment information together in one place.",
+          "badge": "",
           "label": "Explore Client Management Tools"
         },
         {
           "icon": "FilePenLine",
           "title": "Client Notes & Formulas",
-          "description": "Keep detailed, confidential notes and reference photos right on their client card for flawless color mixing and technique replication on future visits.",
+          "description": "Record useful notes and formulas so you can refer to them during future visits.",
           "badge": "",
           "label": ""
         },
         {
           "icon": "BellRing",
           "title": "Confirmations & Reminders",
-          "description": "Unlimited automated client appointment confirmations and SMS/Email reminders are sent without you ever lifting a finger.",
+          "description": "Keep clients informed with appointment confirmations and reminders.",
           "badge": "",
           "label": ""
         },
         {
-          "icon": "Tag",
+          "icon": "Tags",
           "title": "Client Tags & Groups",
-          "description": "Tag and sort clients into smart groups (e.g. VIP, Blonde Specialist, Student) for fast filtering, personalized marketing, and tailored blasts.",
-          "badge": "",
-          "label": ""
-        },
-        {
-          "icon": "Ban",
-          "title": "Block Flaky Clients",
-          "description": "Discreetly restrict clients who do not respect your business policies, timing, or deposit rules. We never notify them, keeping your schedule serene.",
+          "description": "Organize clients with tags to make them easier to find and group.",
           "badge": "",
           "label": ""
         },
         {
           "icon": "ClipboardCheck",
           "title": "Custom Intake Forms & Waivers",
-          "description": "Build your own custom digital intake forms, patch test confirmations, or liability waivers, requiring completion prior to booking.",
+          "description": "Collect client information with intake forms and waivers.",
           "badge": "",
           "label": ""
+        },
+        {
+          "icon": "CreditCard",
+          "title": "Memberships & Packages",
+          "description": "Offer clients memberships and service packages.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Gift",
+          "title": "Loyalty Stamps & Gift Cards",
+          "description": "Offer gift cards and loyalty rewards to your clients.",
+          "badge": "Coming Soon",
+          "label": "Learn about Loyalty Cards"
         }
       ]
     },
@@ -135,40 +114,26 @@
       "module": "03",
       "icon": "Wallet",
       "title": "Payments & No-Show Protection",
-      "description": "Guaranteed revenue. Charge upfront deposits, enforce strict cancellation policies, and tap to accept payments straight on your phone.",
+      "description": "Manage deposits, in-person payments, and checkout for your bookings.",
       "cards": [
-        {
-          "icon": "Images",
-          "title": "Tap to Pay on iPhone & Android",
-          "description": "Accept in-person, contactless payments right on your smartphone. Apple Pay, Google Pay, and physical chip cardsâ€”no extra terminals or hardware required. Fast, encrypted, and secure.",
-          "badge": "Hardware-Free POS",
-          "label": "Learn about Tap to Pay"
-        },
         {
           "icon": "ShieldCheck",
           "title": "Deposits & Cancellation Fees",
-          "description": "Require an upfront deposit at the time of booking. With a card on file, automatically charge late cancellation fees if clients ghost your chair.",
-          "badge": "Zero No-Shows",
+          "description": "Set deposit requirements and cancellation fees for appointments.",
+          "badge": "",
           "label": "Learn more about cancellations"
         },
         {
-          "icon": "Monitor",
-          "title": "Booksy Card Reader",
-          "description": "Accept credit and mobile wallet payments on-site with our sleek countertop and handheld readers, perfectly synced with your checkout register.",
+          "icon": "CreditCard",
+          "title": "Card Reader",
+          "description": "Accept customer payments in person with a card reader.",
           "badge": "",
           "label": "Learn about Card Reader"
         },
         {
-          "icon": "Zap",
-          "title": "Fast & Instant Payouts",
-          "description": "Free next-business-day regular payouts, or trigger Fast Payouts to access your earnings directly in your bank account in 30 minutes or less.",
-          "badge": "",
-          "label": ""
-        },
-        {
           "icon": "ReceiptText",
           "title": "Cash Register & Smart Tips",
-          "description": "Easily balance end-of-day totals, track cash drawers, and add suggested tip percentages at checkout to boost technician earning potential.",
+          "description": "Record payments and tips with your cash register at checkout.",
           "badge": "",
           "label": ""
         }
@@ -180,47 +145,26 @@
       "module": "04",
       "icon": "Megaphone",
       "title": "Marketing, Marketplace & Growth",
-      "description": "Access a marketplace of 44M+ clients, automate targeted email/SMS promotions, and incentivize loyalty through gift cards and membership passes.",
+      "description": "Share updates and offers with clients and help them find ways to book your business.",
       "cards": [
-        {
-          "icon": "Globe",
-          "title": "Booksy Marketplace",
-          "description": "44 million clients worldwide search Booksy for top-tier service providers and local businesses. Your business profile is permanently listed with zero setup fees.",
-          "badge": "Client Network",
-          "label": "Learn about Marketplace"
-        },
-        {
-          "icon": "Rocket",
-          "title": "Boost Accelerator",
-          "description": "Turn on Boost to multiply visibility in local search rankings. Pay only a modest commission when a completely new client books their first visit.",
-          "badge": "Pure ROI",
-          "label": "Explore Boost feature"
-        },
         {
           "icon": "MailOpen",
           "title": "Email & SMS Message Blasts",
-          "description": "Send bulk announcements, holiday schedules, last-minute discounts, or re-booking reminders directly to your client database in under 2 minutes.",
+          "description": "Send announcements and promotions to your clients by email or text message.",
           "badge": "",
           "label": "Explore Marketing Tools"
         },
         {
-          "icon": "Share2",
+          "icon": "QrCode",
           "title": "Instagram, Google & QR Codes",
-          "description": "Activate an official \"Book Now\" button on your Instagram profile, accept bookings via Google Maps, and print customized QR codes for your counter or studio.",
+          "description": "Share your booking options through Instagram, Google, and QR codes.",
           "badge": "",
           "label": ""
         },
         {
-          "icon": "Award",
-          "title": "Loyalty Stamps & Gift Cards",
-          "description": "Sell digital gift cards online to generate upfront revenue, and run automated digital punch-card loyalty programs that keep clients re-booking.",
-          "badge": "",
-          "label": "Learn about Loyalty Cards"
-        },
-        {
-          "icon": "CreditCard",
-          "title": "Memberships & Packages",
-          "description": "Package treatments (e.g. 5 blowouts for $180) to secure upfront revenue, or create recurring monthly memberships for your most loyal clients.",
+          "icon": "Tag",
+          "title": "Offers & Discount Codes",
+          "description": "Create offers and discount codes for your clients.",
           "badge": "",
           "label": ""
         }
@@ -230,89 +174,44 @@
       "id": "operations-section",
       "category": "operations",
       "module": "05",
-      "icon": "Scissors",
-      "title": "Services & Staff Operations",
-      "description": "Run busy multi-staff locations, rentals, and service suites with granular permissions, shift rosters, and real-time commission tracking.",
+      "icon": "Settings2",
+      "title": "Management",
+      "description": "Manage your services, staff, locations, and business information.",
       "cards": [
         {
-          "icon": "BadgeCheck",
-          "title": "Service Variants & Add-Ons",
-          "description": "Upsell clients with add-ons and premium options. Set tiered pricing based on staff seniority and service complexity.",
-          "badge": "",
-          "label": ""
-        },
-        {
-          "icon": "PanelsTopLeft",
-          "title": "Parallel Clients & Processing Time",
-          "description": "Double-book effortlessly during processing or prep intervals. Keep your calendar open for quick appointments while an initial service progresses.",
+          "icon": "ListPlus",
+          "title": "Service Variants",
+          "description": "Set up different options or variations for the services you offer.",
           "badge": "",
           "label": ""
         },
         {
           "icon": "UserRoundCog",
-          "title": "Staff Permissions & Profiles",
-          "description": "Choose from 5 permission levels to control what each team member accesses. Staff can log in with their own mobile app to view only their calendar.",
+          "title": "Staff Management",
+          "description": "Add and manage the staff members who work at your business.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "MapPin",
+          "title": "Multiple Locations",
+          "description": "Keep information for your business locations organized.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Puzzle",
+          "title": "Integration",
+          "description": "Connect your business with the integrations available in Booksaa.",
           "badge": "",
           "label": ""
         },
         {
           "icon": "ChartNoAxesCombined",
-          "title": "Commissions & Shifts",
-          "description": "Apply customized tiered commissions for services and retail product sales. Manage team shifts, time-off requests, and print schedules in seconds.",
+          "title": "Reporting",
+          "description": "Review reports to understand activity across your business.",
           "badge": "",
           "label": ""
-        },
-        {
-          "icon": "Package",
-          "title": "Inventory & Backbar Control",
-          "description": "Keep a detailed inventory of items you sell or use internally. Track stock level thresholds, scan barcodes, and receive low-stock alerts.",
-          "badge": "",
-          "label": ""
-        },
-        {
-          "icon": "DoorOpen",
-          "title": "Rooms & Shared Equipment",
-          "description": "Assign limited resources like specialty equipment, private suites, or service bays to prevent resource conflicts.",
-          "badge": "",
-          "label": ""
-        }
-      ]
-    },
-    {
-      "id": "platforms-section",
-      "category": "platforms",
-      "module": "06",
-      "icon": "PanelsTopLeft",
-      "title": "Apps & Fast Migration Tools",
-      "description": "Switching from Vagaro, Square, or pen-and-paper? We make switching effortless in less than 15 minutes.",
-      "cards": [
-        {
-          "icon": "Smartphone",
-          "title": "Booksy Biz App",
-          "description": "Run your whole salon from your pocket. iOS and Android with full push notifications and offline access.",
-          "badge": "Download Biz App",
-          "label": "Download Biz App"
-        },
-        {
-          "icon": "Tablet",
-          "title": "Web & Tablet Edition",
-          "description": "Front-desk workstation view designed for iPad, Galaxy Tab, and desktop browsers with split multi-column calendars.",
-          "badge": "Launch Web Portal",
-          "label": "Launch Web Portal"
-        },
-        {
-          "icon": "Upload",
-          "title": "1-Click Client Import",
-          "description": "Import existing clients directly from your phone address book, Google Contacts, or a spreadsheet. We automatically construct profiles.",
-          "badge": "Free White-Glove Setup",
-          "label": "Free White-Glove Setup"
-        },
-        {
-          "icon": "Send",
-          "title": "Automated Invites",
-          "description": "Broadcast your customized personal booking link to past clients via text and social with zero manual effort.",
-          "badge": "Instant Relaunch",
-          "label": "Instant Relaunch"
         }
       ]
     }

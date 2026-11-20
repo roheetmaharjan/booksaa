@@ -40,63 +40,65 @@ const Header = () => {
   return (
     <>
       <header className={`left-0 top-0 z-40 w-full py-3 ${isHomePage ? (sticky ? "light-header" : "dark-header") : sticky ? "inner-header light-header" : "inner-header"}`}>
-        <div className="container-fluid !p-0 !px-5 relative z-20">
-          <div className="relative flex w-full items-center justify-between">
-            <div className="shrink-0 px-2 sm:px-4 w-70">
+        <div className="container-fluid !p-0 !px-8 relative z-20">
+          <div className="relative w-full items-center justify-between grid grid-cols-3">
+            <div className="shrink-0 w-70">
               <Link href="/" className="block w-full">
                 <Image src={`/logo_white.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[25px] object-contain light-logo" />
                 <Image src={`/logo.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[25px] object-contain dark-logo" />
               </Link>
             </div>
             {/* Nav */}
-            <NavigationMenu className="ml-3 hidden flex-1 !justify-start lg:flex header-navigation">
-              <NavigationMenuList className="justify-start font-semibold">
-                <NavigationMenuItem>
-                  <NavigationMenuTrigger className="!px-3 text-base font-semibold bg-transparent">Solutions</NavigationMenuTrigger>
+            <div className="flex justify-center items-center">
+              <NavigationMenu className="hidden flex-1 !justify-start lg:flex header-navigation">
+                <NavigationMenuList className="justify-start font-semibold">
+                  <NavigationMenuItem>
+                    <NavigationMenuTrigger className="!px-3 text-base font-semibold bg-transparent">Solutions</NavigationMenuTrigger>
 
-                  <NavigationMenuContent className="!absolute !left-0 !w-full p-10">
-                    <div className="grid !w-full grid-cols-1 gap-6 !border-none !shadow-none sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
-                      {/* Industry links */}
-                      <div className="sm:col-span-1 lg:col-span-3">
-                        <p className="text-xs font-medium mb-6 uppercase text-gray-600"> Solution For Following Business Type</p>
-                        <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
-                          {industries.map((column, index) => (
-                            <div key={index} className="space-y-6">
-                              {column.map((industry) => (
-                                <Link key={industry} href={`/industries/${industry.toLowerCase().replaceAll(" ", "-").replaceAll("&", "and")}`} className="group/link block text-[16px] font-medium tracking-tight text-slate-900 transition-all duration-200 hover:translate-x-1 hover:text-primary">
-                                  {industry}
-                                </Link>
-                              ))}
-                            </div>
-                          ))}
+                    <NavigationMenuContent className="!absolute !left-0 !w-full p-10">
+                      <div className="grid !w-full grid-cols-1 gap-6 !border-none !shadow-none sm:grid-cols-2 lg:grid-cols-4 lg:gap-8">
+                        {/* Industry links */}
+                        <div className="sm:col-span-1 lg:col-span-3">
+                          <p className="text-xs font-medium mb-6 uppercase text-gray-600"> Solution For Following Business Type</p>
+                          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3 lg:gap-8">
+                            {industries.map((column, index) => (
+                              <div key={index} className="space-y-6">
+                                {column.map((industry) => (
+                                  <Link key={industry} href={`/industries/${industry.toLowerCase().replaceAll(" ", "-").replaceAll("&", "and")}`} className="group/link block text-[16px] font-medium tracking-tight text-slate-900 transition-all duration-200 hover:translate-x-1 hover:text-primary">
+                                    {industry}
+                                  </Link>
+                                ))}
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        {/* Promotional image */}
+                        <div className="relative hidden min-h-[250px] overflow-hidden rounded-[28px] sm:block bg-gray-200">
+                          <Image src="/menu-image.jpg" alt="Business owner" fill sizes="350px" className="object-cover transition-transform duration-700 hover:scale-105" />
                         </div>
                       </div>
-
-                      {/* Promotional image */}
-                      <div className="relative hidden min-h-[250px] overflow-hidden rounded-[28px] sm:block bg-gray-200">
-                        <Image src="/menu-image.jpg" alt="Business owner" fill sizes="350px" className="object-cover transition-transform duration-700 hover:scale-105" />
-                      </div>
-                    </div>
-                  </NavigationMenuContent>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/features" className="py-2 px-2">
-                    Features
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/pricing" className="py-2 px-2">
-                    Pricing
-                  </Link>
-                </NavigationMenuItem>
-                <NavigationMenuItem>
-                  <Link href="/contact-sales" className="py-2 px-4">
-                    Contact Sales
-                  </Link>
-                </NavigationMenuItem>
-              </NavigationMenuList>
-            </NavigationMenu>
-            <div className="flex items-center justify-end gap-2 px-2 sm:px-4 w-70">
+                    </NavigationMenuContent>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link href="/features" className="py-2 px-2">
+                      Features
+                    </Link>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link href="/pricing" className="py-2 px-2">
+                      Pricing
+                    </Link>
+                  </NavigationMenuItem>
+                  <NavigationMenuItem>
+                    <Link href="/contact-sales" className="py-2 px-2">
+                      Contact Sales
+                    </Link>
+                  </NavigationMenuItem>
+                </NavigationMenuList>
+              </NavigationMenu>
+            </div>
+            <div className="flex items-center justify-end gap-2 w-70">
               <div className="hidden items-center justify-end lg:flex">
                 {session?.user ? (
                   <>

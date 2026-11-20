@@ -47,8 +47,7 @@ export default function TargetAudience() {
     <section className="py-10 xl:py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-center uppercase text-primary font-semibold mb-3">Solution</p>
-
+          <p className="text-center uppercase font-semibold mb-3 text-sm text-slate-500 tracking-[0.18em]">Solution</p>
           <h2 className="section-heading">
             Built for every kind of service
           </h2>

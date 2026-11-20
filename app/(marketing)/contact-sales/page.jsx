@@ -9,16 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-const industries = [
-  "Beauty salon",
-  "Barbershop",
-  "Med spa",
-  "Nail salon",
-  "Massage & wellness",
-  "Hair removal",
-  "Tattoo & piercing",
-  "Other",
-];
+const industries = ["Beauty salon", "Barbershop", "Med spa", "Nail salon", "Massage & wellness", "Hair removal", "Tattoo & piercing", "Other"];
 
 const locations = ["1 Location (Single)", "2–5 Locations", "6–10 Locations", "11+ Locations"];
 const staffOptions = ["Just me (Solo operator)", "2–5 providers", "6–10 providers", "11+ providers"];
@@ -53,14 +44,19 @@ function SelectField({ id, label, value, onValueChange, options, required = fals
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id} className="text-xs font-semibold uppercase tracking-wide text-slate-700">
-        {label}{required && <span className="ml-1 text-red-500">*</span>}
+        {label}
+        {required && <span className="ml-1 text-red-500">*</span>}
       </Label>
       <Select value={value} onValueChange={onValueChange}>
         <SelectTrigger id={id} aria-required={required} className="h-10 bg-white text-slate-800">
           <SelectValue placeholder={`Select ${label.toLowerCase()}`} />
         </SelectTrigger>
         <SelectContent>
-          {options.map((option) => <SelectItem key={option} value={option}>{option}</SelectItem>)}
+          {options.map((option) => (
+            <SelectItem key={option} value={option}>
+              {option}
+            </SelectItem>
+          ))}
         </SelectContent>
       </Select>
     </div>
@@ -119,21 +115,21 @@ export default function ContactSalesPage() {
   }
 
   return (
-    <main className="bg-slate-50 px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+    <main className="px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+      <div className="pointer-events-none absolute left-1/2 top-0 -z-10 h-[340px] w-[840px] -translate-x-1/2 bg-gradient-to-b from-teal-100/70 via-cyan-100/50 to-transparent blur-3xl" />
+      <div className="pointer-events-none absolute -top-12 right-12 -z-10 h-72 w-72 rounded-full bg-orange-100/60 blur-3xl" />
       <div className="mx-auto max-w-6xl">
         <header className="mx-auto mb-10 max-w-3xl text-center">
           <p className="mb-3 text-sm font-semibold uppercase tracking-[0.18em] text-slate-500">Let’s make your day easier</p>
           <h1 className="text-3xl font-semibold tracking-tight text-slate-900 sm:text-4xl lg:text-5xl">
             Request more info or book a <span className="text-primary italic">personalized demo</span>
           </h1>
-          <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">
-            Experience how Booksaa simplifies online scheduling, automated client reminders, point of sale, and team management in one seamless system.
-          </p>
+          <p className="mx-auto mt-4 max-w-2xl text-sm leading-6 text-slate-600 sm:text-base">Experience how Booksaa simplifies online scheduling, automated client reminders, point of sale, and team management in one seamless system.</p>
         </header>
 
         <div className="grid gap-10 lg:grid-cols-2 lg:gap-14">
           <aside className="pt-1">
-            <h2 className="text-xl font-semibold tracking-tight text-slate-900">What to expect</h2>
+            <h2 className="text-2xl font-semibold tracking-tight text-slate-900">What to expect</h2>
             <p className="mt-1 text-sm text-slate-500">Here is how our seamless demonstration process works:</p>
 
             <ul className="mt-6 space-y-5">
@@ -142,7 +138,9 @@ export default function ContactSalesPage() {
                   <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full border border-primary/60 text-[#638b2e]">
                     <Check size={12} strokeWidth={2.5} />
                   </span>
-                  <p><strong className="font-semibold text-slate-800">{item.title}</strong> {item.description}</p>
+                  <p>
+                    <strong className="font-semibold text-slate-800">{item.title}</strong> {item.description}
+                  </p>
                 </li>
               ))}
             </ul>
@@ -171,25 +169,35 @@ export default function ContactSalesPage() {
             <form onSubmit={handleSubmit} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-2">
                 <div className="space-y-1.5">
-                  <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wide text-slate-700">First name <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="firstName" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    First name <span className="text-red-500">*</span>
+                  </Label>
                   <Input className="bg-white" id="firstName" name="firstName" required maxLength={80} autoComplete="given-name" placeholder="e.g. Sarah" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wide text-slate-700">Last name <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="lastName" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    Last name <span className="text-red-500">*</span>
+                  </Label>
                   <Input className="bg-white" id="lastName" name="lastName" required maxLength={80} autoComplete="family-name" placeholder="e.g. Jenkins" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="businessEmail" className="text-xs font-semibold uppercase tracking-wide text-slate-700">Business email <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="businessEmail" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    Business email <span className="text-red-500">*</span>
+                  </Label>
                   <Input className="bg-white" id="businessEmail" name="businessEmail" type="email" required maxLength={254} autoComplete="email" placeholder="name@business.com" />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wide text-slate-700">Phone number <span className="text-red-500">*</span></Label>
+                  <Label htmlFor="phone" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    Phone number <span className="text-red-500">*</span>
+                  </Label>
                   <Input className="bg-white" id="phone" name="phone" type="tel" required maxLength={32} autoComplete="tel" placeholder="(555) 000-1234" />
                 </div>
               </div>
 
               <div className="space-y-1.5">
-                <Label htmlFor="businessName" className="text-xs font-semibold uppercase tracking-wide text-slate-700">Business name <span className="text-red-500">*</span></Label>
+                <Label htmlFor="businessName" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                  Business name <span className="text-red-500">*</span>
+                </Label>
                 <Input className="bg-white" id="businessName" name="businessName" required maxLength={120} autoComplete="organization" placeholder="e.g. Glow Aesthetics & Spa" />
               </div>
 
@@ -198,7 +206,9 @@ export default function ContactSalesPage() {
               <div className="grid gap-4 sm:grid-cols-2">
                 <SelectField id="locations" label="Number of locations" value={locationCount} onValueChange={setLocationCount} options={locations} />
                 <div className="space-y-1.5">
-                  <Label htmlFor="software" className="text-xs font-semibold uppercase tracking-wide text-slate-700">Current software / system</Label>
+                  <Label htmlFor="software" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                    Current software / system
+                  </Label>
                   <Input id="software" name="software" maxLength={120} placeholder="e.g. Vagaro, Mindbody, Fresha, Paper" />
                 </div>
               </div>
@@ -206,14 +216,24 @@ export default function ContactSalesPage() {
               <SelectField id="staffCount" label="Staff / service providers" value={staffCount} onValueChange={setStaffCount} options={staffOptions} />
 
               <div className="space-y-1.5">
-                <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-slate-700">Share any initial thoughts, goals, or questions</Label>
+                <Label htmlFor="notes" className="text-xs font-semibold uppercase tracking-wide text-slate-700">
+                  Share any initial thoughts, goals, or questions
+                </Label>
                 <Textarea id="notes" name="notes" maxLength={2000} rows={3} className="resize-y bg-white" placeholder="Tell us what you’d like to improve (e.g. reducing no-shows, multi-location payroll, migrating client forms)..." />
               </div>
 
               <div className="flex items-start gap-2 pt-1">
                 <Checkbox id="consent" checked={consent} onCheckedChange={(checked) => setConsent(checked === true)} required />
                 <Label htmlFor="consent" className="text-xs leading-5 text-slate-500">
-                  I agree to Booksaa’s <a href="/privacy-policy" className="font-medium text-slate-700 underline underline-offset-2">Privacy Policy</a> and <a href="/terms" className="font-medium text-slate-700 underline underline-offset-2">Terms of Service</a>. We respect your time and inbox—no spam, ever.
+                  I agree to Booksaa’s{" "}
+                  <a href="/privacy-policy" className="font-medium text-slate-700 underline underline-offset-2">
+                    Privacy Policy
+                  </a>{" "}
+                  and{" "}
+                  <a href="/terms" className="font-medium text-slate-700 underline underline-offset-2">
+                    Terms of Service
+                  </a>
+                  . We respect your time and inbox—no spam, ever.
                 </Label>
               </div>
 
@@ -224,7 +244,13 @@ export default function ContactSalesPage() {
               )}
 
               <Button type="submit" disabled={submitting || !consent || !industry} className="h-11 w-full bg-primary text-slate-900 hover:bg-primary/90">
-                {submitting ? "Sending request..." : <>Book a Demo <ArrowRight className="ml-2 h-4 w-4" /></>}
+                {submitting ? (
+                  "Sending request..."
+                ) : (
+                  <>
+                    Book a Demo <ArrowRight className="ml-2 h-4 w-4" />
+                  </>
+                )}
               </Button>
             </form>
           </section>
