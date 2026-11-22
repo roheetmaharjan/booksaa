@@ -51,6 +51,7 @@ body {
     --sidebar-accent-foreground: 0, 0%, 100%;
     --sidebar-border: 220 13% 91%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    --radix-navigation-menu-viewport-width: 900px;
   }
   .dark {
     --background: 0 0% 3.9%;
@@ -275,4 +276,48 @@ body {
 }
 [data-sidebar="menu-button"] {
   margin: auto;
+}
+
+.mega-menu-enter {
+  transform-origin: top center;
+  animation: megaMenuEnter 250ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+@keyframes megaMenuEnter {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) scale(0.98);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.dark-header{
+  background-color: #062B3D;
+  color: #fff;
+}
+.light-header {
+  box-shadow: 0 25px 50px -12px rgb(0 0 0 / 0.25);
+  position: fixed;
+  z-index: 999;
+  background-color: rgba(255, 255, 255, 0.75);
+  backdrop-filter: blur(5px);
+  color: #333;
+}
+.dark-logo{
+  display: none
+}
+.light-logo{
+  display: none;
+}
+.dark-header .light-logo{
+  display: block;
+}
+.light-header .dark-logo{
+  display: block;
+}
+.inner-header .dark-logo{
+  display: block
 }

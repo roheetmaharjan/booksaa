@@ -47,10 +47,9 @@ export default function TargetAudience() {
     <section className="py-10 xl:py-20">
       <div className="container mx-auto px-4">
         <div className="max-w-3xl mx-auto text-center">
-          <p className="text-center uppercase text-primary font-semibold mb-3">Industries We Work With</p>
-
+          <p className="text-center uppercase font-semibold mb-3 text-sm text-slate-500 tracking-[0.18em]">Solution</p>
           <h2 className="section-heading">
-            Complete <span className="text-primary">Business Management</span> Platform for Service Providers
+            Built for every kind of service
           </h2>
 
           <p className="text-center max-w-3xl mx-auto mb-10 text-muted-foreground">We helps service-based businesses manage appointments, staff, clients, and day-to-day operations</p>
@@ -81,7 +80,7 @@ export default function TargetAudience() {
           {Object.entries(industries).map(([key, industry]) => (
             <TabsContent key={key} value={key}>
               <div className="rounded-2xl border bg-background overflow-hidden">
-                <div className="grid lg:grid-cols-2 gap-8 p-6">
+                <div className="grid lg:grid-cols-2 gap-8 p-4">
                   <div>
                     <Image src={industry.image} alt={industry.title} width={400} height={400} sizes="(max-width: 768px) 100vw, 33vw" loading="lazy" className="h-[400px] w-full rounded-xl object-cover" />
                   </div>

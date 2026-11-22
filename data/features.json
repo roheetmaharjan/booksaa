@@ -1,0 +1,219 @@
+{
+  "hero": {
+    "title": "Every feature you need to run & scale your business.",
+    "description": "Explore the tools for managing bookings, client information, payments, marketing, and day-to-day business operations."
+  },
+  "sections": [
+    {
+      "id": "booking-section",
+      "category": "booking",
+      "module": "01",
+      "icon": "CalendarDays",
+      "title": "Booking & Scheduling",
+      "description": "Tools to share booking options, list your services, and keep your appointments organized.",
+      "cards": [
+        {
+          "icon": "MonitorSmartphone",
+          "title": "Online Booking 24/7",
+          "description": "Let clients view your available times and request an appointment online whenever it suits them.",
+          "badge": "",
+          "label": "Learn about online booking"
+        },
+        {
+          "icon": "CreditCard",
+          "title": "Payments & POS",
+          "description": "Keep track of payments and point-of-sale activity for your business.",
+          "badge": "",
+          "label": "Learn about AI Receptionist"
+        },
+        {
+          "icon": "Images",
+          "title": "Service Listings + Photos",
+          "description": "Keep your services together with clear descriptions and photos to help clients choose.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "CalendarCheck",
+          "title": "Calendar & Scheduling",
+          "description": "View and manage your appointments in a calendar, with their scheduled dates and times.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Link",
+          "title": "Send Booking Link",
+          "description": "Share a direct link that clients can use to book an appointment with your business.",
+          "badge": "Coming Soon",
+          "label": ""
+        }
+      ]
+    },
+    {
+      "id": "crm-section",
+      "category": "crm",
+      "module": "02",
+      "icon": "UsersRound",
+      "title": "Client Management & CRM",
+      "description": "Keep client details, notes, and appointment information organized in one place.",
+      "cards": [
+        {
+          "icon": "ContactRound",
+          "title": "Smart Client Cards",
+          "description": "See key client details and appointment information together in one place.",
+          "badge": "",
+          "label": "Explore Client Management Tools"
+        },
+        {
+          "icon": "FilePenLine",
+          "title": "Client Notes & Formulas",
+          "description": "Record useful notes and formulas so you can refer to them during future visits.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "BellRing",
+          "title": "Confirmations & Reminders",
+          "description": "Keep clients informed with appointment confirmations and reminders.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Tags",
+          "title": "Client Tags & Groups",
+          "description": "Organize clients with tags to make them easier to find and group.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "ClipboardCheck",
+          "title": "Custom Intake Forms & Waivers",
+          "description": "Collect client information with intake forms and waivers.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "CreditCard",
+          "title": "Memberships & Packages",
+          "description": "Offer clients memberships and service packages.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Gift",
+          "title": "Loyalty Stamps & Gift Cards",
+          "description": "Offer gift cards and loyalty rewards to your clients.",
+          "badge": "Coming Soon",
+          "label": "Learn about Loyalty Cards"
+        }
+      ]
+    },
+    {
+      "id": "payments-section",
+      "category": "payments",
+      "module": "03",
+      "icon": "Wallet",
+      "title": "Payments & No-Show Protection",
+      "description": "Manage deposits, in-person payments, and checkout for your bookings.",
+      "cards": [
+        {
+          "icon": "ShieldCheck",
+          "title": "Deposits & Cancellation Fees",
+          "description": "Set deposit requirements and cancellation fees for appointments.",
+          "badge": "",
+          "label": "Learn more about cancellations"
+        },
+        {
+          "icon": "CreditCard",
+          "title": "Card Reader",
+          "description": "Accept customer payments in person with a card reader.",
+          "badge": "",
+          "label": "Learn about Card Reader"
+        },
+        {
+          "icon": "ReceiptText",
+          "title": "Cash Register & Smart Tips",
+          "description": "Record payments and tips with your cash register at checkout.",
+          "badge": "",
+          "label": ""
+        }
+      ]
+    },
+    {
+      "id": "marketing-section",
+      "category": "marketing",
+      "module": "04",
+      "icon": "Megaphone",
+      "title": "Marketing, Marketplace & Growth",
+      "description": "Share updates and offers with clients and help them find ways to book your business.",
+      "cards": [
+        {
+          "icon": "MailOpen",
+          "title": "Email & SMS Message Blasts",
+          "description": "Send announcements and promotions to your clients by email or text message.",
+          "badge": "",
+          "label": "Explore Marketing Tools"
+        },
+        {
+          "icon": "QrCode",
+          "title": "Instagram, Google & QR Codes",
+          "description": "Share your booking options through Instagram, Google, and QR codes.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Tag",
+          "title": "Offers & Discount Codes",
+          "description": "Create offers and discount codes for your clients.",
+          "badge": "",
+          "label": ""
+        }
+      ]
+    },
+    {
+      "id": "operations-section",
+      "category": "operations",
+      "module": "05",
+      "icon": "Settings2",
+      "title": "Management",
+      "description": "Manage your services, staff, locations, and business information.",
+      "cards": [
+        {
+          "icon": "ListPlus",
+          "title": "Service Variants",
+          "description": "Set up different options or variations for the services you offer.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "UserRoundCog",
+          "title": "Staff Management",
+          "description": "Add and manage the staff members who work at your business.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "MapPin",
+          "title": "Multiple Locations",
+          "description": "Keep information for your business locations organized.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "Puzzle",
+          "title": "Integration",
+          "description": "Connect your business with the integrations available in Booksaa.",
+          "badge": "",
+          "label": ""
+        },
+        {
+          "icon": "ChartNoAxesCombined",
+          "title": "Reporting",
+          "description": "Review reports to understand activity across your business.",
+          "badge": "",
+          "label": ""
+        }
+      ]
+    }
+  ]
+}

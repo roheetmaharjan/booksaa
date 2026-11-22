@@ -1,13 +1,15 @@
 import HeroSection from "@/components/components_marketing/HeroSection";
 import TargetAudience from "@/components/components_marketing/TargetAudience";
-import Solution from "@/components/components_marketing/Solution";
+import Features from "@/components/components_marketing/Features";
+import WhyChooseUs from "@/components/components_marketing/WhyChooseUs";
 
 export default function MarketingHome() {
   return (
     <div className="">
       <HeroSection />
       <TargetAudience />
-      <Solution />
+      <Features />
+      <WhyChooseUs />
     </div>
   );
 }

@@ -86,7 +86,7 @@ export default function BusinessPricingCalculator() {
   }).toString()}`;
 
   return (
-    <section className="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8 max-w-md w-full mx-auto">
+    <section className="rounded-3xl border border-slate-300 bg-white p-6 sm:p-8 max-w-lg w-full mx-auto">
       {/* Header */}
       <div className="text-center mb-6">
         <p className="font-semibold text-slate-500 text-sm tracking-wide uppercase mb-4">

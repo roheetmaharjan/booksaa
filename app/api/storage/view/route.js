@@ -1,11 +1,8 @@
 import { cookies } from "next/headers";
-import { GetObjectCommand } from "@aws-sdk/client-s3";
-import { getSignedUrl } from "@aws-sdk/s3-request-presigner";
-
 import { AUTH_COOKIE_NAME, verifySessionToken } from "@/lib/auth";
 
 import { prisma } from "@/lib/prisma";
-import { s3, STORAGE_BUCKET } from "@/lib/storage";
+import { getStorageImageUrl } from "@/lib/storage-view";
 
 export async function POST(request) {
   try {
@@ -51,14 +48,7 @@ export async function POST(request) {
 
     const images = await Promise.all(
       validKeys.map(async (key) => {
-        const command = new GetObjectCommand({
-          Bucket: STORAGE_BUCKET,
-          Key: key,
-        });
-
-        const url = await getSignedUrl(s3, command, {
-          expiresIn: 3600,
-        });
+        const url = await getStorageImageUrl(key);
 
         return {
           key,
