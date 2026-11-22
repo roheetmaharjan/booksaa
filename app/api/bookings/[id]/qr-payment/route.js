@@ -3,12 +3,14 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { getCurrentVendorOrThrow } from "@/lib/customer-crm";
+import { getVendorSettings } from "@/lib/business-settings";
 
 export async function POST(req, { params }) {
   try {
     const { id } = await params;
     const session = await getCurrentSession();
     const vendor = await getCurrentVendorOrThrow(session);
+    const settings = await getVendorSettings(vendor.id);
     const { bookingIds = [id], amountPaid } = await req.json();
     const ids = [...new Set(bookingIds)];
     if (!ids.includes(id)) ids.unshift(id);
@@ -24,10 +26,10 @@ export async function POST(req, { params }) {
     const stripe = new Stripe(details.stripeSecretKey, { apiVersion: "2023-10-16" });
     const origin = req.headers.get("origin") || new URL(req.url).origin;
     const checkout = await stripe.checkout.sessions.create({
-      mode: "payment", currency: "usd", payment_method_types: ["card"],
+      mode: "payment", currency: settings.currencyCode.toLowerCase(), payment_method_types: ["card"],
       customer_email: bookings[0].customerEmail || undefined,
-      line_items: [{ price_data: { currency: "usd", product_data: { name: `Appointment — ${bookings[0].customerName || "Customer"}` }, unit_amount: Math.round(amount * 100) }, quantity: 1 }],
-      metadata: { bookingIds: ids.join(","), vendorId: vendor.id },
+      line_items: [{ price_data: { currency: settings.currencyCode.toLowerCase(), product_data: { name: `Appointment — ${bookings[0].customerName || "Customer"}` }, unit_amount: Math.round(amount * 100) }, quantity: 1 }],
+      metadata: { bookingIds: ids.join(","), vendorId: vendor.id, currencyCode: settings.currencyCode },
       success_url: `${origin}/pay/success?session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin}/pay/cancelled`,
     });

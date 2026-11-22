@@ -32,7 +32,7 @@ const METHODS = [
 
 const TAX_RATE = 0.08;
 
-export function CheckoutDialog({ appt, open, onOpenChange, onComplete }) {
+export function CheckoutDialog({ appt, currencyCode = "USD", open, onOpenChange, onComplete }) {
   const [lines, setLines] = useState([]);
   const [tipPct, setTipPct] = useState(20);
   const [method, setMethod] = useState(METHODS[0].id);
@@ -86,7 +86,7 @@ export function CheckoutDialog({ appt, open, onOpenChange, onComplete }) {
                     </p>
                   </div>
 
-                  <span className="font-mono text-sm">{currency(l.price)}</span>
+                  <span className="font-mono text-sm">{currency(l.price, currencyCode)}</span>
 
                   <button type="button" aria-label={`Remove ${l.name}`} onClick={() => setLines(lines.filter((_, idx) => idx !== i))} className="text-muted-foreground transition-colors hover:text-destructive">
                     <Trash2 className="size-4" />
@@ -125,22 +125,22 @@ export function CheckoutDialog({ appt, open, onOpenChange, onComplete }) {
 
             {/* Summary */}
             <dl className="mt-5 space-y-1.5 border-t border-border pt-4 text-sm">
-              <Row label="Subtotal" value={currency(subtotal)} />
+              <Row label="Subtotal" value={currency(subtotal, currencyCode)} />
 
-              <Row label={`Tip (${tipPct}%)`} value={currency(tip)} />
+              <Row label={`Tip (${tipPct}%)`} value={currency(tip, currencyCode)} />
 
-              <Row label="Tax" value={currency(tax)} />
+              <Row label="Tax" value={currency(tax, currencyCode)} />
 
               <div className="flex items-center justify-between border-t border-border pt-2">
                 <dt className="font-display text-base font-semibold">Total</dt>
 
-                <dd className="font-display text-lg font-semibold">{currency(total)}</dd>
+                <dd className="font-display text-lg font-semibold">{currency(total, currencyCode)}</dd>
               </div>
             </dl>
 
             {/* Charge */}
             <Button className="mt-4 w-full" size="lg" disabled={lines.length === 0} onClick={() => onComplete(appt.id, total, method, tip, appt.bookingIds)}>
-              Charge {currency(total)}
+              Charge {currency(total, currencyCode)}
             </Button>
 
             {/* Cancel */}

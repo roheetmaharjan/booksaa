@@ -5,7 +5,8 @@ import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getVerifiedEmail } from "@/lib/guest-booking-otp";
 import { sendGuestBookingConfirmationEmail } from "@/lib/emails/guestBooking";
-import { getGuestBookingSelection, getRequiredDeposit, hashVerificationToken } from "@/lib/public-booking";
+import { getGuestBookingSelection, getRequiredDeposit, getEffectivePaymentRequirement, hashVerificationToken } from "@/lib/public-booking";
+import { DEFAULT_VENDOR_SETTINGS, getZonedDayBounds, isBookingWithinWindow } from "@/lib/business-settings";
 
 function getMinutes(value) {
   const [hours, minutes] = value.split(":").map(Number);
@@ -40,13 +41,40 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: "Enter your full name." }, { status: 400 });
     }
 
-    const selection = getGuestBookingSelection(body);
     const vendor = await prisma.vendors.findFirst({
       where: { slug },
-      select: { id: true, userId: true, name: true, stripeSecretKey: true },
+      select: {
+        id: true,
+        userId: true,
+        name: true,
+        stripeSecretKey: true,
+        settings: {
+          select: {
+            onlineBookingEnabled: true,
+            manualBookingApproval: true,
+            onlinePaymentsEnabled: true,
+            depositsEnabled: true,
+            cashPaymentsEnabled: true,
+            payAtBusinessEnabled: true,
+            notifyBookingConfirmation: true,
+            currencyCode: true,
+            timeZone: true,
+            minAdvanceNoticeMinutes: true,
+            maxAdvanceBookingDays: true,
+          },
+        },
+      },
     });
     if (!vendor) {
       return NextResponse.json({ success: false, message: "Business not found." }, { status: 404 });
+    }
+    const settings = { ...DEFAULT_VENDOR_SETTINGS, ...vendor.settings };
+    if (!settings.onlineBookingEnabled || (!settings.onlinePaymentsEnabled && !settings.cashPaymentsEnabled && !settings.payAtBusinessEnabled)) {
+      return NextResponse.json({ success: false, message: "Online booking is currently unavailable for this business." }, { status: 403 });
+    }
+    const selection = getGuestBookingSelection(body, settings.timeZone);
+    if (!isBookingWithinWindow(selection.scheduledAt, selection.date, settings, settings.timeZone)) {
+      return NextResponse.json({ success: false, message: "The selected time is outside this business's booking window." }, { status: 409 });
     }
 
     const service = await prisma.service.findFirst({
@@ -56,7 +84,8 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: "The selected service is no longer available." }, { status: 404 });
     }
 
-    const deposit = getRequiredDeposit(service);
+    const paymentRequirement = getEffectivePaymentRequirement(service, settings);
+    const deposit = getRequiredDeposit({ ...service, prepaymentType: paymentRequirement }, settings);
     if (!Number.isFinite(deposit) || deposit < 0) {
       return NextResponse.json({ success: false, message: "The service payment requirement is invalid." }, { status: 400 });
     }
@@ -70,9 +99,10 @@ export async function POST(request, { params }) {
       stripeClient = new Stripe(vendor.stripeSecretKey, { apiVersion: "2023-10-16" });
       const paymentIntent = await stripeClient.paymentIntents.retrieve(body.paymentIntentId);
       const metadata = paymentIntent.metadata || {};
+      const expectedCurrency = metadata.currencyCode?.toLowerCase() || "usd";
       const paymentMatches =
         paymentIntent.status === "succeeded" &&
-        paymentIntent.currency === "usd" &&
+        paymentIntent.currency === expectedCurrency &&
         paymentIntent.amount === Math.round(deposit * 100) &&
         metadata.guestBooking === "true" &&
         metadata.vendorId === vendor.id &&
@@ -92,24 +122,26 @@ export async function POST(request, { params }) {
         include: { service: true, professional: true, location: true },
       });
       if (existingPaymentBooking) {
-        let emailSent = true;
+        let emailSent = false;
         let emailError = null;
-        try {
-          await sendGuestBookingConfirmationEmail({
-            email,
-            name: existingPaymentBooking.customerName || fullName,
-            businessName: vendor.name,
-            serviceName: existingPaymentBooking.service.name,
-            professionalName: existingPaymentBooking.professional?.name,
-            locationName: existingPaymentBooking.location?.name || "Business location",
-            date: selection.date,
-            time: existingPaymentBooking.startTime,
-            paidAmount: existingPaymentBooking.paidAmount,
-          });
-        } catch (error) {
-          emailSent = false;
-          emailError = "Your booking is confirmed, but we could not send the confirmation email.";
-          console.error("Guest booking confirmation email retry failed:", error);
+        if (settings.notifyBookingConfirmation && !settings.manualBookingApproval) {
+          try {
+            await sendGuestBookingConfirmationEmail({
+              email,
+              name: existingPaymentBooking.customerName || fullName,
+              businessName: vendor.name,
+              serviceName: existingPaymentBooking.service.name,
+              professionalName: existingPaymentBooking.professional?.name,
+              locationName: existingPaymentBooking.location?.name || "Business location",
+              date: selection.date,
+              time: existingPaymentBooking.startTime,
+              paidAmount: existingPaymentBooking.paidAmount,
+            });
+            emailSent = true;
+          } catch (error) {
+            emailError = "Your booking is confirmed, but we could not send the confirmation email.";
+            console.error("Guest booking confirmation email retry failed:", error);
+          }
         }
         return NextResponse.json({ success: true, booking: existingPaymentBooking, emailSent, emailError });
       }
@@ -149,7 +181,7 @@ export async function POST(request, { params }) {
     }
     const weekday = new Intl.DateTimeFormat("en-US", {
       weekday: "long",
-      timeZone: "Asia/Kathmandu",
+      timeZone: settings.timeZone,
     }).format(selection.scheduledAt);
     const hours = location?.businessHours.find((item) => item.day === weekday);
     const closeMinutes = hours?.closeTime ? getMinutes(hours.closeTime) : 0;
@@ -166,8 +198,10 @@ export async function POST(request, { params }) {
     const startTime = selection.startTime;
     const endTime = formatTime(selection.startMinutes + duration);
     const scheduledEnd = new Date(selection.scheduledAt.getTime() + duration * 60 * 1000);
-    const dayStart = new Date(`${selection.date}T00:00:00+05:45`);
-    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    const dayBounds = getZonedDayBounds(selection.date, settings.timeZone);
+    if (!dayBounds) {
+      throw apiError("Unable to determine the selected business day.", 400);
+    }
 
     const { booking, alreadyConfirmed } = await prisma.$transaction(async (transaction) => {
       const previousBooking = await transaction.bookings.findFirst({
@@ -187,7 +221,7 @@ export async function POST(request, { params }) {
         where: {
           locationId: selection.locationId,
           professionalId: selection.professionalId,
-          scheduledAt: { gte: dayStart, lt: dayEnd },
+          scheduledAt: { gte: dayBounds.start, lt: dayBounds.end },
           status: { notIn: ["CANCELED", "PAYMENT_EXPIRED"] },
         },
         select: { scheduledAt: true, scheduledEnd: true },
@@ -239,8 +273,8 @@ export async function POST(request, { params }) {
           customerName: fullName,
           customerEmail: email,
           customerPhone: phone,
-          status: "CONFIRMED",
-          paymentRequirement: service.prepaymentType || "pay_later",
+          status: settings.manualBookingApproval ? "PENDING" : "CONFIRMED",
+          paymentRequirement: paymentRequirement || "pay_later",
           paymentAmount: service.price,
           paymentStatus: paidAmount >= service.price ? "PAID" : paidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID",
           paidAmount,
@@ -262,9 +296,12 @@ export async function POST(request, { params }) {
       return { booking, alreadyConfirmed: false };
     }, { isolationLevel: Prisma.TransactionIsolationLevel.Serializable });
 
-    let emailSent = true;
+    let emailSent = !settings.notifyBookingConfirmation;
     let emailError = null;
     try {
+      if (!settings.notifyBookingConfirmation || settings.manualBookingApproval) {
+        return NextResponse.json({ success: true, booking, emailSent: false, emailError: null }, { status: alreadyConfirmed ? 200 : 201 });
+      }
       await sendGuestBookingConfirmationEmail({
         email,
         name: fullName,

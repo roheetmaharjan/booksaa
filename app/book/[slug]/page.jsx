@@ -20,10 +20,28 @@ const bookingStateKey = "booksaa-booking-state";
 const serviceChargeRate = 0.1;
 const taxRate = 0.05;
 
-const formatCurrency = (amount) => new Intl.NumberFormat("en-US", {
+const formatCurrency = (amount, currencyCode = "USD") => new Intl.NumberFormat("en-US", {
   style: "currency",
-  currency: "USD",
+  currency: currencyCode,
 }).format(amount);
+
+function formatBusinessDate(value, dateFormat = "DD/MM/YYYY") {
+  const [year, month, day] = String(value || "").split("-");
+  if (!year || !month || !day) return value || "";
+  if (dateFormat === "MM/DD/YYYY") return `${month}/${day}/${year}`;
+  if (dateFormat === "YYYY-MM-DD") return `${year}-${month}-${day}`;
+  return `${day}/${month}/${year}`;
+}
+
+function formatBusinessTime(value, timeFormat = "24h") {
+  if (!value || timeFormat === "24h") return value;
+  const [rawHour, rawMinute] = value.split(":");
+  let hour = Number(rawHour);
+  if (!Number.isInteger(hour) || hour < 0 || hour > 23) return value;
+  const period = hour >= 12 ? "PM" : "AM";
+  hour = hour % 12 || 12;
+  return `${hour}:${rawMinute} ${period}`;
+}
 
 async function requestJson(url, options) {
   const response = await fetch(url, {
@@ -412,6 +430,14 @@ export default function BookingServiceSelection() {
     );
   }
 
+  if (!business.onlineBookingEnabled && currentStep <= 2) {
+    return (
+      <main className="flex min-h-screen items-center justify-center bg-slate-50 p-6">
+        <p className="max-w-md rounded-xl border border-slate-200 bg-white p-6 text-center text-slate-600">Online booking is currently unavailable for this business. Please contact them directly.</p>
+      </main>
+    );
+  }
+
   if (currentStep <= 2) {
     return (
       <main className="min-h-screen bg-slate-50/60 py-8 text-slate-800 lg:py-12">
@@ -428,6 +454,7 @@ export default function BookingServiceSelection() {
                   <div className="min-w-0">
                     <h1 className="truncate text-2xl font-extrabold tracking-tight text-slate-900 sm:text-3xl">{business.name}</h1>
                     <p className="mt-1 flex items-center gap-1.5 text-sm font-medium text-slate-500"><MapPin className="h-4 w-4 shrink-0 text-slate-400" />{location?.address || location?.name}</p>
+                    {(business.businessEmail || business.website) && <p className="mt-1 text-sm text-slate-500">{business.businessEmail && <a className="mr-3 underline" href={`mailto:${business.businessEmail}`}>{business.businessEmail}</a>}{business.website && <a className="underline" href={business.website} target="_blank" rel="noreferrer">Website</a>}</p>}
                   </div>
                 </div>
                 {location?.status?.label && <span className={`w-fit rounded-full px-3 py-1 text-xs font-semibold ${location.status.isOpen ? "border border-emerald-200 bg-emerald-50 text-emerald-700" : "border border-slate-200 bg-white text-slate-500"}`}>{location.status.label} today</span>}
@@ -466,7 +493,7 @@ export default function BookingServiceSelection() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {services.map((service) => (
                   <article key={service.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-slate-900">{service.name}</h3><span className="shrink-0 font-bold text-slate-900">${service.price}</span></div>
+                    <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-slate-900">{service.name}</h3><span className="shrink-0 font-bold text-slate-900">{formatCurrency(service.price, business.currencyCode)}</span></div>
                     <p className="mt-2 text-xs text-slate-500">{service.duration} min · {service.prepaymentType === "deposit" ? "Deposit required" : service.prepaymentType === "full" ? "Full payment required" : "Pay at business"}</p>
                     {service.description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{service.description}</p>}
                   </article>
@@ -481,7 +508,7 @@ export default function BookingServiceSelection() {
                 {(location?.businessHours || []).map((hours) => (
                   <div key={hours.day} className="flex justify-between gap-4 border-b border-slate-100 py-2.5 text-sm last:border-0">
                     <span className="text-slate-600">{hours.day}</span>
-                    <span className={hours.isOpen ? "font-medium text-slate-900" : "text-slate-400"}>{hours.isOpen ? `${hours.openTime} – ${hours.closeTime}` : "Closed"}</span>
+                    <span className={hours.isOpen ? "font-medium text-slate-900" : "text-slate-400"}>{hours.isOpen ? `${formatBusinessTime(hours.openTime, business.timeFormat)} – ${formatBusinessTime(hours.closeTime, business.timeFormat)}` : "Closed"}</span>
                   </div>
                 ))}
                 {!location?.businessHours?.length && <p className="text-sm text-slate-500">Business hours aren’t listed for this location.</p>}
@@ -504,6 +531,7 @@ export default function BookingServiceSelection() {
               </div>
               <ServiceSelect
                 services={services}
+                currencyCode={business.currencyCode}
                 selectedService={selectedService}
                 onSelectService={(service) => {
                   if (selectedService?.id !== service.id) {
@@ -549,28 +577,28 @@ export default function BookingServiceSelection() {
                   disabled={!locationId || !selectedService || !professionalId}
                   onClick={() => setDateTimeOpen(true)}
                 >
-                  {appointment ? `${appointment.date} at ${appointment.time}` : "Select date and time"}
+                  {appointment ? `${formatBusinessDate(appointment.date, business.dateFormat)} at ${appointment.time}` : "Select date and time"}
                 </Button>
               </div>
               <div className="mt-5 space-y-2 border-t border-slate-200 pt-4 text-sm">
                 <div className="flex items-center justify-between gap-4 text-slate-600">
                   <span>Service price</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(serviceSubtotal)}</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(serviceSubtotal, business.currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-slate-600">
                   <span>Service charge (10%)</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(serviceCharge)}</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(serviceCharge, business.currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-slate-600">
                   <span>Taxes &amp; fees (VAT 5%)</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(taxes)}</span>
+                  <span className="font-medium text-slate-900">{formatCurrency(taxes, business.currencyCode)}</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-4 border-t border-dashed border-slate-200 pt-3">
                   <div>
                     <span className="font-bold text-slate-900">Total amount</span>
                     <p className="text-[11px] text-slate-400">Includes taxes and service charge</p>
                   </div>
-                  <span className="text-xl font-black text-slate-900">{formatCurrency(totalAmount)}</span>
+                  <span className="text-xl font-black text-slate-900">{formatCurrency(totalAmount, business.currencyCode)}</span>
                 </div>
               </div>
               <div className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5">
@@ -597,6 +625,9 @@ export default function BookingServiceSelection() {
               key={`${locationId}-${selectedService?.id || ""}-${professionalId}`}
               professionalId={professionalId}
               professionalName={professionals.find((item) => item.id === professionalId)?.name}
+              timeZone={business.timeZone}
+              dateFormat={business.dateFormat}
+              timeFormat={business.timeFormat}
               initialAppointment={appointment}
               onBack={() => {
                 setDateTimeOpen(false);
@@ -659,6 +690,8 @@ export default function BookingServiceSelection() {
         {currentStep === 5 && (
           <PaymentSelect
             service={selectedService}
+            currencyCode={business.currencyCode}
+            paymentInstructions={business.paymentInstructions}
             customerEmail={contact.email}
             paymentSetup={paymentSetup}
             loading={actionLoading}
@@ -676,16 +709,18 @@ export default function BookingServiceSelection() {
         {currentStep === 6 && confirmation && (
           <section className="space-y-5">
             <div>
-              <h2 className="text-xl font-bold text-emerald-800">Appointment confirmed</h2>
+              <h2 className="text-xl font-bold text-emerald-800">{confirmation.booking?.status === "PENDING" ? "Booking request received" : "Appointment confirmed"}</h2>
               <p className="mt-1 text-sm text-slate-600">
-                {confirmation.emailSent
+                {confirmation.booking?.status === "PENDING"
+                  ? "Your request is waiting for the business to approve it."
+                  : confirmation.emailSent
                   ? `A confirmation email has been sent to ${contact.email}.`
-                  : confirmation.emailError || "Your appointment is confirmed, but the email could not be sent."}
+                  : confirmation.emailError || "Your appointment is confirmed. No confirmation email was sent."}
               </p>
             </div>
             <dl className="space-y-3 rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm">
               <div className="flex justify-between gap-4"><dt className="text-slate-500">Service</dt><dd className="text-right font-medium">{selectedService?.name}</dd></div>
-              <div className="flex justify-between gap-4"><dt className="text-slate-500">Date</dt><dd className="text-right font-medium">{appointment?.date}</dd></div>
+              <div className="flex justify-between gap-4"><dt className="text-slate-500">Date</dt><dd className="text-right font-medium">{formatBusinessDate(appointment?.date, business.dateFormat)}</dd></div>
               <div className="flex justify-between gap-4"><dt className="text-slate-500">Time</dt><dd className="text-right font-medium">{appointment?.time}</dd></div>
               <div className="flex justify-between gap-4"><dt className="text-slate-500">Professional</dt><dd className="text-right font-medium">{appointment?.professionalName || "To be assigned"}</dd></div>
               <div className="flex justify-between gap-4"><dt className="text-slate-500">Location</dt><dd className="text-right font-medium">{location?.name}</dd></div>

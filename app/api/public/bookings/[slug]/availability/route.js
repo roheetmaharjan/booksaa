@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { DEFAULT_VENDOR_SETTINGS, getZonedDateParts, getZonedDayBounds, isBookingWithinWindow, zonedDateTimeToDate } from "@/lib/business-settings";
 
 export async function GET(request, { params }) {
   try {
@@ -33,6 +34,15 @@ export async function GET(request, { params }) {
       select: {
         id: true,
         name: true,
+        settings: {
+          select: {
+            onlineBookingEnabled: true,
+            timeZone: true,
+            timeFormat: true,
+            minAdvanceNoticeMinutes: true,
+            maxAdvanceBookingDays: true,
+          },
+        },
 
         locations: {
           where: {
@@ -56,6 +66,11 @@ export async function GET(request, { params }) {
         },
         { status: 404 },
       );
+    }
+
+    const settings = { ...DEFAULT_VENDOR_SETTINGS, ...business.settings };
+    if (!settings.onlineBookingEnabled || (!settings.onlinePaymentsEnabled && !settings.cashPaymentsEnabled && !settings.payAtBusinessEnabled)) {
+      return NextResponse.json({ success: false, message: "Online booking is currently unavailable for this business." }, { status: 403 });
     }
 
     // -----------------------------------
@@ -143,12 +158,11 @@ export async function GET(request, { params }) {
     // 5. Get business hours for date
     // -----------------------------------
 
-    const selectedDate = new Date(`${date}T00:00:00`);
-
-    const weekday = new Intl.DateTimeFormat("en-US", {
-      weekday: "long",
-      timeZone: "Asia/Kathmandu",
-    }).format(selectedDate);
+    const selectedDate = zonedDateTimeToDate(date, "12:00", settings.timeZone);
+    if (!selectedDate) {
+      return NextResponse.json({ success: false, message: "A valid appointment date is required." }, { status: 400 });
+    }
+    const weekday = getZonedDateParts(selectedDate, settings.timeZone).weekday;
 
     const today = location.businessHours.find((item) => item.day === weekday);
 
@@ -166,16 +180,18 @@ export async function GET(request, { params }) {
     // 6. Get existing bookings
     // -----------------------------------
 
-    const startOfDay = new Date(`${date}T00:00:00+05:45`);
-    const endOfDay = new Date(`${date}T23:59:59+05:45`);
+    const dayBounds = getZonedDayBounds(date, settings.timeZone);
+    if (!dayBounds) {
+      return NextResponse.json({ success: false, message: "Unable to determine the selected business day." }, { status: 400 });
+    }
 
     const bookings = await prisma.bookings.findMany({
       where: {
         locationId,
         professionalId: professionalId || null,
         scheduledAt: {
-          gte: startOfDay,
-          lte: endOfDay,
+          gte: dayBounds.start,
+          lt: dayBounds.end,
         },
         status: {
           notIn: ["CANCELED", "PAYMENT_EXPIRED"],
@@ -199,12 +215,17 @@ export async function GET(request, { params }) {
       closeTime: today.closeTime,
       duration: service.duration,
       bookings,
+      timeZone: settings.timeZone,
+      timeFormat: settings.timeFormat,
+      minAdvanceNoticeMinutes: settings.minAdvanceNoticeMinutes,
+      maxAdvanceBookingDays: settings.maxAdvanceBookingDays,
     });
 
     return NextResponse.json({
       success: true,
       data: {
         date,
+        timeZone: settings.timeZone,
         professional: professional ? { id: professional.id, name: professional.name } : null,
         service: {
           id: service.id,
@@ -228,7 +249,7 @@ export async function GET(request, { params }) {
   }
 }
 
-function generateSlots({ date, openTime, closeTime, duration, bookings, interval = 15 }) {
+function generateSlots({ date, openTime, closeTime, duration, bookings, timeZone, timeFormat, minAdvanceNoticeMinutes, maxAdvanceBookingDays, interval = 15 }) {
   const slots = [];
 
   const [openHour, openMinute] = openTime.split(":").map(Number);
@@ -236,12 +257,17 @@ function generateSlots({ date, openTime, closeTime, duration, bookings, interval
 
   const openMinutes = openHour * 60 + openMinute;
   const closeMinutes = closeHour * 60 + closeMinute;
+  const now = new Date();
+  const bookingWindow = { minAdvanceNoticeMinutes, maxAdvanceBookingDays };
+  const today = getZonedDateParts(now, timeZone);
+  const todayKey = `${today.year}-${today.month}-${today.day}`;
+  const distance = Math.floor((Date.parse(`${date}T00:00:00Z`) - Date.parse(`${todayKey}T00:00:00Z`)) / 86400000);
+  if (distance < 0 || distance > maxAdvanceBookingDays) return slots;
 
   for (let startMinutes = openMinutes; startMinutes + duration <= closeMinutes; startMinutes += interval) {
-    const endMinutes = startMinutes + duration;
-
-    const start = createNepalDate(date, startMinutes);
-    const end = createNepalDate(date, endMinutes);
+    const start = zonedDateTimeToDate(date, formatLocalTime(startMinutes), timeZone);
+    if (!start) continue;
+    const end = new Date(start.getTime() + duration * 60 * 1000);
 
     const isBooked = bookings.some((booking) => {
       const existingStart = new Date(booking.scheduledAt);
@@ -251,19 +277,19 @@ function generateSlots({ date, openTime, closeTime, duration, bookings, interval
     });
 
     slots.push({
-      time: formatTime(startMinutes),
-      available: !isBooked,
+      time: formatTime(startMinutes, timeFormat),
+      available: !isBooked && isBookingWithinWindow(start, date, bookingWindow, timeZone, now),
     });
   }
 
   return slots;
 }
 
-function createNepalDate(date, minutes) {
+function formatLocalTime(minutes) {
   const hour = Math.floor(minutes / 60);
   const minute = minutes % 60;
 
-  return new Date(`${date}T${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}:00+05:45`);
+  return `${String(hour).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 }
 // function parseTimeToMinutes(timeString) {
 //   if (!timeString || typeof timeString !== "string") return Number.NaN;
@@ -275,9 +301,10 @@ function createNepalDate(date, minutes) {
 //   return hours * 60 + minutes;
 // }
 
-function formatTime(minutes) {
+function formatTime(minutes, timeFormat) {
   const hour24 = Math.floor(minutes / 60);
   const minute = minutes % 60;
+  if (timeFormat === "24h") return `${String(hour24).padStart(2, "0")}:${String(minute).padStart(2, "0")}`;
 
   const period = hour24 >= 12 ? "PM" : "AM";
   const hour12 = hour24 % 12 || 12;

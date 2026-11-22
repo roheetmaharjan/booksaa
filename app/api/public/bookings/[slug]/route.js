@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getStorageImageUrl } from "@/lib/storage-view";
+import { DEFAULT_VENDOR_SETTINGS } from "@/lib/business-settings";
+import { getEffectivePaymentRequirement } from "@/lib/public-booking";
 
 export async function GET(request, { params }) {
   try {
@@ -31,6 +33,22 @@ export async function GET(request, { params }) {
         photos: true,
         description: true,
         phone: true,
+        settings: {
+          select: {
+            businessEmail: true,
+            website: true,
+            paymentInstructions: true,
+            currencyCode: true,
+            timeZone: true,
+            dateFormat: true,
+            timeFormat: true,
+            onlineBookingEnabled: true,
+            onlinePaymentsEnabled: true,
+            depositsEnabled: true,
+            payAtBusinessEnabled: true,
+            cashPaymentsEnabled: true,
+          },
+        },
 
         locations: {
           select: {
@@ -98,7 +116,8 @@ export async function GET(request, { params }) {
       );
     }
 
-    const businessStatus = location ? getBusinessStatus(location.businessHours || []) : null;
+    const settings = { ...DEFAULT_VENDOR_SETTINGS, ...business.settings };
+    const businessStatus = location ? getBusinessStatus(location.businessHours || [], settings.timeZone) : null;
 
     let galleryKeys = [];
     try {
@@ -122,12 +141,27 @@ export async function GET(request, { params }) {
           imageUrl: profileImage,
           description: business.description,
           phone: business.phone,
+          businessEmail: settings.businessEmail,
+          website: settings.website,
+          paymentInstructions: settings.paymentInstructions,
+          currencyCode: settings.currencyCode,
+          timeZone: settings.timeZone,
+          dateFormat: settings.dateFormat,
+          timeFormat: settings.timeFormat,
+          onlineBookingEnabled: settings.onlineBookingEnabled && (settings.onlinePaymentsEnabled || settings.cashPaymentsEnabled || settings.payAtBusinessEnabled),
+          onlinePaymentsEnabled: settings.onlinePaymentsEnabled,
+          depositsEnabled: settings.depositsEnabled,
+          payAtBusinessEnabled: settings.payAtBusinessEnabled,
+          cashPaymentsEnabled: settings.cashPaymentsEnabled,
           gallery,
         },
         locations: business.locations,
         location: location ? { ...location, status: businessStatus } : null,
 
-        services: business.services || [],
+        services: (business.services || []).map((service) => ({
+          ...service,
+          prepaymentType: getEffectivePaymentRequirement(service, settings),
+        })),
       },
     });
   } catch (error) {
@@ -143,12 +177,12 @@ export async function GET(request, { params }) {
   }
 }
 
-function getBusinessStatus(businessHours) {
+function getBusinessStatus(businessHours, timeZone) {
   const now = new Date();
 
   // Current time in Nepal
   const nepalTime = new Intl.DateTimeFormat("en-US", {
-    timeZone: "Asia/Kathmandu",
+    timeZone,
     weekday: "long",
     hour: "2-digit",
     minute: "2-digit",

@@ -13,10 +13,11 @@ function toAmount(value) {
   return Number.isFinite(amount) ? Math.max(0, amount) : 0;
 }
 
-function MoneyInput({ value, onChange, label }) {
+function MoneyInput({ value, onChange, label, currencyCode = "USD" }) {
+  const currencySymbol = new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).formatToParts(0).find((part) => part.type === "currency")?.value || currencyCode;
   return (
     <label className="flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 focus-within:border-primary">
-      <span className="text-xs text-muted-foreground w-[20px] text-center">$</span>
+      <span className="text-xs text-muted-foreground w-[20px] text-center">{currencySymbol}</span>
       <input aria-label={label} type="number" min="0" step="0.01" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} className="w-16 bg-transparent border-none text-right text-sm font-semibold outline-none py-1 px-0" />
     </label>
   );
@@ -31,7 +32,7 @@ function SummaryRow({ label, value, children, strong = false }) {
   );
 }
 
-export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onCheckout, onQrPaid }) {
+export function AppointmentDetail({ appt, currencyCode = "USD", onClose, onConfirm, onArrive, onCheckout, onQrPaid }) {
   const [discount, setDiscount] = useState("0");
   const [tip, setTip] = useState("0");
   const [amountPaid, setAmountPaid] = useState("0");
@@ -107,7 +108,7 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
               </span>
               <span>
                 <span className="text-muted-foreground">Avg. visit: </span>
-                <b>{currency(appt.avgVisit)}</b>
+                <b>{currency(appt.avgVisit, currencyCode)}</b>
               </span>
             </div>
             <p className="flex justify-between border-b border-border px-5 py-3 text-sm">
@@ -132,7 +133,7 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
                       </p>
                     </div>
                     <span className="truncate text-muted-foreground">{service.staff}</span>
-                    <span className="text-right font-mono font-medium">{currency(service.price)}</span>
+                    <span className="text-right font-mono font-medium">{currency(service.price, currencyCode)}</span>
                   </div>
                 ))}
               </div>
@@ -146,22 +147,22 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
           </div>
           <aside className="col-span-3 bg-gray-100">
             <div className="flex h-full flex-col">
-              <SummaryRow label="Services" value={currency(subtotal)} />
+              <SummaryRow label="Services" value={currency(subtotal, currencyCode)} />
               <SummaryRow label="Discount">
-                <MoneyInput label="Discount" value={discount} onChange={setDiscount} />
+                <MoneyInput label="Discount" value={discount} onChange={setDiscount} currencyCode={currencyCode} />
               </SummaryRow>
-              <SummaryRow label="Deposit paid" value={`− ${currency(priorPaid)}`} />
+              <SummaryRow label="Deposit paid" value={`− ${currency(priorPaid, currencyCode)}`} />
               <SummaryRow label="Tip">
-                <MoneyInput label="Tip" value={tip} onChange={setTip} />
+                <MoneyInput label="Tip" value={tip} onChange={setTip} currencyCode={currencyCode} />
               </SummaryRow>
-              <SummaryRow label="Total" value={currency(total)} />
-              <SummaryRow label="Amount due" value={currency(amountDue)} />
+              <SummaryRow label="Total" value={currency(total, currencyCode)} />
+              <SummaryRow label="Amount due" value={currency(amountDue, currencyCode)} />
               {appt.stage !== "completed" && (
                 <SummaryRow label="Amount paid">
-                  <MoneyInput label="Amount paid" className="border-none" value={amountPaid} onChange={setAmountPaid} />
+                  <MoneyInput label="Amount paid" className="border-none" value={amountPaid} onChange={setAmountPaid} currencyCode={currencyCode} />
                 </SummaryRow>
               )}
-              {appt.stage !== "completed" && <SummaryRow label="Change due" value={currency(changeDue)} />}
+              {appt.stage !== "completed" && <SummaryRow label="Change due" value={currency(changeDue, currencyCode)} />}
               <div className="p-5 mt-auto">
                 {qrError && <p className="mb-2 text-sm text-destructive">{qrError}</p>}
                 {appt.stage !== "completed" ? (
@@ -193,8 +194,8 @@ export function AppointmentDetail({ appt, onClose, onConfirm, onArrive, onChecko
           </DialogHeader>
           {qrPayment && (
             <>
-              <img className="mx-auto size-72" src={qrPayment.imageUrl} alt={`Stripe payment QR code for ${currency(amountPaidValue)}`} />
-              <p className="text-center text-sm font-medium">Waiting for {currency(amountPaidValue)} payment…</p>
+              <img className="mx-auto size-72" src={qrPayment.imageUrl} alt={`Stripe payment QR code for ${currency(amountPaidValue, currencyCode)}`} />
+              <p className="text-center text-sm font-medium">Waiting for {currency(amountPaidValue, currencyCode)} payment…</p>
             </>
           )}
         </DialogContent>

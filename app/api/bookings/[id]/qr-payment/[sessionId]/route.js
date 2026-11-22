@@ -15,6 +15,8 @@ export async function GET(_req, { params }) {
     const checkout = await stripe.checkout.sessions.retrieve(sessionId);
     const ids = (checkout.metadata?.bookingIds || "").split(",").filter(Boolean);
     if (!ids.includes(id) || checkout.metadata?.vendorId !== vendor.id) return NextResponse.json({ error: "Payment session does not match this booking." }, { status: 403 });
+    const sessionCurrency = checkout.metadata?.currencyCode?.toLowerCase() || "usd";
+    if (checkout.currency !== sessionCurrency) return NextResponse.json({ error: "Payment session currency could not be verified." }, { status: 400 });
     if (checkout.payment_status !== "paid") return NextResponse.json({ paid: false, status: checkout.payment_status });
     const bookings = await prisma.bookings.findMany({ where: { id: { in: ids }, service: { vendorId: vendor.id } }, select: { id: true, paymentAmount: true, paidAmount: true } });
     await prisma.$transaction(bookings.map((booking) => {

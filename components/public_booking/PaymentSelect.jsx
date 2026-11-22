@@ -15,7 +15,11 @@ function getStripePromise(publishableKey) {
   return stripePromises.get(publishableKey);
 }
 
-function CardPaymentForm({ amount, onConfirm, onBeforePayment, loading, error }) {
+function formatCurrency(value, currencyCode) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).format(Number(value || 0));
+}
+
+function CardPaymentForm({ amount, currencyCode, paymentRequirement, onConfirm, onBeforePayment, loading, error }) {
   const stripe = useStripe();
   const elements = useElements();
   const [processing, setProcessing] = useState(false);
@@ -70,7 +74,7 @@ function CardPaymentForm({ amount, onConfirm, onBeforePayment, loading, error })
       <PaymentElement />
       {(cardError || error) && <p role="alert" className="text-sm text-red-600">{cardError || error}</p>}
       <Button type="submit" className="w-full sm:w-auto" disabled={!stripe || !elements || processing || loading}>
-        {processing || loading ? "Processing..." : `Pay deposit ($${Number(amount).toFixed(2)})`}
+        {processing || loading ? "Processing..." : `Pay ${paymentRequirement === "full" ? "total" : "deposit"} (${formatCurrency(amount, currencyCode)})`}
       </Button>
     </form>
   );
@@ -78,6 +82,8 @@ function CardPaymentForm({ amount, onConfirm, onBeforePayment, loading, error })
 
 export default function PaymentSelect({
   service,
+  currencyCode = "USD",
+  paymentInstructions,
   customerEmail,
   paymentSetup,
   loading,
@@ -105,6 +111,8 @@ export default function PaymentSelect({
           >
             <CardPaymentForm
               amount={paymentSetup.depositAmount}
+              currencyCode={currencyCode}
+              paymentRequirement={service.prepaymentType}
               onConfirm={onPaymentSuccess}
               onBeforePayment={onBeforePayment}
               loading={loading}
@@ -121,6 +129,7 @@ export default function PaymentSelect({
           <div className="rounded-md border border-emerald-200 bg-emerald-50 p-4 text-sm text-emerald-900">
             No deposit is required. You can confirm now and pay for the service at the business.
           </div>
+          {paymentInstructions && <p className="rounded-md border border-slate-200 bg-white p-4 text-sm text-slate-600">{paymentInstructions}</p>}
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <Button type="button" disabled={loading} onClick={onConfirmBooking}>
             {loading ? "Confirming booking..." : "Confirm booking — pay later"}

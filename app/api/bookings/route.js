@@ -1,15 +1,17 @@
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { createCustomerCode, findCustomerDuplicates, getCurrentVendorOrThrow, normalizeEmail, normalizePhone } from "@/lib/customer-crm";
+import { getVendorSettings, zonedDateTimeToDate } from "@/lib/business-settings";
 import { sendPaymentLinkEmail, sendBookingConfirmationEmail } from "@/lib/emails/sendBookingEmails";
 import { BookingStatus } from "@/constants/enums";
 
 // Helper to calculate deposit required for a service
-function getDepositRequired(service) {
+function getDepositRequired(service, settings) {
   if (service.prepaymentType === "full") {
     return service.price;
   }
   if (service.prepaymentType === "deposit") {
+    if (!settings.depositsEnabled || (!settings.onlinePaymentsEnabled && (settings.payAtBusinessEnabled || settings.cashPaymentsEnabled))) return 0;
     if (service.depositType === "fixed") {
       return Number(service.depositValue || 0);
     }
@@ -18,6 +20,17 @@ function getDepositRequired(service) {
     }
   }
   return 0;
+}
+
+function formatTimeInTimeZone(date, timeZone) {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    hour: "2-digit",
+    minute: "2-digit",
+    hourCycle: "h23",
+  }).formatToParts(date);
+  const values = Object.fromEntries(parts.map((part) => [part.type, part.value]));
+  return `${values.hour}:${values.minute}`;
 }
 
 export async function GET(req) {
@@ -108,6 +121,7 @@ export async function POST(req) {
   try {
     const session = await getCurrentSession();
     const vendor = await getCurrentVendorOrThrow(session);
+    const vendorSettings = await getVendorSettings(vendor.id);
     const body = await req.json();
 
     // Support single serviceId or array of serviceIds
@@ -117,8 +131,14 @@ export async function POST(req) {
       ? [body.serviceId]
       : [];
 
-    if (serviceIds.length === 0 || !body.scheduledAt) {
+    if (serviceIds.length === 0 || (!body.scheduledAt && !(body.date && body.startTime))) {
       return Response.json({ error: "Service and scheduled time are required." }, { status: 400 });
+    }
+    const requestedStartTime = body.date && body.startTime
+      ? zonedDateTimeToDate(body.date, body.startTime, vendorSettings.timeZone)
+      : new Date(body.scheduledAt);
+    if (!requestedStartTime || Number.isNaN(requestedStartTime.getTime())) {
+      return Response.json({ error: "The selected business date and time are invalid." }, { status: 400 });
     }
 
     // Fetch details of selected services
@@ -174,7 +194,7 @@ export async function POST(req) {
     let totalAmount = 0;
     let totalDepositRequired = 0;
     const servicesPaymentInfo = services.map((svc) => {
-      const deposit = getDepositRequired(svc);
+      const deposit = getDepositRequired(svc, vendorSettings);
       totalAmount += svc.price;
       totalDepositRequired += deposit;
       return {
@@ -192,6 +212,15 @@ export async function POST(req) {
 
     // Determine target booking status and payment status based on payment option chosen
     const paymentOption = body.paymentOption || "pay_later"; // options: collect_now_cash, collect_now_card, send_link, pay_at_business, pay_later
+    if (paymentOption === "collect_now_cash" && !vendorSettings.cashPaymentsEnabled) {
+      return Response.json({ error: "Cash payments are disabled for this business." }, { status: 400 });
+    }
+    if (["collect_now_card", "send_link"].includes(paymentOption) && !vendorSettings.onlinePaymentsEnabled) {
+      return Response.json({ error: "Online payments are disabled for this business." }, { status: 400 });
+    }
+    if (paymentOption === "pay_at_business" && !vendorSettings.payAtBusinessEnabled) {
+      return Response.json({ error: "Pay-at-business is disabled for this business." }, { status: 400 });
+    }
     let targetBookingStatus = "CONFIRMED";
     let targetPaymentStatus = "UNPAID";
     let paidAmount = 0;
@@ -231,7 +260,7 @@ export async function POST(req) {
     }
 
     // Sequential booking creation
-    let currentStartTime = new Date(body.scheduledAt);
+    let currentStartTime = requestedStartTime;
     const createdBookings = [];
 
     for (let i = 0; i < services.length; i++) {
@@ -243,12 +272,11 @@ export async function POST(req) {
       const serviceWeight = svc.price / (totalAmount || 1);
       const svcPaidAmount = paidAmount * serviceWeight;
       const svcRemainingBalance = svc.price - svcPaidAmount;
-      const svcDeposit = getDepositRequired(svc);
+      const svcDeposit = getDepositRequired(svc, vendorSettings);
 
       // Format start and end time strings (HH:mm)
-      const pad = (n) => String(n).padStart(2, '0');
-      const startTimeStr = `${pad(currentStartTime.getHours())}:${pad(currentStartTime.getMinutes())}`;
-      const endTimeStr = `${pad(scheduledEnd.getHours())}:${pad(scheduledEnd.getMinutes())}`;
+      const startTimeStr = formatTimeInTimeZone(currentStartTime, vendorSettings.timeZone);
+      const endTimeStr = formatTimeInTimeZone(scheduledEnd, vendorSettings.timeZone);
 
       const booking = await prisma.bookings.create({
         data: {
@@ -310,7 +338,7 @@ export async function POST(req) {
         paymentLink,
         totalDepositRequired > 0 ? totalDepositRequired : totalAmount
       );
-    } else if (targetBookingStatus === "CONFIRMED" && customerEmail) {
+    } else if (targetBookingStatus === "CONFIRMED" && customerEmail && vendorSettings.notifyBookingConfirmation) {
       await sendBookingConfirmationEmail(customerEmail, customerName, bookingDetailsForEmail);
     }
 

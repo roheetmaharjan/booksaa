@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { Toaster } from "@/components/ui/sonner";
 import { BoardTopBar } from "@/components/checkout/BoardTopBar";
@@ -77,6 +77,7 @@ function groupByBookingGroup(appointments) {
 }
 
 export default function CheckoutPage() {
+  const routeParams = useParams();
   const params = useSearchParams();
   const bookingId = params.get("bookingId");
   const locationId = params.get("locationId");
@@ -85,6 +86,7 @@ export default function CheckoutPage() {
   const [selectedDate, setSelectedDate] = useState(() => new Date());
   const [selectedId, setSelectedId] = useState(bookingId);
   const [list, setList] = useState([]);
+  const [currencyCode, setCurrencyCode] = useState("USD");
   const [draggedAppointment, setDraggedAppointment] = useState(null);
   
   const url = useMemo(() => {
@@ -103,6 +105,24 @@ export default function CheckoutPage() {
   }, [locationId, selectedDate]);
   
   const { data, loading, error, refetch } = useFetch(url);
+
+  useEffect(() => {
+    let active = true;
+    const slug = routeParams?.slug;
+    const query = slug ? `?slug=${encodeURIComponent(slug)}` : "";
+    fetch(`/api/businesses/settings${query}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Unable to load business currency.");
+        if (active) setCurrencyCode(result.settings.currencyCode);
+      })
+      .catch((settingsError) => {
+        if (active) toast.error(settingsError.message || "Unable to load business currency.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [routeParams?.slug]);
 
   useEffect(() => {
     const appointments = groupByBookingGroup(filterDueBookings(data?.bookings || [], selectedDate)
@@ -153,7 +173,7 @@ export default function CheckoutPage() {
       const response = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/bookings/${id}/checkout`, { method: "PUT", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ amountPaid: total, paymentMethod: method, bookingIds }) });
       const result = await response.json();
       if (!response.ok) throw new Error(result.error || "Unable to complete checkout");
-      toast.success(`Checked out — ${currency(total)}`);
+      toast.success(`Checked out — ${currency(total, currencyCode)}`);
       await refetch();
     } catch (checkoutError) {
       toast.error(checkoutError.message);
@@ -179,7 +199,7 @@ export default function CheckoutPage() {
       <BoardTopBar query={query} onQuery={setQuery} staff={staff} onStaff={setStaff} staffOptions={staffOptions} selectedDate={selectedDate} onDateChange={setSelectedDate} onBookingSuccess={handleBookingSuccess} />
       <div className="flex items-center gap-6 border-b border-border bg-surface-raised/60 px-5 py-2 text-sm">
         <span className="text-muted-foreground">
-          Checked out today: <strong className="text-foreground">{currency(revenue)}</strong>
+          Checked out today: <strong className="text-foreground">{currency(revenue, currencyCode)}</strong>
         </span>
         <span className="text-muted-foreground">
           In shop: <strong className="text-foreground">{list.filter((item) => item.stage === "arrived").length}</strong>
@@ -212,7 +232,7 @@ export default function CheckoutPage() {
       <Drawer open={Boolean(selected)} onOpenChange={(open) => !open && setSelectedId(null)} direction="right" dismissible={false}>
         <DrawerContent className="inset-y-0 right-0 left-auto mt-0 h-full rounded-l-xl w-full max-w-5xl border-y-0 border-r-0 border-l border-border bg-card p-0 shadow-pop">
           <DrawerTitle className="sr-only">Appointment details for {selected?.client}</DrawerTitle>
-          {selected && <AppointmentDetail key={selected.id} appt={selected} onClose={() => setSelectedId(null)} onConfirm={() => move(selected, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected, "arrived", `${selected.client} marked as arrived`)} onCheckout={(total, method) => complete(selected.id, total, method, 0, selected.bookingIds)} onQrPaid={handleQrPaymentSuccess} />}
+          {selected && <AppointmentDetail key={selected.id} appt={selected} currencyCode={currencyCode} onClose={() => setSelectedId(null)} onConfirm={() => move(selected, "confirmed", `${selected.client} confirmed`)} onArrive={() => move(selected, "arrived", `${selected.client} marked as arrived`)} onCheckout={(total, method) => complete(selected.id, total, method, 0, selected.bookingIds)} onQrPaid={handleQrPaymentSuccess} />}
         </DrawerContent>
       </Drawer>
       {/* <Toaster /> */}

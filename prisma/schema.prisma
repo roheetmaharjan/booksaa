@@ -90,6 +90,42 @@ model Vendors {
   defaultLocation       Location?                    @relation("VendorDefaultLocation", fields: [defaultLocationId], references: [id])
   plan                  Plans                        @relation(fields: [planId], references: [id])
   user                  Users                        @relation(fields: [userId], references: [id])
+  settings              VendorSettings?
+}
+
+model VendorSettings {
+  id                           String   @id @default(cuid())
+  vendorId                     String   @unique
+  businessEmail                String?
+  website                      String?
+  countryCode                  String   @default("NP")
+  currencyCode                 String   @default("USD")
+  timeZone                     String   @default("Asia/Kathmandu")
+  dateFormat                   String   @default("DD/MM/YYYY")
+  timeFormat                   String   @default("12h")
+  onlineBookingEnabled         Boolean  @default(true)
+  manualBookingApproval        Boolean  @default(false)
+  minAdvanceNoticeMinutes      Int      @default(0)
+  maxAdvanceBookingDays        Int      @default(365)
+  allowCustomerCancellations   Boolean  @default(true)
+  allowCustomerRescheduling    Boolean  @default(true)
+  cancellationDeadlineHours    Int?
+  cashPaymentsEnabled          Boolean  @default(true)
+  onlinePaymentsEnabled        Boolean  @default(true)
+  payAtBusinessEnabled         Boolean  @default(true)
+  depositsEnabled              Boolean  @default(true)
+  defaultDepositPercentage     Float?
+  paymentInstructions          String?
+  notifyNewBooking             Boolean  @default(false)
+  notifyBookingConfirmation    Boolean  @default(true)
+  notifyBookingCancellation    Boolean  @default(false)
+  notifyBookingReminder        Boolean  @default(false)
+  notifyPaymentConfirmation    Boolean  @default(false)
+  createdAt                    DateTime @default(now())
+  updatedAt                    DateTime @updatedAt
+  vendor                       Vendors  @relation(fields: [vendorId], references: [id], onDelete: Cascade)
+
+  @@index([vendorId])
 }
 
 model Category {

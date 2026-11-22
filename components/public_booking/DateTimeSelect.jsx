@@ -8,19 +8,36 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 
 function formatDate(date) {
-  const year = date.getFullYear();
-  const month = String(date.getMonth() + 1).padStart(2, "0");
-  const day = String(date.getDate()).padStart(2, "0");
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
 
   return `${year}-${month}-${day}`;
 }
 
+function getTodayInTimeZone(timeZone) {
+  const parts = Object.fromEntries(new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date()).map((part) => [part.type, Number(part.value)]));
+  return new Date(Date.UTC(parts.year, parts.month - 1, parts.day));
+}
+
+function formatDateLabel(date, dateFormat) {
+  const year = date.getUTCFullYear();
+  const month = String(date.getUTCMonth() + 1).padStart(2, "0");
+  const day = String(date.getUTCDate()).padStart(2, "0");
+  if (dateFormat === "MM/DD/YYYY") return `${month}/${day}/${year}`;
+  if (dateFormat === "YYYY-MM-DD") return `${year}-${month}-${day}`;
+  return `${day}/${month}/${year}`;
+}
+
 function getMonday(date) {
   const result = new Date(date);
-  result.setHours(0, 0, 0, 0);
-
-  const day = result.getDay();
-  result.setDate(result.getDate() - (day === 0 ? 6 : day - 1));
+  const day = result.getUTCDay();
+  result.setUTCDate(result.getUTCDate() - (day === 0 ? 6 : day - 1));
 
   return result;
 }
@@ -28,7 +45,10 @@ function getMonday(date) {
 function getMinutes(time) {
   const match = time.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)$/i);
 
-  if (!match) return Number.MAX_SAFE_INTEGER;
+  if (!match) {
+    const time24Match = time.match(/^(\d{2}):(\d{2})$/);
+    return time24Match ? Number(time24Match[1]) * 60 + Number(time24Match[2]) : Number.MAX_SAFE_INTEGER;
+  }
 
   let hour = Number(match[1]);
   const minute = Number(match[2]);
@@ -40,14 +60,9 @@ function getMinutes(time) {
   return hour * 60 + minute;
 }
 
-export default function DateTimeSelect({ slug, locationId, serviceId, professionalId, professionalName, initialAppointment, onContinue, onBack }) {
-  const [selectedDate, setSelectedDate] = useState(() => {
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    return today;
-  });
-
-  const [weekStart, setWeekStart] = useState(() => getMonday(new Date()));
+export default function DateTimeSelect({ slug, locationId, serviceId, professionalId, professionalName, initialAppointment, onContinue, onBack, timeZone = "Asia/Kathmandu", dateFormat = "DD/MM/YYYY" }) {
+  const [selectedDate, setSelectedDate] = useState(() => getTodayInTimeZone(timeZone));
+  const [weekStart, setWeekStart] = useState(() => getMonday(getTodayInTimeZone(timeZone)));
   const [selectedTime, setSelectedTime] = useState("");
   const [availability, setAvailability] = useState({});
   const [loading, setLoading] = useState(false);
@@ -57,8 +72,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, profession
     if (!initialAppointment) return;
 
     const [year, month, day] = initialAppointment.date.split("-").map(Number);
-    const date = new Date(year, month - 1, day);
-    date.setHours(0, 0, 0, 0);
+    const date = new Date(Date.UTC(year, month - 1, day));
     setSelectedDate(date);
     setWeekStart(getMonday(date));
     setSelectedTime(initialAppointment.time);
@@ -67,15 +81,16 @@ export default function DateTimeSelect({ slug, locationId, serviceId, profession
   const days = useMemo(() => {
     return Array.from({ length: 7 }, (_, index) => {
       const date = new Date(weekStart);
-      date.setDate(weekStart.getDate() + index);
+      date.setUTCDate(weekStart.getUTCDate() + index);
 
       return {
         date,
         key: formatDate(date),
         day: date.toLocaleDateString("en-US", {
+          timeZone: "UTC",
           weekday: "short",
         }),
-        number: date.getDate(),
+        number: date.getUTCDate(),
       };
     });
   }, [weekStart]);
@@ -161,7 +176,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, profession
     setSelectedTime("");
     setWeekStart((previous) => {
       const next = new Date(previous);
-      next.setDate(next.getDate() - 7);
+      next.setUTCDate(next.getUTCDate() - 7);
       setSelectedDate(next);
       return next;
     });
@@ -171,7 +186,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, profession
     setSelectedTime("");
     setWeekStart((previous) => {
       const next = new Date(previous);
-      next.setDate(next.getDate() + 7);
+      next.setUTCDate(next.getUTCDate() + 7);
       setSelectedDate(next);
       return next;
     });
@@ -193,14 +208,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, profession
   const weekEnd = days[6]?.date;
 
   const weekLabel = weekEnd
-    ? `${days[0].date.toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-      })} – ${weekEnd.toLocaleDateString("en-US", {
-        day: "numeric",
-        month: "short",
-        year: "numeric",
-      })}`
+    ? `${formatDateLabel(days[0].date, dateFormat)} – ${formatDateLabel(weekEnd, dateFormat)}`
     : "";
 
   return (
@@ -330,12 +338,7 @@ export default function DateTimeSelect({ slug, locationId, serviceId, profession
               <div>
                 <p className="text-[11px] font-medium text-slate-400">Selected appointment</p>
                 <p className="mt-1 text-sm font-bold text-slate-800">
-                  {selectedDate.toLocaleDateString("en-US", {
-                    weekday: "short",
-                    month: "short",
-                    day: "numeric",
-                    year: "numeric",
-                  })}
+                  {selectedDate.toLocaleDateString("en-US", { timeZone: "UTC", weekday: "short" })}, {formatDateLabel(selectedDate, dateFormat)}
                   {selectedTime ? ` at ${selectedTime}` : ""}
                 </p>
               </div>

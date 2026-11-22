@@ -2,12 +2,14 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { getCurrentVendorOrThrow } from "@/lib/customer-crm";
+import { getVendorSettings } from "@/lib/business-settings";
 import Stripe from "stripe";
 
 export async function POST(req) {
   try {
     const session = await getCurrentSession();
     const vendorDetails = await getCurrentVendorOrThrow(session);
+    const settings = await getVendorSettings(vendorDetails.id);
 
     const { amount } = await req.json();
 
@@ -29,7 +31,7 @@ export async function POST(req) {
     // Create payment intent using the vendor's secret key
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(amount * 100),
-      currency: "usd",
+      currency: settings.currencyCode.toLowerCase(),
       metadata: {
         vendorId: vendorDetails.id,
       },
@@ -38,6 +40,7 @@ export async function POST(req) {
     return NextResponse.json({
       clientSecret: paymentIntent.client_secret,
       publishableKey: vendor.stripePublishableKey,
+      currencyCode: settings.currencyCode,
     });
   } catch (error) {
     console.error("Create collect-payment intent error:", error);

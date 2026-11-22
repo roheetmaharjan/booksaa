@@ -4,7 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { calculateBusinessSubscription } from "@/lib/subscription-pricing";
 import { getSubscriptionState } from "@/lib/subscription-state";
 
-export async function GET() {
+export async function GET(request) {
   try {
     const session = await getCurrentSession();
 
@@ -12,17 +12,16 @@ export async function GET() {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
     }
 
-    if (session.role !== "VENDOR") {
+    const requestedSlug = new URL(request.url).searchParams.get("slug");
+    if (session.role !== "VENDOR" && !(session.role === "ADMIN" && requestedSlug)) {
       return NextResponse.json(
-        { error: "Only vendor accounts can access this dashboard." },
+        { error: "You do not have permission to access this business." },
         { status: 403 }
       );
     }
 
-    const vendor = await prisma.vendors.findUnique({
-      where: {
-        userId: session.id,
-      },
+    const vendor = await prisma.vendors.findFirst({
+      where: session.role === "ADMIN" ? { slug: requestedSlug } : { userId: session.id },
       select: {
         id: true,
         name: true,
@@ -116,6 +115,9 @@ export async function GET() {
         { error: "Business not found for this account." },
         { status: 404 }
       );
+    }
+    if (session.role === "VENDOR" && requestedSlug && vendor.slug !== requestedSlug) {
+      return NextResponse.json({ error: "You do not have access to this business." }, { status: 403 });
     }
 
     // Get entitlements from latest subscription

@@ -2,7 +2,8 @@ import { NextResponse } from "next/server";
 import Stripe from "stripe";
 import { prisma } from "@/lib/prisma";
 import { getVerifiedEmail } from "@/lib/guest-booking-otp";
-import { getGuestBookingSelection, getRequiredDeposit, hashVerificationToken } from "@/lib/public-booking";
+import { getEffectivePaymentRequirement, getGuestBookingSelection, getRequiredDeposit, hashVerificationToken } from "@/lib/public-booking";
+import { DEFAULT_VENDOR_SETTINGS, getZonedDayBounds, isBookingWithinWindow } from "@/lib/business-settings";
 
 export async function POST(request, { params }) {
   try {
@@ -13,13 +14,39 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: "Verify your email before continuing." }, { status: 401 });
     }
 
-    const selection = getGuestBookingSelection(body);
     const vendor = await prisma.vendors.findFirst({
       where: { slug },
-      select: { id: true, name: true, stripeSecretKey: true, stripePublishableKey: true },
+      select: {
+        id: true,
+        name: true,
+        stripeSecretKey: true,
+        stripePublishableKey: true,
+        settings: {
+          select: {
+            onlineBookingEnabled: true,
+            onlinePaymentsEnabled: true,
+            depositsEnabled: true,
+            currencyCode: true,
+            timeZone: true,
+            minAdvanceNoticeMinutes: true,
+            maxAdvanceBookingDays: true,
+          },
+        },
+      },
     });
     if (!vendor) {
       return NextResponse.json({ success: false, message: "Business not found." }, { status: 404 });
+    }
+    const settings = { ...DEFAULT_VENDOR_SETTINGS, ...vendor.settings };
+    if (!settings.onlineBookingEnabled || (!settings.onlinePaymentsEnabled && !settings.cashPaymentsEnabled && !settings.payAtBusinessEnabled)) {
+      return NextResponse.json({ success: false, message: "Online booking is currently unavailable for this business." }, { status: 403 });
+    }
+    if (!settings.onlinePaymentsEnabled) {
+      return NextResponse.json({ success: false, message: "Online payments are currently unavailable for this business." }, { status: 403 });
+    }
+    const selection = getGuestBookingSelection(body, settings.timeZone);
+    if (!isBookingWithinWindow(selection.scheduledAt, selection.date, settings, settings.timeZone)) {
+      return NextResponse.json({ success: false, message: "The selected time is outside this business's booking window." }, { status: 409 });
     }
 
     const service = await prisma.service.findFirst({
@@ -29,7 +56,8 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: "The selected service is no longer available." }, { status: 404 });
     }
 
-    const deposit = getRequiredDeposit(service);
+    const paymentRequirement = getEffectivePaymentRequirement(service, settings);
+    const deposit = getRequiredDeposit({ ...service, prepaymentType: paymentRequirement }, settings);
     if (!Number.isFinite(deposit) || deposit <= 0) {
       return NextResponse.json({ success: false, message: "This service does not require a deposit." }, { status: 400 });
     }
@@ -47,7 +75,7 @@ export async function POST(request, { params }) {
     });
     const weekday = new Intl.DateTimeFormat("en-US", {
       weekday: "long",
-      timeZone: "Asia/Kathmandu",
+      timeZone: settings.timeZone,
     }).format(selection.scheduledAt);
     const hours = location?.businessHours.find((item) => item.day === weekday);
     const startMinutes = selection.startMinutes;
@@ -72,13 +100,15 @@ export async function POST(request, { params }) {
       }
     }
 
-    const dayStart = new Date(`${selection.date}T00:00:00+05:45`);
-    const dayEnd = new Date(dayStart.getTime() + 24 * 60 * 60 * 1000);
+    const dayBounds = getZonedDayBounds(selection.date, settings.timeZone);
+    if (!dayBounds) {
+      return NextResponse.json({ success: false, message: "Unable to determine the selected business day." }, { status: 400 });
+    }
     const existingBookings = await prisma.bookings.findMany({
       where: {
         locationId: selection.locationId,
         professionalId: selection.professionalId,
-        scheduledAt: { gte: dayStart, lt: dayEnd },
+        scheduledAt: { gte: dayBounds.start, lt: dayBounds.end },
         status: { notIn: ["CANCELED", "PAYMENT_EXPIRED"] },
       },
       select: { scheduledAt: true, scheduledEnd: true },
@@ -96,7 +126,7 @@ export async function POST(request, { params }) {
     const stripe = new Stripe(vendor.stripeSecretKey, { apiVersion: "2023-10-16" });
     const paymentIntent = await stripe.paymentIntents.create({
       amount: Math.round(deposit * 100),
-      currency: "usd",
+      currency: settings.currencyCode.toLowerCase(),
       receipt_email: verifiedEmail,
       description: `Guest booking deposit: ${service.name}`,
       metadata: {
@@ -107,6 +137,7 @@ export async function POST(request, { params }) {
         professionalId: selection.professionalId || "",
         date: selection.date,
         startTime: selection.startTime,
+        currencyCode: settings.currencyCode,
         verificationId: hashVerificationToken(body.verifiedEmailToken),
       },
     });
@@ -116,6 +147,7 @@ export async function POST(request, { params }) {
       clientSecret: paymentIntent.client_secret,
       publishableKey: vendor.stripePublishableKey,
       depositAmount: deposit,
+      currencyCode: settings.currencyCode,
     });
   } catch (error) {
     console.error("Guest booking payment setup failed:", error);

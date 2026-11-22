@@ -5,7 +5,7 @@ import BusinessHours from "@/components/common/BusinessHour";
 import { Alert, AlertTitle } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -15,9 +15,10 @@ import { useMutation } from "@/hooks/useMutation";
 import { validateForm } from "@/utils/formValidator";
 import { CameraIcon } from "@phosphor-icons/react";
 import { Loader2, MapPin, PenIcon } from "lucide-react";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
+import Link from "next/link";
 import PhotoUpload from "@/components/photos/PhotoUpload";
 import GalleryGrid from "@/components/photos/GalleryGrid";
 import { ASSET_TYPES } from "@/constants/storage";
@@ -25,6 +26,7 @@ import Payment from "@/components/settings/Payment";
 import BillingUsage from "@/components/settings/BillingUsage";
 import Locations, { getLocationLabel } from "@/components/settings/Locations";
 import Notifications from "@/components/settings/Notifications";
+import BusinessSettingsForm from "@/components/settings/BusinessSettingsForm";
 
 const emptyOwner = { firstname: "", lastname: "", email: "" };
 
@@ -61,6 +63,7 @@ function normalizeBusinessForm(data) {
 
 export default function SettingsPage() {
   const searchParams = useSearchParams();
+  const params = useParams();
   const selectedLocationFromSidebar = searchParams.get("locationId") || "";
 
   const [vendorId, setVendorId] = useState(null);
@@ -90,7 +93,7 @@ export default function SettingsPage() {
   };
 
   useEffect(() => {
-    setActiveTab(searchParams.get("tab") || "detail");
+    setActiveTab(searchParams.get("tab") || "business-profile");
   }, [searchParams]);
 
   useEffect(() => {
@@ -99,7 +102,7 @@ export default function SettingsPage() {
     const resolveCurrentVendor = async () => {
       setLoading(true);
       try {
-        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current`, { cache: "no-store" });
+        const res = await fetch(`${process.env.NEXT_PUBLIC_API_URL}/api/businesses/current?slug=${encodeURIComponent(params.slug)}`, { cache: "no-store" });
         const data = await res.json();
         if (!res.ok) throw new Error(data.error || "Unable to resolve your business account.");
         if (isActive) setVendorId(data.vendorId);
@@ -304,6 +307,7 @@ export default function SettingsPage() {
       await updateBusiness({
         name: form.name,
         categoryId: form.categoryId,
+        phone: form.phone,
         description: form.description,
         cancellation_policy: form.cancellation_policy,
         user: form.user,
@@ -340,19 +344,22 @@ export default function SettingsPage() {
           </Alert>
         ) : (
           <>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="gap-2 items-start">
-              <TabsList className="mb-5 flex h-auto flex-wrap items-start" variant="line">
-                <TabsTrigger value="business-profile">Business Profile</TabsTrigger>
-                <TabsTrigger value="profile">My Profile</TabsTrigger>
-                <TabsTrigger value="photos">Photos</TabsTrigger>
-                <TabsTrigger value="businesshours">Business Hours</TabsTrigger>
-                <TabsTrigger value="locations">Business Locations</TabsTrigger>
-                <TabsTrigger value="payments">Payments</TabsTrigger>
-                <TabsTrigger value="billing">Billing & Usage</TabsTrigger>
-                <TabsTrigger value="notifications">Notifications</TabsTrigger>
+            <Tabs value={activeTab} onValueChange={setActiveTab} className="grid items-start gap-6 md:grid-cols-[220px_minmax(0,1fr)]">
+              <TabsList className="flex h-auto w-full flex-row flex-wrap items-start justify-start gap-1 md:sticky md:top-4 md:flex-col md:items-stretch" variant="line">
+                <TabsTrigger value="business-profile" className="justify-start">Business Profile</TabsTrigger>
+                <TabsTrigger value="business-preferences" className="justify-start">Business Preferences</TabsTrigger>
+                <TabsTrigger value="businesshours" className="justify-start">Business Hours</TabsTrigger>
+                <TabsTrigger value="locations" className="justify-start">Business Locations</TabsTrigger>
+                <TabsTrigger value="payments" className="justify-start">Payments</TabsTrigger>
+                <TabsTrigger value="notifications" className="justify-start">Notifications</TabsTrigger>
+                <TabsTrigger value="team" className="justify-start">Team & Access</TabsTrigger>
+                <TabsTrigger value="profile" className="justify-start">My Profile</TabsTrigger>
+                <TabsTrigger value="security" className="justify-start">Security & Account</TabsTrigger>
+                <TabsTrigger value="photos" className="justify-start">Photos</TabsTrigger>
+                <TabsTrigger value="billing" className="justify-start">Billing & Usage</TabsTrigger>
               </TabsList>
 
-              <TabsContent value="business-profile">
+              <TabsContent value="business-profile" className="mt-0 min-w-0">
                 <form onSubmit={handleDetailSubmit}>
                   <div className="card-value">
                     <Label>
@@ -378,6 +385,10 @@ export default function SettingsPage() {
                     </Label>
                     <Input name="name" value={form.name || ""} onChange={handleChange} placeholder="Business Name" />
                     {formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
+                  </div>
+                  <div className="card-value">
+                    <Label htmlFor="business-phone">Business Phone</Label>
+                    <Input id="business-phone" name="phone" type="tel" value={form.phone || ""} onChange={handleChange} placeholder="Business phone number" />
                   </div>
                   <div className="card-value">
                     <Label>
@@ -415,7 +426,10 @@ export default function SettingsPage() {
                   </div>
                 </form>
               </TabsContent>
-              <TabsContent value="profile">
+              <TabsContent value="business-preferences" forceMount className="mt-0 min-w-0">
+                <BusinessSettingsForm slug={params.slug} />
+              </TabsContent>
+              <TabsContent value="profile" className="mt-0 min-w-0">
                 <div className="flex-1">
                   <div className="grid grid-cols-12 gap-3">
                     <HeaderValue label="Email" value={ownerEmail || "-"} />
@@ -428,7 +442,29 @@ export default function SettingsPage() {
                   </div>
                 </div>
               </TabsContent>
-              <TabsContent value="photos">
+              <TabsContent value="team" className="mt-0 min-w-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Team & access</CardTitle>
+                    <CardDescription>Manage professionals, staff roles, and location assignments using the existing team tools.</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <Button asChild><Link href={`/${params.slug}/professionals`}>Manage team members</Link></Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="security" className="mt-0 min-w-0">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Security & account</CardTitle>
+                    <CardDescription>Account profile and status are available under My Profile. Sign out from the account menu when using a shared device.</CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex flex-wrap gap-3">
+                    <Button asChild variant="outline"><Link href="/auth/forgot-password">Reset password</Link></Button>
+                  </CardContent>
+                </Card>
+              </TabsContent>
+              <TabsContent value="photos" className="mt-0 min-w-0">
                 <div className="flex gap-2 flex-wrap justify-between mb-4">
                   <PhotoUpload onUploadComplete={refreshPhotos} />
                   <Select value={dateFilter} onValueChange={setDateFilter}>
@@ -460,8 +496,8 @@ export default function SettingsPage() {
               <TabsContent value="billing">
                 <BillingUsage />
               </TabsContent>
-              <TabsContent value="notifications">
-                <Notifications />
+              <TabsContent value="notifications" forceMount className="mt-0 min-w-0">
+                <Notifications slug={params.slug} />
               </TabsContent>
             </Tabs>
           </>

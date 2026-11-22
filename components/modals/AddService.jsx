@@ -18,6 +18,7 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
   const [services, setServices] = useState();
   const [loading, setLoading] = useState();
   const [error, setError] = useState();
+  const [defaultDepositPercentage, setDefaultDepositPercentage] = useState(null);
   const {
     formState: serviceForm,
     setFormState: setServiceForm,
@@ -41,6 +42,23 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
       setServiceForm((prev) => ({ ...prev, locationId }));
     }
   }, [locationId, setServiceForm]);
+
+  useEffect(() => {
+    if (!open) return undefined;
+    let active = true;
+    fetch("/api/businesses/settings", { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to load payment defaults.");
+        if (active) setDefaultDepositPercentage(data.settings.defaultDepositPercentage);
+      })
+      .catch((requestError) => {
+        console.error("Unable to load service payment defaults:", requestError);
+      });
+    return () => {
+      active = false;
+    };
+  }, [open]);
   console.log("locations is:", locations);
   const validationRules = {
     name: { required: true, message: "Service name is required" },
@@ -128,7 +146,13 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
             <div className="mt-3 grid gap-3 rounded-md border bg-slate-50 p-3">
               <div>
                 <Label>Payment rule</Label>
-                <Select value={serviceForm.prepaymentType} onValueChange={(value) => setServiceForm((prev) => ({ ...prev, prepaymentType: value }))}>
+                <Select value={serviceForm.prepaymentType} onValueChange={(value) => setServiceForm((prev) => ({
+                  ...prev,
+                  prepaymentType: value,
+                  depositValue: value === "deposit" && !prev.depositValue && defaultDepositPercentage !== null
+                    ? String(defaultDepositPercentage)
+                    : prev.depositValue,
+                }))}>
                   <SelectTrigger className="mt-1 bg-white">
                     <SelectValue placeholder="Select payment rule" />
                   </SelectTrigger>

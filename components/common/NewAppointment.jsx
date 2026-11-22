@@ -2,6 +2,7 @@
 
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useState, useEffect, useCallback } from "react";
+import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { calculateBookingTotals } from "@/lib/booking-deposit";
 
@@ -68,15 +69,15 @@ function getEmptyBooking(startDate, serviceDuration = DEFAULT_DURATION) {
   };
 }
 
-function paymentLabel(service) {
+function paymentLabel(service, currencyCode) {
   if (!service || service.prepaymentType === "pay_later") return "Pay later";
   if (service.prepaymentType === "full") return "Full payment";
   const value = Number(service.depositValue || 0);
-  return service.depositType === "fixed" ? `$${value.toFixed(2)} deposit` : `${value}% deposit`;
+  return service.depositType === "fixed" ? `${formatCurrency(value, currencyCode)} deposit` : `${value}% deposit`;
 }
 
-function formatCurrency(value) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: "USD" }).format(Number(value || 0));
+function formatCurrency(value, currencyCode = "USD") {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).format(Number(value || 0));
 }
 
 // ─── sub-components ───────────────────────────────────────────────────────────
@@ -112,7 +113,7 @@ function DatePickerField({ value, onChange, minDate }) {
 }
 
 // Service Card
-function ServiceCard({ service, selected, onSelect }) {
+function ServiceCard({ service, selected, onSelect, currencyCode }) {
   return (
     <button type="button" onClick={() => onSelect(service.id)} className={cn("group relative flex w-full items-start gap-2 p-3 text-left transition-all duration-150", selected ? "bg-gray-50" : "border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50")}>
       <span className="h-full w-1 shrink-0 absolute left-0 top-0" style={{ backgroundColor: service.color || "#2563eb" }} />
@@ -126,7 +127,7 @@ function ServiceCard({ service, selected, onSelect }) {
         )}
         <div>
           <p className={cn("truncate text-sm font-medium flex items-center gap-2", selected ? "" : "text-slate-700")}>{service.name}</p>
-          <p className="text-gray-600 font-normal text-xs">{paymentLabel(service)}</p>
+          <p className="text-gray-600 font-normal text-xs">{paymentLabel(service, currencyCode)}</p>
         </div>
         <span className={cn("mt-0.5 flex items-center gap-1.5 text-xs", selected ? "text-slate-600" : "text-slate-600")}>
           <Clock className="h-3 w-3" /> {service.duration} min
@@ -139,7 +140,9 @@ function ServiceCard({ service, selected, onSelect }) {
 // ─── main component ───────────────────────────────────────────────────────────
 
 export default function NewAppointment({ open, onOpenChange, onBookingSuccess, initialStart, initialProfessionalId, professionals = [], services = [], initialCustomer }) {
+  const params = useParams();
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
+  const [currencyCode, setCurrencyCode] = useState("USD");
   const [depositReviewOpen, setDepositReviewOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [submittingBooking, setSubmittingBooking] = useState(false);
@@ -155,6 +158,24 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   const [duplicateState, setDuplicateState] = useState(null);
   const [savingCustomer, setSavingCustomer] = useState(false);
   // const paymentOption = getPaymentOptionForMethod(method);
+
+  useEffect(() => {
+    let active = true;
+    const slug = params?.slug;
+    const query = slug ? `?slug=${encodeURIComponent(slug)}` : "";
+    fetch(`/api/businesses/settings${query}`, { cache: "no-store" })
+      .then(async (response) => {
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error || "Unable to load business currency.");
+        if (active) setCurrencyCode(data.settings.currencyCode);
+      })
+      .catch((error) => {
+        if (active) toast.error(error.message || "Unable to load business currency.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [params?.slug]);
 
   // initialize/reset the booking form whenever the dialog is opened for a new slot
   useEffect(() => {
@@ -521,6 +542,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                         <ServiceCard
                           key={svc.id}
                           service={svc}
+                          currencyCode={currencyCode}
                           selected={(bookingForm.serviceIds || []).includes(svc.id)}
                           onSelect={(id) =>
                             setBookingForm((p) => ({
@@ -578,23 +600,23 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
               <div className="mt-4 text-sm pt-4 border-t">
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Subtotal</span>
-                  <span>{formatCurrency(bookingTotals.subtotal)}</span>
+                  <span>{formatCurrency(bookingTotals.subtotal, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Taxes</span>
-                  <span>{formatCurrency(bookingTotals.taxAmount)}</span>
+                  <span>{formatCurrency(bookingTotals.taxAmount, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Total</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.total)}</span>
+                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.total, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Required deposit</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.requiredDeposit)}</span>
+                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.requiredDeposit, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Remaining balance</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.remainingBalance)}</span>
+                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.remainingBalance, currencyCode)}</span>
                 </div>
               </div>
             </div>

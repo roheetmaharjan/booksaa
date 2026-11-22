@@ -4,7 +4,11 @@ import { ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 
-export default function ServiceSelect({ services, selectedService, onSelectService }) {
+function formatCurrency(value, currencyCode) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).format(Number(value || 0));
+}
+
+export default function ServiceSelect({ services, selectedService, onSelectService, currencyCode = "USD" }) {
   return (
     <>
       {/* Header */}
@@ -23,9 +27,9 @@ export default function ServiceSelect({ services, selectedService, onSelectServi
             <DropdownMenuItem key={service.id} onSelect={() => onSelectService(service)} className="flex cursor-pointer items-center justify-between gap-4 py-3">
               <span className="min-w-0">
                 <span className="block truncate text-sm font-semibold">{service.name}</span>
-                <span className="text-xs text-slate-500">{service.duration} min · {service.prepaymentType === "full" ? "Full payment required" : service.prepaymentType === "deposit" ? `Deposit required (${service.depositType === "fixed" ? `$${service.depositValue}` : `${service.depositValue}%`})` : "Pay at business"}</span>
+                <span className="text-xs text-slate-500">{service.duration} min · {service.prepaymentType === "full" ? "Full payment required" : service.prepaymentType === "deposit" ? `Deposit required (${service.depositType === "fixed" ? formatCurrency(service.depositValue, currencyCode) : `${service.depositValue}%`})` : "Pay at business"}</span>
               </span>
-              <span className="shrink-0 text-sm font-bold">${service.price}</span>
+              <span className="shrink-0 text-sm font-bold">{formatCurrency(service.price, currencyCode)}</span>
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
