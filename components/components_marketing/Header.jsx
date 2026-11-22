@@ -44,8 +44,8 @@ const Header = () => {
           <div className="relative w-full items-center justify-between grid grid-cols-3">
             <div className="shrink-0 w-70">
               <Link href="/" className="block w-full">
-                <Image src={`/logo_white.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[25px] object-contain light-logo" />
-                <Image src={`/logo.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[25px] object-contain dark-logo" />
+                <Image src={`/logo_white.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[32px] object-contain light-logo" />
+                <Image src={`/logo.png`} alt="booksaa" width={140} height={30} className="!w-auto h-[32px] object-contain dark-logo" />
               </Link>
             </div>
             {/* Nav */}

@@ -39,7 +39,7 @@ export default function BooksaaFooter() {
               {/* Brand */}
               <div>
                 <h3 className="text-3xl font-bold">
-                  <Image src={`/logo.png`} alt="Booksaa" width={140} height={20} className="dark:hidden !w-auto h-[27px]" />
+                  <Image src={`/logo.png`} alt="Booksaa" width={140} height={20} className="dark:hidden !w-auto h-[32px]" />
                 </h3>
 
                 <p className="mt-4 text-slate-700">Modern booking and business management software for service companies.</p>

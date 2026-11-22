@@ -15,7 +15,7 @@ export default function BusinessSignUpLayout({ children }) {
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <Link href="/" className="inline-flex justify-center">
-            <Image src="/logo_white.png" alt="Booksaa" width={120} height={27} priority />
+            <Image src="/logo_white.png" alt="Booksaa" width={140} height={27} priority className="h-[35px]" />
           </Link>
         </div>
       </header>
