@@ -288,6 +288,7 @@ export default function CustomersPage() {
 
         <CustomerTable
           customers={customers}
+          currencyCode={vendor?.currencyCode}
           loading={loading}
           query={query}
           setQuery={setQuery}

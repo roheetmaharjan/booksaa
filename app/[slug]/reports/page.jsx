@@ -1,5 +1,8 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { toast } from "sonner";
 import {
   BarChart3,
   CalendarDays,
@@ -26,21 +29,43 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
 const paymentData = [
-  { method: "Cash", amount: "$620.00", percentage: 50 },
-  { method: "Card", amount: "$450.00", percentage: 36 },
-  { method: "Payment Link", amount: "$170.00", percentage: 14 },
+  { method: "Cash", amount: 620, percentage: 50 },
+  { method: "Card", amount: 450, percentage: 36 },
+  { method: "Payment Link", amount: 170, percentage: 14 },
 ];
 
 const services = [
-  { name: "Haircut", bookings: 14, revenue: "$420.00" },
-  { name: "Hair Color", bookings: 6, revenue: "$360.00" },
-  { name: "Facial", bookings: 4, revenue: "$240.00" },
-  { name: "Hair Wash", bookings: 3, revenue: "$90.00" },
+  { name: "Haircut", bookings: 14, revenue: 420 },
+  { name: "Hair Color", bookings: 6, revenue: 360 },
+  { name: "Facial", bookings: 4, revenue: 240 },
+  { name: "Hair Wash", bookings: 3, revenue: 90 },
 ];
 
 export default function ReportsPage() {
+  const params = useParams();
+  const [currencyCode, setCurrencyCode] = useState("USD");
+
+  useEffect(() => {
+    let active = true;
+    const slug = params?.slug;
+    const query = slug ? `?slug=${encodeURIComponent(slug)}` : "";
+    fetch(`/api/businesses/settings${query}`, { cache: "no-store" })
+      .then(async (response) => {
+        const result = await response.json();
+        if (!response.ok) throw new Error(result.error || "Unable to load business currency.");
+        if (active) setCurrencyCode(result.settings.currencyCode);
+      })
+      .catch((error) => {
+        if (active) toast.error(error.message || "Unable to load business currency.");
+      });
+    return () => {
+      active = false;
+    };
+  }, [params?.slug]);
+
   return (
     <div className="space-y-6 p-6">
       {/* Header */}
@@ -70,7 +95,7 @@ export default function ReportsPage() {
       <div className="grid gap-4 md:grid-cols-4 lg:grid-cols-4">
         <SummaryCard
           title="Revenue"
-          value="$1,240.00"
+          value={formatVendorCurrency(1240, currencyCode)}
           description="+12.5% from yesterday"
           icon={DollarSign}
         />
@@ -84,8 +109,8 @@ export default function ReportsPage() {
 
         <SummaryCard
           title="Payments"
-          value="$1,060.00"
-          description="$180.00 outstanding"
+          value={formatVendorCurrency(1060, currencyCode)}
+          description={`${formatVendorCurrency(180, currencyCode)} outstanding`}
           icon={CreditCard}
         />
 
@@ -191,7 +216,7 @@ export default function ReportsPage() {
               <div key={payment.method}>
                 <div className="mb-2 flex items-center justify-between text-sm">
                   <span>{payment.method}</span>
-                  <span className="font-medium">{payment.amount}</span>
+                  <span className="font-medium">{formatVendorCurrency(payment.amount, currencyCode)}</span>
                 </div>
 
                 <div className="h-2 overflow-hidden rounded-full bg-muted">
@@ -241,7 +266,7 @@ export default function ReportsPage() {
                       {service.bookings}
                     </TableCell>
                     <TableCell className="text-right">
-                      {service.revenue}
+                      {formatVendorCurrency(service.revenue, currencyCode)}
                     </TableCell>
                   </TableRow>
                 ))}

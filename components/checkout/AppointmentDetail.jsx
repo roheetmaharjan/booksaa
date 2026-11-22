@@ -6,6 +6,7 @@ import QRCode from "qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { currency } from "@/lib/appointments";
+import { getCurrencySymbol } from "@/lib/vendor-currency";
 import { StageBadges } from "./StageBadges";
 
 function toAmount(value) {
@@ -14,10 +15,10 @@ function toAmount(value) {
 }
 
 function MoneyInput({ value, onChange, label, currencyCode = "USD" }) {
-  const currencySymbol = new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).formatToParts(0).find((part) => part.type === "currency")?.value || currencyCode;
+  const currencySymbol = getCurrencySymbol(currencyCode);
   return (
     <label className="flex items-center gap-1 rounded-md border border-border bg-card px-2 py-1 focus-within:border-primary">
-      <span className="text-xs text-muted-foreground w-[20px] text-center">{currencySymbol}</span>
+      <span className="min-w-[30px] text-xs text-muted-foreground text-center">{currencySymbol}</span>
       <input aria-label={label} type="number" min="0" step="0.01" inputMode="decimal" value={value} onChange={(event) => onChange(event.target.value)} className="w-16 bg-transparent border-none text-right text-sm font-semibold outline-none py-1 px-0" />
     </label>
   );

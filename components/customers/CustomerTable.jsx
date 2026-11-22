@@ -8,6 +8,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import Loading from "@/components/common/Loading";
 import { Avatar } from "./Avatar";
 import { EmptyRow } from "./EmptyRow";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
 const statusTone = {
   ACTIVE:   "bg-emerald-50 text-emerald-700 border-emerald-200",
@@ -18,10 +19,6 @@ const statusTone = {
 function formatDate(value) {
   if (!value) return "-";
   return new Date(value).toLocaleDateString();
-}
-
-function money(value) {
-  return `$${Number(value || 0).toFixed(2)}`;
 }
 
 export function CustomerTable({
@@ -37,6 +34,7 @@ export function CustomerTable({
   page,
   setPage,
   onRowClick,
+  currencyCode = "USD",
 }) {
   return (
     <Card>
@@ -123,7 +121,7 @@ export function CustomerTable({
                       </div>
                     </TableCell>
                     <TableCell>{formatDate(customer.lastVisit)}</TableCell>
-                    <TableCell className="text-right">{money(customer.lifetimeSpending)}</TableCell>
+                    <TableCell className="text-right">{formatVendorCurrency(customer.lifetimeSpending, currencyCode)}</TableCell>
                   </TableRow>
                 ))}
                 {customers.length === 0 && (

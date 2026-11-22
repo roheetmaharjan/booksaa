@@ -46,6 +46,11 @@ export async function GET(req, { params }) {
           },
         },
         businessHours: true,
+        settings: {
+          select: {
+            currencyCode: true,
+          },
+        },
         user: {
           select: {
             firstname: true,
@@ -90,6 +95,7 @@ export async function GET(req, { params }) {
       services: selectedLocation ? vendor.services.filter((service) => service.locationId === selectedLocation.id) : vendor.services,
       professionals: selectedLocation ? vendor.professionals.filter((professional) => professional.locationId === selectedLocation.id) : vendor.professionals,
       businessHours: selectedLocation ? vendor.businessHours.filter((hour) => hour.locationId === selectedLocation.id) : vendor.businessHours,
+      currencyCode: vendor.settings?.currencyCode || "USD",
       billingSummary: calculateBusinessSubscription({
         plan: vendor.plan,
         locations: vendor.locations,

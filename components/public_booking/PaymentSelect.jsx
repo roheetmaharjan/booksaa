@@ -5,6 +5,7 @@ import { Elements, PaymentElement, useElements, useStripe } from "@stripe/react-
 import { loadStripe } from "@stripe/stripe-js";
 
 import { Button } from "@/components/ui/button";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
 const stripePromises = new Map();
 
@@ -13,10 +14,6 @@ function getStripePromise(publishableKey) {
     stripePromises.set(publishableKey, loadStripe(publishableKey));
   }
   return stripePromises.get(publishableKey);
-}
-
-function formatCurrency(value, currencyCode) {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).format(Number(value || 0));
 }
 
 function CardPaymentForm({ amount, currencyCode, paymentRequirement, onConfirm, onBeforePayment, loading, error }) {
@@ -74,7 +71,7 @@ function CardPaymentForm({ amount, currencyCode, paymentRequirement, onConfirm, 
       <PaymentElement />
       {(cardError || error) && <p role="alert" className="text-sm text-red-600">{cardError || error}</p>}
       <Button type="submit" className="w-full sm:w-auto" disabled={!stripe || !elements || processing || loading}>
-        {processing || loading ? "Processing..." : `Pay ${paymentRequirement === "full" ? "total" : "deposit"} (${formatCurrency(amount, currencyCode)})`}
+        {processing || loading ? "Processing..." : `Pay ${paymentRequirement === "full" ? "total" : "deposit"} (${formatVendorCurrency(amount, currencyCode)})`}
       </Button>
     </form>
   );

@@ -20,6 +20,7 @@ import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, Command
 import { CustomerCreateFormContent } from "@/components/customers/CustomerCreateDialog";
 import { format, startOfDay, addMinutes, isAfter, isSameDay } from "date-fns";
 import { toast } from "sonner";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 // ─── constants ──────────────────────────────────────────────────────────────
 
 const DEFAULT_DURATION = 30;
@@ -73,11 +74,7 @@ function paymentLabel(service, currencyCode) {
   if (!service || service.prepaymentType === "pay_later") return "Pay later";
   if (service.prepaymentType === "full") return "Full payment";
   const value = Number(service.depositValue || 0);
-  return service.depositType === "fixed" ? `${formatCurrency(value, currencyCode)} deposit` : `${value}% deposit`;
-}
-
-function formatCurrency(value, currencyCode = "USD") {
-  return new Intl.NumberFormat("en-US", { style: "currency", currency: currencyCode }).format(Number(value || 0));
+  return service.depositType === "fixed" ? `${formatVendorCurrency(value, currencyCode)} deposit` : `${value}% deposit`;
 }
 
 // ─── sub-components ───────────────────────────────────────────────────────────
@@ -600,23 +597,23 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
               <div className="mt-4 text-sm pt-4 border-t">
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Subtotal</span>
-                  <span>{formatCurrency(bookingTotals.subtotal, currencyCode)}</span>
+                  <span>{formatVendorCurrency(bookingTotals.subtotal, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Taxes</span>
-                  <span>{formatCurrency(bookingTotals.taxAmount, currencyCode)}</span>
+                  <span>{formatVendorCurrency(bookingTotals.taxAmount, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Total</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.total, currencyCode)}</span>
+                  <span className="font-semibold text-slate-900">{formatVendorCurrency(bookingTotals.total, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Required deposit</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.requiredDeposit, currencyCode)}</span>
+                  <span className="font-semibold text-slate-900">{formatVendorCurrency(bookingTotals.requiredDeposit, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
                   <span className="text-slate-500">Remaining balance</span>
-                  <span className="font-semibold text-slate-900">{formatCurrency(bookingTotals.remainingBalance, currencyCode)}</span>
+                  <span className="font-semibold text-slate-900">{formatVendorCurrency(bookingTotals.remainingBalance, currencyCode)}</span>
                 </div>
               </div>
             </div>

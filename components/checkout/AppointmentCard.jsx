@@ -16,7 +16,7 @@ const accentByStage = {
   completed: "before:bg-status-completed",
 };
 
-export function AppointmentCard({ appt, active, onSelect, onCheckout, onDragStart, onDragEnd }) {
+export function AppointmentCard({ appt, active, onSelect, onCheckout, onDragStart, onDragEnd, currencyCode = "USD" }) {
   const [selectedBooking, setSelectedBooking] = useState(null);
   const [bookingDetailsOpen, setBookingDetailsOpen] = useState(false);
   const openBookingDetails = () => {
@@ -62,6 +62,7 @@ export function AppointmentCard({ appt, active, onSelect, onCheckout, onDragStar
         open={bookingDetailsOpen}
         onOpenChange={setBookingDetailsOpen}
         trigger={card}
+        currencyCode={currencyCode}
       />
   );
 }

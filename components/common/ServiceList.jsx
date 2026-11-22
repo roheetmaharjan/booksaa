@@ -10,6 +10,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { useFetch } from "@/hooks/useFetch";
 import { Card, CardContent, CardHeader } from "../ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
 export default function ServiceList({ vendorId, locationId, canManage = false }) {
   const [openAddService, setAddServiceOpen] = useState(false);
@@ -139,7 +140,7 @@ export default function ServiceList({ vendorId, locationId, canManage = false })
 
                     <TableCell>{service.description || "-"}</TableCell>
 
-                    <TableCell>$ {service.price}</TableCell>
+                    <TableCell>{formatVendorCurrency(service.price, vendor.currencyCode)}</TableCell>
 
                     <TableCell>{service.duration} min</TableCell>
 

@@ -426,7 +426,7 @@ export default function SettingsPage() {
                   </div>
                 </form>
               </TabsContent>
-              <TabsContent value="business-preferences" forceMount className="mt-0 min-w-0">
+              <TabsContent value="business-preferences" className="mt-0 min-w-0">
                 <BusinessSettingsForm slug={params.slug} />
               </TabsContent>
               <TabsContent value="profile" className="mt-0 min-w-0">
@@ -496,7 +496,7 @@ export default function SettingsPage() {
               <TabsContent value="billing">
                 <BillingUsage />
               </TabsContent>
-              <TabsContent value="notifications" forceMount className="mt-0 min-w-0">
+              <TabsContent value="notifications" className="mt-0 min-w-0">
                 <Notifications slug={params.slug} />
               </TabsContent>
             </Tabs>

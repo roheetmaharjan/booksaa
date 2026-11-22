@@ -439,6 +439,7 @@ export default function BookingsPage() {
         open={bookingDetailsOpen}
         onOpenChange={setBookingDetailsOpen}
         anchorPosition={bookingDetailsAnchor}
+        currencyCode={vendor?.currencyCode}
       />
 
       {/* New Appointment dialog — fully self-contained, just told where/when */}

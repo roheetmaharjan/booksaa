@@ -221,7 +221,7 @@ export default function CheckoutPage() {
               </h2>
               <div className="mt-3 space-y-2">
                 {items.map((item) => (
-                  <AppointmentCard key={item.id} appt={item} active={item.id === selectedId} onCheckout={openBookingCheckout} onDragStart={handleDragStart} onDragEnd={() => setDraggedAppointment(null)} />
+                  <AppointmentCard key={item.id} appt={item} active={item.id === selectedId} onCheckout={openBookingCheckout} onDragStart={handleDragStart} onDragEnd={() => setDraggedAppointment(null)} currencyCode={currencyCode} />
                 ))}
                 {!items.length && <p className="rounded-md border border-dashed border-border px-3 py-6 text-center text-xs text-muted-foreground">Nothing here</p>}
               </div>

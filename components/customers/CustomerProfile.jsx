@@ -11,6 +11,7 @@ import { Metric } from "./Metric";
 import { Info } from "./Info";
 import { EmptyRow } from "./EmptyRow";
 import NewAppointment from "@/components/common/NewAppointment";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
 function formatDate(value) {
   if (!value) return "-";
@@ -20,10 +21,6 @@ function formatDate(value) {
 function formatDateTime(value) {
   if (!value) return "-";
   return new Date(value).toLocaleString([], { dateStyle: "medium", timeStyle: "short" });
-}
-
-function money(value) {
-  return `$${Number(value || 0).toFixed(2)}`;
 }
 
 export function CustomerProfile({ customer, noteContent, setNoteContent, addNote, quickAction }) {
@@ -49,6 +46,7 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
   const effectiveLocationId = locationId || vendor?.selectedLocationId || vendor?.defaultLocationId || locations[0]?.id || "";
   const professionals = vendor?.professionals || [];
   const services = vendor?.services || [];
+  const money = (value) => formatVendorCurrency(value, vendor?.currencyCode);
 
   const [openProfessional, setOpenProfessional] = useState(false);
   // RBC resources — one per professional

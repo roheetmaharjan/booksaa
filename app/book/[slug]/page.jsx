@@ -14,16 +14,12 @@ import EmailVerification from "@/components/public_booking/EmailVerification";
 import GuestDetails from "@/components/public_booking/GuestDetails";
 import PaymentSelect from "@/components/public_booking/PaymentSelect";
 import ServiceSelect from "@/components/public_booking/ServiceSelect";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
 const flowStorageKey = "booksaa-guest-booking-flow";
 const bookingStateKey = "booksaa-booking-state";
 const serviceChargeRate = 0.1;
 const taxRate = 0.05;
-
-const formatCurrency = (amount, currencyCode = "USD") => new Intl.NumberFormat("en-US", {
-  style: "currency",
-  currency: currencyCode,
-}).format(amount);
 
 function formatBusinessDate(value, dateFormat = "DD/MM/YYYY") {
   const [year, month, day] = String(value || "").split("-");
@@ -493,7 +489,7 @@ export default function BookingServiceSelection() {
               <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
                 {services.map((service) => (
                   <article key={service.id} className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
-                    <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-slate-900">{service.name}</h3><span className="shrink-0 font-bold text-slate-900">{formatCurrency(service.price, business.currencyCode)}</span></div>
+                    <div className="flex items-start justify-between gap-3"><h3 className="font-semibold text-slate-900">{service.name}</h3><span className="shrink-0 font-bold text-slate-900">{formatVendorCurrency(service.price, business.currencyCode)}</span></div>
                     <p className="mt-2 text-xs text-slate-500">{service.duration} min · {service.prepaymentType === "deposit" ? "Deposit required" : service.prepaymentType === "full" ? "Full payment required" : "Pay at business"}</p>
                     {service.description && <p className="mt-2 text-sm leading-relaxed text-slate-600">{service.description}</p>}
                   </article>
@@ -583,22 +579,22 @@ export default function BookingServiceSelection() {
               <div className="mt-5 space-y-2 border-t border-slate-200 pt-4 text-sm">
                 <div className="flex items-center justify-between gap-4 text-slate-600">
                   <span>Service price</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(serviceSubtotal, business.currencyCode)}</span>
+                  <span className="font-medium text-slate-900">{formatVendorCurrency(serviceSubtotal, business.currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-slate-600">
                   <span>Service charge (10%)</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(serviceCharge, business.currencyCode)}</span>
+                  <span className="font-medium text-slate-900">{formatVendorCurrency(serviceCharge, business.currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between gap-4 text-slate-600">
                   <span>Taxes &amp; fees (VAT 5%)</span>
-                  <span className="font-medium text-slate-900">{formatCurrency(taxes, business.currencyCode)}</span>
+                  <span className="font-medium text-slate-900">{formatVendorCurrency(taxes, business.currencyCode)}</span>
                 </div>
                 <div className="flex items-baseline justify-between gap-4 border-t border-dashed border-slate-200 pt-3">
                   <div>
                     <span className="font-bold text-slate-900">Total amount</span>
                     <p className="text-[11px] text-slate-400">Includes taxes and service charge</p>
                   </div>
-                  <span className="text-xl font-black text-slate-900">{formatCurrency(totalAmount, business.currencyCode)}</span>
+                  <span className="text-xl font-black text-slate-900">{formatVendorCurrency(totalAmount, business.currencyCode)}</span>
                 </div>
               </div>
               <div className="mt-5 flex flex-col gap-4 border-t border-slate-100 pt-5">

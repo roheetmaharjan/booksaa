@@ -6,8 +6,9 @@ import { CreditCard, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Popover, PopoverAnchor, PopoverContent } from "@/components/ui/popover";
 import { Avatar } from "../customers/Avatar";
+import { formatVendorCurrency } from "@/lib/vendor-currency";
 
-export default function BookingDetailsPopover({ bookings, open, onOpenChange, onCheckout, trigger, anchorPosition }) {
+export default function BookingDetailsPopover({ bookings, open, onOpenChange, onCheckout, trigger, anchorPosition, currencyCode = "USD" }) {
   if (!bookings) return trigger || null;
 
   const services = Array.isArray(bookings.services)
@@ -57,7 +58,7 @@ export default function BookingDetailsPopover({ bookings, open, onOpenChange, on
           <span className="text-slate-300">|</span>
           <span>
             <span className="text-muted-foreground">Avg. visit: </span>
-            <b>${averageVisit}</b>
+            <b>{formatVendorCurrency(averageVisit, currencyCode)}</b>
           </span>
           <div className="ml-auto">{paymentStatus}</div>
         </div>
@@ -76,7 +77,7 @@ export default function BookingDetailsPopover({ bookings, open, onOpenChange, on
                     {service.start} - {service.end}
                   </div>
                 </div>
-                <div className="text-sm font-bold">${service.price} </div>
+                <div className="text-sm font-bold">{formatVendorCurrency(service.price, currencyCode)}</div>
                 <div>
                   <div className="flex flex-wrap items-center gap-2 mt-1" title={service.staff}>
                     <Avatar customer={{ fullName: service.staff }} />
