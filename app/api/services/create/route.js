@@ -1,9 +1,23 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { getVendorSettings } from "@/lib/business-settings";
+import { validateServicePaymentConfiguration } from "@/lib/booking-deposit";
 
 export async function POST(req) {
   try {
-    const { name, price, duration, description, color, vendorId, locationId, prepaymentType, depositType, depositValue } = await req.json();
+    const {
+      name,
+      price,
+      duration,
+      description,
+      color,
+      vendorId,
+      locationId,
+      prepaymentType: requestedPrepaymentType,
+      depositType: requestedDepositType,
+      depositValue: requestedDepositValue,
+      allowPayAtBusiness: requestedAllowPayAtBusiness,
+    } = await req.json();
 
     // Validate required fields
     if (!vendorId || !locationId) {
@@ -58,6 +72,26 @@ export async function POST(req) {
       );
     }
 
+    const vendorSettings = await getVendorSettings(vendorId);
+    const prepaymentType = requestedPrepaymentType ?? vendorSettings.defaultPrepaymentType;
+    const depositType = prepaymentType === "deposit"
+      ? requestedDepositType || "percentage"
+      : requestedDepositType;
+    const depositValue = prepaymentType === "deposit"
+      ? requestedDepositValue === undefined || requestedDepositValue === null || requestedDepositValue === ""
+        ? depositType === "percentage" || depositType === "percent"
+          ? vendorSettings.defaultDepositPercentage
+          : requestedDepositValue
+        : requestedDepositValue
+      : requestedDepositValue;
+    const paymentConfiguration = validateServicePaymentConfiguration({
+      price,
+      prepaymentType,
+      depositType,
+      depositValue,
+      allowPayAtBusiness: requestedAllowPayAtBusiness ?? vendorSettings.defaultAllowPayAtBusiness,
+    });
+
     const service = await prisma.service.create({
       data: {
         name,
@@ -67,15 +101,13 @@ export async function POST(req) {
         duration: parseFloat(duration),
         vendorId,
         locationId,
-        prepaymentType: ["full", "deposit", "pay_later"].includes(prepaymentType) ? prepaymentType : "pay_later",
-        depositType: prepaymentType === "deposit" ? depositType || "percent" : null,
-        depositValue: prepaymentType === "deposit" && depositValue !== "" ? Number(depositValue) : null,
+        ...paymentConfiguration,
       },
     });
 
     return NextResponse.json(service, { status: 201 });
   } catch (err) {
     console.error("Service create error:", err);
-    return NextResponse.json({ error: "Server error" }, { status: 500 });
+    return NextResponse.json({ error: err.message || "Server error" }, { status: err.status || 500 });
   }
 }

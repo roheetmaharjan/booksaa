@@ -10,6 +10,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { PriceField } from "@/components/common/PriceField";
@@ -49,8 +50,9 @@ export default function EditService({
     duration: "",
     locationId: "",
     prepaymentType: "pay_later",
-    depositType: "percent",
+    depositType: "percentage",
     depositValue: "",
+    allowPayAtBusiness: true,
   });
 
   useEffect(() => {
@@ -63,9 +65,14 @@ export default function EditService({
         price: service.price || "",
         duration: service.duration || "",
         locationId: service.locationId || "",
-        prepaymentType: service.prepaymentType || "pay_later",
-        depositType: service.depositType || "percent",
-        depositValue: service.depositValue ?? "",
+        prepaymentType: service.prepaymentType === "full"
+          ? "full"
+          : service.depositType
+            ? "deposit"
+            : service.prepaymentType || "pay_later",
+        depositType: service.depositType === "percent" ? "percentage" : service.depositType || (service.prepaymentType === "deposit" ? "percentage" : null),
+        depositValue: service.depositType ? service.depositValue ?? "" : "",
+        allowPayAtBusiness: service.allowPayAtBusiness ?? true,
       });
     }
   }, [service, setServiceForm]);
@@ -195,7 +202,12 @@ export default function EditService({
               <Label>Payment rule</Label>
               <Select
                 value={serviceForm.prepaymentType}
-                onValueChange={(value) => setServiceForm((prev) => ({ ...prev, prepaymentType: value }))}
+                onValueChange={(value) => setServiceForm((prev) => ({
+                  ...prev,
+                  prepaymentType: value,
+                  depositType: value === "deposit" ? prev.depositType || "percentage" : null,
+                  depositValue: value === "deposit" ? prev.depositValue : "",
+                }))}
               >
                 <SelectTrigger className="mt-1 bg-white">
                   <SelectValue placeholder="Select payment rule" />
@@ -219,7 +231,7 @@ export default function EditService({
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="percent">Percent</SelectItem>
+                      <SelectItem value="percentage">Percentage</SelectItem>
                       <SelectItem value="fixed">Fixed amount</SelectItem>
                     </SelectContent>
                   </Select>
@@ -230,7 +242,8 @@ export default function EditService({
                     id="depositValue"
                     name="depositValue"
                     type="number"
-                    min="0"
+                    min="0.01"
+                    max={serviceForm.depositType === "fixed" ? serviceForm.price : "100"}
                     step="0.01"
                     value={serviceForm.depositValue}
                     onChange={handleServiceChange}
@@ -240,6 +253,14 @@ export default function EditService({
                 </div>
               </div>
             )}
+            <div className="flex items-center justify-between gap-4">
+              <Label htmlFor="allowPayAtBusiness">Allow pay at business for this service</Label>
+              <Switch
+                id="allowPayAtBusiness"
+                checked={serviceForm.allowPayAtBusiness}
+                onCheckedChange={(value) => setServiceForm((current) => ({ ...current, allowPayAtBusiness: value }))}
+              />
+            </div>
           </div>
           <DialogFooter className="mt-4">
             <Button variant="secondary">Cancel</Button>

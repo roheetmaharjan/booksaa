@@ -22,6 +22,7 @@ export default function AdminHeader({startTransition}) {
         <nav className="hidden md:flex flex-row gap-3">
           <button className="flex gap-2 items-center" onClick={handleNav("/admin")}><SquaresFourIcon size={25} weight="duotone"/>Dashboard</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/users")}><UsersIcon size={25} weight="duotone" /> Users</button>
+          <button className="flex gap-2 items-center" onClick={handleNav("/admin/forms")}><ClipboardList size={21} /> Forms</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/demo-requests")}><ClipboardList size={21} /> Demo Requests</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/settings")}><GearIcon size={25} weight="duotone" /> Settings</button>
           <button className="flex gap-2 items-center" onClick={handleNav("/admin/reports")}><ChartBarIcon size={25} weight="duotone" /> Reports</button>

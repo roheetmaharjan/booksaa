@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { validateServicePaymentConfiguration } from "@/lib/booking-deposit";
 
 export async function DELETE(req, { params }) {
   const { id } = await params;
@@ -29,11 +30,37 @@ export async function PATCH(req, { params }) {
   }
 
   try {
-    const { name, description, price, duration, color, locationId, prepaymentType, depositType, depositValue } = await req.json();
+    const {
+      name,
+      description,
+      price,
+      duration,
+      color,
+      locationId,
+      prepaymentType: requestedPrepaymentType,
+      depositType: requestedDepositType,
+      depositValue: requestedDepositValue,
+      allowPayAtBusiness: requestedAllowPayAtBusiness,
+    } = await req.json();
     
     if (!name || !price || !duration) {
       return NextResponse.json({ error: "Missing required fields" }, { status: 400 });
     }
+
+    const existingService = await prisma.service.findUnique({
+      where: { id },
+    });
+    if (!existingService) {
+      return NextResponse.json({ error: "Service not found" }, { status: 404 });
+    }
+
+    const paymentConfiguration = validateServicePaymentConfiguration({
+      price,
+      prepaymentType: requestedPrepaymentType ?? existingService.prepaymentType,
+      depositType: requestedPrepaymentType === undefined ? existingService.depositType : requestedDepositType,
+      depositValue: requestedPrepaymentType === undefined ? existingService.depositValue : requestedDepositValue,
+      allowPayAtBusiness: requestedAllowPayAtBusiness ?? existingService.allowPayAtBusiness,
+    });
 
     const updatedService = await prisma.service.update({
       where: { id },
@@ -44,9 +71,7 @@ export async function PATCH(req, { params }) {
         price: Number(price),
         duration: Number(duration),
         locationId: locationId || undefined,
-        prepaymentType: ["full", "deposit", "pay_later"].includes(prepaymentType) ? prepaymentType : "pay_later",
-        depositType: prepaymentType === "deposit" ? depositType || "percent" : null,
-        depositValue: prepaymentType === "deposit" && depositValue !== "" ? Number(depositValue) : null,
+        ...paymentConfiguration,
       },
     });
 

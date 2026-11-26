@@ -4,6 +4,7 @@ import { prisma } from "@/lib/prisma";
 import { getVerifiedEmail } from "@/lib/guest-booking-otp";
 import { getEffectivePaymentRequirement, getGuestBookingSelection, getRequiredDeposit, hashVerificationToken } from "@/lib/public-booking";
 import { DEFAULT_VENDOR_SETTINGS, getZonedDayBounds, isBookingWithinWindow } from "@/lib/business-settings";
+import { roundCurrencyAmount, toMinorCurrencyUnits } from "@/lib/booking-deposit";
 
 export async function POST(request, { params }) {
   try {
@@ -28,6 +29,8 @@ export async function POST(request, { params }) {
             depositsEnabled: true,
             currencyCode: true,
             timeZone: true,
+            cashPaymentsEnabled: true,
+            payAtBusinessEnabled: true,
             minAdvanceNoticeMinutes: true,
             maxAdvanceBookingDays: true,
           },
@@ -56,8 +59,10 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: "The selected service is no longer available." }, { status: 404 });
     }
 
-    const paymentRequirement = getEffectivePaymentRequirement(service, settings);
-    const deposit = getRequiredDeposit({ ...service, prepaymentType: paymentRequirement }, settings);
+    const paymentAmount = roundCurrencyAmount(service.price, settings.currencyCode);
+    const bookingService = { ...service, price: paymentAmount };
+    const paymentRequirement = getEffectivePaymentRequirement(bookingService, settings);
+    const deposit = getRequiredDeposit({ ...bookingService, prepaymentType: paymentRequirement }, settings);
     if (!Number.isFinite(deposit) || deposit <= 0) {
       return NextResponse.json({ success: false, message: "This service does not require a deposit." }, { status: 400 });
     }
@@ -125,7 +130,7 @@ export async function POST(request, { params }) {
 
     const stripe = new Stripe(vendor.stripeSecretKey, { apiVersion: "2023-10-16" });
     const paymentIntent = await stripe.paymentIntents.create({
-      amount: Math.round(deposit * 100),
+      amount: toMinorCurrencyUnits(deposit, settings.currencyCode),
       currency: settings.currencyCode.toLowerCase(),
       receipt_email: verifiedEmail,
       description: `Guest booking deposit: ${service.name}`,
@@ -133,6 +138,11 @@ export async function POST(request, { params }) {
         guestBooking: "true",
         vendorId: vendor.id,
         serviceId: service.id,
+        paymentAmount: String(paymentAmount),
+        paymentRequirement,
+        depositAmount: String(deposit),
+        depositType: service.depositType || "",
+        depositValue: service.depositValue === null ? "" : String(service.depositValue),
         locationId: selection.locationId,
         professionalId: selection.professionalId || "",
         date: selection.date,
@@ -147,6 +157,7 @@ export async function POST(request, { params }) {
       clientSecret: paymentIntent.client_secret,
       publishableKey: vendor.stripePublishableKey,
       depositAmount: deposit,
+      paymentRequirement,
       currencyCode: settings.currencyCode,
     });
   } catch (error) {

@@ -41,7 +41,7 @@ function customerPayload(body) {
 }
 
 function bookingAmount(booking) {
-  return Number(booking.paymentAmount || booking.service?.price || 0);
+  return Number(booking.paymentAmount ?? booking.service?.price ?? 0);
 }
 
 function buildStats(customers) {

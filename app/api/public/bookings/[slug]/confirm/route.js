@@ -7,6 +7,7 @@ import { getVerifiedEmail } from "@/lib/guest-booking-otp";
 import { sendGuestBookingConfirmationEmail } from "@/lib/emails/guestBooking";
 import { getGuestBookingSelection, getRequiredDeposit, getEffectivePaymentRequirement, hashVerificationToken } from "@/lib/public-booking";
 import { DEFAULT_VENDOR_SETTINGS, getZonedDayBounds, isBookingWithinWindow } from "@/lib/business-settings";
+import { roundCurrencyAmount, toMinorCurrencyUnits } from "@/lib/booking-deposit";
 
 function getMinutes(value) {
   const [hours, minutes] = value.split(":").map(Number);
@@ -84,26 +85,40 @@ export async function POST(request, { params }) {
       return NextResponse.json({ success: false, message: "The selected service is no longer available." }, { status: 404 });
     }
 
-    const paymentRequirement = getEffectivePaymentRequirement(service, settings);
-    const deposit = getRequiredDeposit({ ...service, prepaymentType: paymentRequirement }, settings);
-    if (!Number.isFinite(deposit) || deposit < 0) {
+    let paymentAmount = roundCurrencyAmount(Number(service.price), settings.currencyCode);
+    let paymentRequirement = getEffectivePaymentRequirement({ ...service, price: paymentAmount }, settings);
+    let deposit = getRequiredDeposit({ ...service, price: paymentAmount }, settings);
+    if (!Number.isFinite(paymentAmount) || paymentAmount < 0 || !Number.isFinite(deposit) || deposit < 0) {
       return NextResponse.json({ success: false, message: "The service payment requirement is invalid." }, { status: 400 });
     }
 
     let stripePaymentIntentId = null;
-    if (deposit > 0) {
-      if (!body.paymentIntentId || !vendor.stripeSecretKey) {
-        return NextResponse.json({ success: false, message: "Complete the required deposit payment to confirm this booking." }, { status: 400 });
+    if (body.paymentIntentId) {
+      if (!vendor.stripeSecretKey) {
+        return NextResponse.json({ success: false, message: "Card payments are not configured for this business." }, { status: 503 });
       }
-
       stripeClient = new Stripe(vendor.stripeSecretKey, { apiVersion: "2023-10-16" });
       const paymentIntent = await stripeClient.paymentIntents.retrieve(body.paymentIntentId);
       const metadata = paymentIntent.metadata || {};
-      const expectedCurrency = metadata.currencyCode?.toLowerCase() || "usd";
+      const expectedCurrencyCode = metadata.currencyCode || settings.currencyCode;
+      const expectedCurrency = expectedCurrencyCode.toLowerCase();
+      const hasPaymentSnapshot = metadata.paymentAmount !== undefined
+        && metadata.depositAmount !== undefined
+        && metadata.paymentRequirement !== undefined;
+      const snapshotPaymentAmount = hasPaymentSnapshot ? Number(metadata.paymentAmount) : paymentAmount;
+      const snapshotDeposit = hasPaymentSnapshot ? Number(metadata.depositAmount) : deposit;
+      const snapshotRequirement = hasPaymentSnapshot ? metadata.paymentRequirement : paymentRequirement;
+      const validSnapshot = Number.isFinite(snapshotPaymentAmount)
+        && snapshotPaymentAmount >= 0
+        && Number.isFinite(snapshotDeposit)
+        && snapshotDeposit > 0
+        && snapshotDeposit <= snapshotPaymentAmount
+        && ["deposit", "full"].includes(snapshotRequirement);
       const paymentMatches =
+        validSnapshot &&
         paymentIntent.status === "succeeded" &&
         paymentIntent.currency === expectedCurrency &&
-        paymentIntent.amount === Math.round(deposit * 100) &&
+        paymentIntent.amount === toMinorCurrencyUnits(snapshotDeposit, expectedCurrencyCode) &&
         metadata.guestBooking === "true" &&
         metadata.vendorId === vendor.id &&
         metadata.serviceId === service.id &&
@@ -146,10 +161,13 @@ export async function POST(request, { params }) {
         return NextResponse.json({ success: true, booking: existingPaymentBooking, emailSent, emailError });
       }
 
+      paymentAmount = roundCurrencyAmount(snapshotPaymentAmount, expectedCurrencyCode);
+      deposit = roundCurrencyAmount(snapshotDeposit, expectedCurrencyCode);
+      paymentRequirement = snapshotRequirement;
       paymentIntentToRefund = paymentIntent.id;
       stripePaymentIntentId = paymentIntent.id;
-    } else if (body.paymentIntentId) {
-      return NextResponse.json({ success: false, message: "This service does not require a card payment." }, { status: 400 });
+    } else if (deposit > 0) {
+      return NextResponse.json({ success: false, message: "Complete the required deposit payment to confirm this booking." }, { status: 400 });
     }
 
     const professional = selection.professionalId
@@ -257,7 +275,7 @@ export async function POST(request, { params }) {
         });
       }
 
-      const paidAmount = deposit > 0 ? Math.round(deposit * 100) / 100 : 0;
+      const paidAmount = deposit > 0 ? roundCurrencyAmount(deposit, settings.currencyCode) : 0;
       const booking = await transaction.bookings.create({
         data: {
           date: selection.scheduledAt,
@@ -275,10 +293,11 @@ export async function POST(request, { params }) {
           customerPhone: phone,
           status: settings.manualBookingApproval ? "PENDING" : "CONFIRMED",
           paymentRequirement: paymentRequirement || "pay_later",
-          paymentAmount: service.price,
-          paymentStatus: paidAmount >= service.price ? "PAID" : paidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID",
+          paymentAmount,
+          depositAmount: deposit,
+          paymentStatus: paidAmount >= paymentAmount ? "PAID" : paidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID",
           paidAmount,
-          remainingBalance: Math.max(0, Number(service.price) - paidAmount),
+          remainingBalance: Math.max(0, paymentAmount - paidAmount),
           stripePaymentIntentId,
           paymentGroupId: randomUUID(),
           payments: paidAmount > 0
@@ -286,7 +305,7 @@ export async function POST(request, { params }) {
                 create: {
                   amount: paidAmount,
                   method: "CARD",
-                  type: paidAmount >= service.price ? "BALANCE" : "DEPOSIT",
+                  type: paidAmount >= paymentAmount ? "BALANCE" : "DEPOSIT",
                   status: "PAID",
                 },
               }

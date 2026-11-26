@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { useState, useEffect, useCallback } from "react";
 import { useParams } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { calculateBookingTotals } from "@/lib/booking-deposit";
+import { calculateBookingTotals, getEffectivePaymentRequirement } from "@/lib/booking-deposit";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -140,6 +140,12 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
   const params = useParams();
   const [bookingForm, setBookingForm] = useState(() => getEmptyBooking());
   const [currencyCode, setCurrencyCode] = useState("USD");
+  const [paymentSettings, setPaymentSettings] = useState({
+    onlinePaymentsEnabled: true,
+    cashPaymentsEnabled: true,
+    payAtBusinessEnabled: true,
+    depositsEnabled: true,
+  });
   const [depositReviewOpen, setDepositReviewOpen] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState(null);
   const [submittingBooking, setSubmittingBooking] = useState(false);
@@ -164,7 +170,10 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Unable to load business currency.");
-        if (active) setCurrencyCode(data.settings.currencyCode);
+        if (active) {
+          setCurrencyCode(data.settings.currencyCode);
+          setPaymentSettings(data.settings);
+        }
       })
       .catch((error) => {
         if (active) toast.error(error.message || "Unable to load business currency.");
@@ -200,13 +209,20 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
     setCustomerError("");
   }, [open, initialStart, initialProfessionalId, initialCustomer, professionals, services]);
 
-  const selectedServices = services.filter((service) => (bookingForm.serviceIds || []).includes(service.id));
+  const servicesWithPaymentRules = services.map((service) => ({
+    ...service,
+    prepaymentType: getEffectivePaymentRequirement(service, paymentSettings),
+  }));
+  const selectedServices = servicesWithPaymentRules.filter((service) => (bookingForm.serviceIds || []).includes(service.id));
   const selectedService = selectedServices[0] || null;
 
   const minStartTime = isSameDay(combineDateAndTime(bookingForm.date, "00:00"), new Date()) ? toTimeString(getNextBookableDate()) : undefined;
-  const bookingTotals = calculateBookingTotals(selectedServices, { taxRate: DEFAULT_TAX_RATE });
+  const bookingTotals = calculateBookingTotals(selectedServices, { taxRate: DEFAULT_TAX_RATE, currencyCode });
 
-  const requiresDeposit = selectedServices.some((service) => service.prepaymentType !== "pay_later");
+  const requiresUpfrontPayment = selectedServices.some((service) => service.prepaymentType !== "pay_later");
+  const requiredPaymentLabel = selectedServices.some((service) => service.prepaymentType === "full")
+    ? "Required upfront payment"
+    : "Required deposit";
 
   const loadCustomers = useCallback(async () => {
     try {
@@ -355,7 +371,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       setCustomerError("");
 
       // Pay-later services can be booked immediately.
-      if (!requiresDeposit) {
+      if (!requiresUpfrontPayment) {
         handleCreateBooking("pay_later");
         return;
       }
@@ -364,7 +380,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
       setSelectedPaymentMethod(null);
       setDepositReviewOpen(true);
     },
-    [bookingForm.customerId, bookingForm.serviceIds, requiresDeposit, handleCreateBooking],
+    [bookingForm.customerId, bookingForm.serviceIds, requiresUpfrontPayment, handleCreateBooking],
   );
 
   // recalc end time when the selected services change
@@ -535,7 +551,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                     </div>
                   ) : (
                     <div className="flex flex-col rounded-md max-h-[400px] overflow-auto">
-                      {services.map((svc) => (
+                      {servicesWithPaymentRules.map((svc) => (
                         <ServiceCard
                           key={svc.id}
                           service={svc}
@@ -559,7 +575,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                 Cancel
               </Button>
               <Button type="submit" disabled={submittingBooking}>
-                {submittingBooking ? "Booking…" : requiresDeposit ? "Continue to payment" : "Confirm booking"}
+                {submittingBooking ? "Booking…" : requiresUpfrontPayment ? "Continue to payment" : "Confirm booking"}
               </Button>
             </DialogFooter>
           </form>
@@ -608,7 +624,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
                   <span className="font-semibold text-slate-900">{formatVendorCurrency(bookingTotals.total, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
-                  <span className="text-slate-500">Required deposit</span>
+                  <span className="text-slate-500">{requiredPaymentLabel}</span>
                   <span className="font-semibold text-slate-900">{formatVendorCurrency(bookingTotals.requiredDeposit, currencyCode)}</span>
                 </div>
                 <div className="flex items-center justify-between py-1">
@@ -621,7 +637,7 @@ export default function NewAppointment({ open, onOpenChange, onBookingSuccess, i
             <div className="space-y-2">
               <div className="rounded-md border border-slate-200 p-4">
                 <p className="text-[11px] font-semibold uppercase text-slate-900">Payment method</p>
-                <p className="mt-1 text-xs text-slate-500">Select one payment method to collect the required deposit.</p>
+                <p className="mt-1 text-xs text-slate-500">Select one payment method to collect the required upfront amount.</p>
 
                 <div className="mt-3 space-y-2">
                   {PAYMENT_METHODS.map((option) => {

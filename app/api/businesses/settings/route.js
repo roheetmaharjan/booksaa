@@ -12,6 +12,7 @@ const booleanFields = [
   "onlinePaymentsEnabled",
   "payAtBusinessEnabled",
   "depositsEnabled",
+  "defaultAllowPayAtBusiness",
   "notifyNewBooking",
   "notifyBookingConfirmation",
   "notifyBookingCancellation",
@@ -19,7 +20,7 @@ const booleanFields = [
   "notifyPaymentConfirmation",
 ];
 
-const stringFields = ["businessEmail", "website", "countryCode", "currencyCode", "timeZone", "dateFormat", "timeFormat", "paymentInstructions"];
+const stringFields = ["businessEmail", "website", "countryCode", "currencyCode", "timeZone", "dateFormat", "timeFormat", "paymentInstructions", "defaultPrepaymentType"];
 
 function badRequest(message) {
   return NextResponse.json({ error: message }, { status: 400 });
@@ -74,6 +75,7 @@ function validateSettings(input) {
     if (field === "timeZone" && !isSupportedTimeZone(value)) return { error: "Select a valid IANA timezone." };
     if (field === "dateFormat" && !["DD/MM/YYYY", "MM/DD/YYYY", "YYYY-MM-DD"].includes(value)) return { error: "Select a supported date format." };
     if (field === "timeFormat" && !["12h", "24h"].includes(value)) return { error: "Select a supported time format." };
+    if (field === "defaultPrepaymentType" && !["pay_later", "deposit", "full"].includes(value)) return { error: "Select a supported default payment rule." };
     if (field === "paymentInstructions" && value.length > 2000) return { error: "Payment instructions must be 2000 characters or fewer." };
     settings[field] = value || null;
   }
@@ -175,6 +177,13 @@ export async function PUT(request) {
     const vendor = await getVendorFromSession(request);
     const validation = validateSettings(await request.json());
     if (validation.error) return badRequest(validation.error);
+
+    const currentSettings = await getVendorSettings(vendor.id);
+    const nextSettings = { ...currentSettings, ...validation.settings };
+    if (nextSettings.defaultPrepaymentType === "deposit"
+      && !(Number(nextSettings.defaultDepositPercentage) > 0)) {
+      return badRequest("Set a default deposit percentage before choosing deposits as the default payment rule.");
+    }
 
     const settings = await updateVendorSettings(vendor.id, validation.settings);
     return NextResponse.json({ settings });

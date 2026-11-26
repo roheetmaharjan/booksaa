@@ -2,25 +2,10 @@ import { prisma } from "@/lib/prisma";
 import { getCurrentSession } from "@/lib/auth";
 import { createCustomerCode, findCustomerDuplicates, getCurrentVendorOrThrow, normalizeEmail, normalizePhone } from "@/lib/customer-crm";
 import { getVendorSettings, zonedDateTimeToDate } from "@/lib/business-settings";
+import { getEffectivePaymentRequirement, getRequiredDeposit } from "@/lib/public-booking";
+import { roundCurrencyAmount } from "@/lib/booking-deposit";
 import { sendPaymentLinkEmail, sendBookingConfirmationEmail } from "@/lib/emails/sendBookingEmails";
 import { BookingStatus } from "@/constants/enums";
-
-// Helper to calculate deposit required for a service
-function getDepositRequired(service, settings) {
-  if (service.prepaymentType === "full") {
-    return service.price;
-  }
-  if (service.prepaymentType === "deposit") {
-    if (!settings.depositsEnabled || (!settings.onlinePaymentsEnabled && (settings.payAtBusinessEnabled || settings.cashPaymentsEnabled))) return 0;
-    if (service.depositType === "fixed") {
-      return Number(service.depositValue || 0);
-    }
-    if (service.depositType === "percent") {
-      return service.price * (Number(service.depositValue || 0) / 100);
-    }
-  }
-  return 0;
-}
 
 function formatTimeInTimeZone(date, timeZone) {
   const parts = new Intl.DateTimeFormat("en-US", {
@@ -194,18 +179,20 @@ export async function POST(req) {
     let totalAmount = 0;
     let totalDepositRequired = 0;
     const servicesPaymentInfo = services.map((svc) => {
-      const deposit = getDepositRequired(svc, vendorSettings);
-      totalAmount += svc.price;
+      const price = roundCurrencyAmount(svc.price, vendorSettings.currencyCode);
+      const bookingService = { ...svc, price };
+      const paymentRequirement = getEffectivePaymentRequirement(bookingService, vendorSettings);
+      const deposit = getRequiredDeposit(bookingService, vendorSettings);
+      totalAmount = roundCurrencyAmount(totalAmount + price, vendorSettings.currencyCode);
       totalDepositRequired += deposit;
       return {
         serviceId: svc.id,
-        price: svc.price,
+        price,
         depositRequired: deposit,
-        prepaymentType: svc.prepaymentType,
+        paymentRequirement,
       };
     });
-
-    const totalRemainingBalance = totalAmount - totalDepositRequired;
+    totalDepositRequired = roundCurrencyAmount(totalDepositRequired, vendorSettings.currencyCode);
 
     // Group ID to link these bookings
     const paymentGroupId = Math.random().toString(36).substring(2, 10).toUpperCase();
@@ -221,10 +208,10 @@ export async function POST(req) {
     if (paymentOption === "pay_at_business" && !vendorSettings.payAtBusinessEnabled) {
       return Response.json({ error: "Pay-at-business is disabled for this business." }, { status: 400 });
     }
-    let targetBookingStatus = "CONFIRMED";
-    let targetPaymentStatus = "UNPAID";
-    let paidAmount = 0;
-    let remainingBalance = totalAmount;
+    if (paymentOption === "pay_at_business" && services.some((service) => !service.allowPayAtBusiness)) {
+      return Response.json({ error: "Pay-at-business is disabled for one or more selected services." }, { status: 400 });
+    }
+    let targetBookingStatus;
     let paymentMethod = null;
     let stripePaymentIntentId = body.stripePaymentIntentId || null;
     let paymentLink = null;
@@ -232,30 +219,18 @@ export async function POST(req) {
 
     if (paymentOption === "collect_now_cash") {
       targetBookingStatus = "CONFIRMED";
-      paidAmount = totalDepositRequired > 0 ? totalDepositRequired : totalAmount; // Default to paying deposit, or full if no deposit
-      remainingBalance = totalAmount - paidAmount;
-      targetPaymentStatus = paidAmount >= totalAmount ? "PAID" : (paidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID");
       paymentMethod = "CASH";
     } else if (paymentOption === "collect_now_card") {
       targetBookingStatus = "CONFIRMED";
-      paidAmount = totalDepositRequired > 0 ? totalDepositRequired : totalAmount;
-      remainingBalance = totalAmount - paidAmount;
-      targetPaymentStatus = paidAmount >= totalAmount ? "PAID" : (paidAmount > 0 ? "PARTIALLY_PAID" : "UNPAID");
       paymentMethod = "CARD";
     } else if (paymentOption === "send_link") {
       targetBookingStatus = "CONFIRMED";
-      targetPaymentStatus = totalDepositRequired > 0 ? "PARTIALLY_PAID" : "UNPAID";
-      paidAmount = 0;
-      remainingBalance = totalAmount;
       paymentLinkExpiresAt = new Date(Date.now() + 30 * 60 * 1000); // 30 minutes
       const origin = req.headers.get("origin") || "http://localhost:3000";
       paymentLink = `${origin}/pay/${paymentGroupId}`;
     } else {
       // pay_later (standard when no prepayment is required)
       targetBookingStatus = "PENDING_PAYMENT";
-      targetPaymentStatus = "UNPAID";
-      paidAmount = 0;
-      remainingBalance = totalAmount;
       paymentMethod = "PAY_LATER";
     }
 
@@ -265,14 +240,22 @@ export async function POST(req) {
 
     for (let i = 0; i < services.length; i++) {
       const svc = services[i];
+      const servicePaymentInfo = servicesPaymentInfo.find((item) => item.serviceId === svc.id);
       const duration = svc.duration || 30;
       const scheduledEnd = new Date(currentStartTime.getTime() + duration * 60 * 1000);
 
-      // Distribute payment amounts proportionally to the service price
-      const serviceWeight = svc.price / (totalAmount || 1);
-      const svcPaidAmount = paidAmount * serviceWeight;
-      const svcRemainingBalance = svc.price - svcPaidAmount;
-      const svcDeposit = getDepositRequired(svc, vendorSettings);
+      const collectNow = paymentOption === "collect_now_cash" || paymentOption === "collect_now_card";
+      const svcPaidAmount = collectNow
+        ? totalDepositRequired > 0
+          ? servicePaymentInfo.depositRequired
+          : servicePaymentInfo.price
+        : 0;
+      const svcRemainingBalance = roundCurrencyAmount(Math.max(0, servicePaymentInfo.price - svcPaidAmount), vendorSettings.currencyCode);
+      const svcPaymentStatus = svcPaidAmount >= servicePaymentInfo.price
+        ? "PAID"
+        : svcPaidAmount > 0
+          ? "PARTIALLY_PAID"
+          : "UNPAID";
 
       // Format start and end time strings (HH:mm)
       const startTimeStr = formatTimeInTimeZone(currentStartTime, vendorSettings.timeZone);
@@ -295,9 +278,10 @@ export async function POST(req) {
           customerPhone: phone,
           notes: body.notes || null,
           status: targetBookingStatus,
-          paymentRequirement: svc.prepaymentType,
-          paymentAmount: svc.price,
-          paymentStatus: targetPaymentStatus,
+          paymentRequirement: servicePaymentInfo.paymentRequirement,
+          paymentAmount: servicePaymentInfo.price,
+          depositAmount: servicePaymentInfo.depositRequired,
+          paymentStatus: svcPaymentStatus,
           paidAmount: svcPaidAmount,
           remainingBalance: svcRemainingBalance,
           stripePaymentIntentId,
@@ -308,7 +292,7 @@ export async function POST(req) {
             create: {
               amount: svcPaidAmount,
               method: paymentMethod,
-              type: svcPaidAmount < svc.price ? "DEPOSIT" : "BALANCE",
+              type: svcPaidAmount < servicePaymentInfo.price ? "DEPOSIT" : "BALANCE",
               status: "PAID",
             },
           } : undefined,

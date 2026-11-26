@@ -7,9 +7,7 @@
     "dev": "next dev -p 3000 --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
-    "postinstall": "prisma generate",
-    "seed": "node ./prisma/seedAll.js"
+    "lint": "next lint"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.1135.0",

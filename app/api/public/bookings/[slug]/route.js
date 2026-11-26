@@ -88,6 +88,7 @@ export async function GET(request, { params }) {
                 depositValue: true,
                 depositType: true,
                 prepaymentType: true,
+                allowPayAtBusiness: true,
               },
             }
           : false,

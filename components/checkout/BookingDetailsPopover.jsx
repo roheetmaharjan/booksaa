@@ -19,7 +19,7 @@ export default function BookingDetailsPopover({ bookings, open, onOpenChange, on
           ...bookings.service,
           bookingId: bookings.id,
           staff: bookings.professional?.name || "Unassigned",
-          price: Number(bookings.service.price || bookings.paymentAmount || 0),
+          price: Number(bookings.paymentAmount ?? bookings.service.price ?? 0),
           duration: bookings.service.duration || 30,
           start: bookings.startTime || "",
           end: bookings.endTime || "",

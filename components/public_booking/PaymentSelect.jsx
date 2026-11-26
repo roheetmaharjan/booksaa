@@ -109,7 +109,7 @@ export default function PaymentSelect({
             <CardPaymentForm
               amount={paymentSetup.depositAmount}
               currencyCode={currencyCode}
-              paymentRequirement={service.prepaymentType}
+              paymentRequirement={paymentSetup.paymentRequirement || service.prepaymentType}
               onConfirm={onPaymentSuccess}
               onBeforePayment={onBeforePayment}
               loading={loading}

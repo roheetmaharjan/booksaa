@@ -40,6 +40,20 @@ You can start editing the page by modifying `app/page.js`. The page auto-updates
 
 This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
 
+## Form Service integration
+
+Booksaa administrators can open the Form Service builder from **Admin → Forms**. Configure these server-only variables in Booksaa (do not prefix them with `NEXT_PUBLIC_`):
+
+```env
+FORM_SERVICE_URL=http://localhost:4000
+FORM_SERVICE_PARTNER_CLIENT_ID=<Booksaa partner client ID>
+FORM_SERVICE_PARTNER_CLIENT_SECRET=<Booksaa partner client secret>
+```
+
+In the Form Service platform admin, generate the Booksaa partner API credentials, enable API access, and ensure the partner has enabled access and an eligible subscription. Copy the client ID and one-time client secret into Booksaa's private environment, then restart both apps. The Form Service derives the tenant ID from the credential; do not configure or send `X-Company-Id` from Booksaa.
+
+Set `FORM_SERVICE_PUBLIC_URL` in the Form Service to its browser-accessible URL. Use HTTPS for deployed environments. The Booksaa integration keeps partner credentials on the server and creates a short-lived builder session for the signed-in Booksaa administrator.
+
 ## Learn More
 
 To learn more about Next.js, take a look at the following resources:

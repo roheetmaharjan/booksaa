@@ -43,6 +43,8 @@ const preferenceFields = [
   "payAtBusinessEnabled",
   "depositsEnabled",
   "defaultDepositPercentage",
+  "defaultPrepaymentType",
+  "defaultAllowPayAtBusiness",
   "paymentInstructions",
 ];
 
@@ -263,23 +265,41 @@ export default function BusinessSettingsForm({ slug }) {
       <Card>
         <CardHeader>
           <CardTitle>Payment settings</CardTitle>
-          <CardDescription>These preferences complement your existing Stripe connection and per-service payment configuration.</CardDescription>
+          <CardDescription>Payment methods apply globally. Defaults apply only when creating new services.</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <SettingSwitch id="cashPaymentsEnabled" label="Cash payments" description="Accept cash payments for appointments." checked={settings.cashPaymentsEnabled} onCheckedChange={(value) => update("cashPaymentsEnabled", value)} />
           <SettingSwitch id="onlinePaymentsEnabled" label="Online payments" description="Allow card payments when Stripe is connected." checked={settings.onlinePaymentsEnabled} onCheckedChange={(value) => update("onlinePaymentsEnabled", value)} />
           <SettingSwitch id="payAtBusinessEnabled" label="Pay at business" description="Allow customers to pay in person at your location." checked={settings.payAtBusinessEnabled} onCheckedChange={(value) => update("payAtBusinessEnabled", value)} />
-          <SettingSwitch id="depositsEnabled" label="Deposits" description="Allow deposits configured for individual services." checked={settings.depositsEnabled} onCheckedChange={(value) => update("depositsEnabled", value)} />
+          <SettingSwitch id="depositsEnabled" label="Deposits" description="Allow collection of deposits configured on individual services." checked={settings.depositsEnabled} onCheckedChange={(value) => update("depositsEnabled", value)} />
           <div className="grid gap-5 md:grid-cols-2">
             <div className="space-y-2">
               <Label htmlFor="defaultDepositPercentage">Default deposit percentage</Label>
               <Input id="defaultDepositPercentage" type="number" min="0" max="100" step="0.1" value={settings.defaultDepositPercentage ?? ""} onChange={(event) => update("defaultDepositPercentage", event.target.value === "" ? null : Number(event.target.value))} placeholder="Optional" />
-              <p className="text-xs text-muted-foreground">Used as the starting value when creating a service deposit.</p>
+              <p className="text-xs text-muted-foreground">Prefills the deposit amount for new services using a percentage deposit.</p>
             </div>
             <div className="space-y-2">
-              <Label htmlFor="paymentInstructions">Payment instructions</Label>
-              <Textarea id="paymentInstructions" maxLength={2000} value={settings.paymentInstructions || ""} onChange={(event) => update("paymentInstructions", event.target.value)} placeholder="Instructions shown to customers" />
+              <Label htmlFor="defaultPrepaymentType">Default payment rule for new services</Label>
+              <Select value={settings.defaultPrepaymentType} onValueChange={(value) => update("defaultPrepaymentType", value)}>
+                <SelectTrigger id="defaultPrepaymentType"><SelectValue /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pay_later">Pay later</SelectItem>
+                  <SelectItem value="deposit">Deposit</SelectItem>
+                  <SelectItem value="full">Full prepayment</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
+          </div>
+          <SettingSwitch
+            id="defaultAllowPayAtBusiness"
+            label="Allow pay at business by default"
+            description="Used for new services only; existing service settings are unchanged."
+            checked={settings.defaultAllowPayAtBusiness}
+            onCheckedChange={(value) => update("defaultAllowPayAtBusiness", value)}
+          />
+          <div className="space-y-2">
+            <Label htmlFor="paymentInstructions">Payment instructions</Label>
+            <Textarea id="paymentInstructions" maxLength={2000} value={settings.paymentInstructions || ""} onChange={(event) => update("paymentInstructions", event.target.value)} placeholder="Instructions shown to customers" />
           </div>
         </CardContent>
       </Card>

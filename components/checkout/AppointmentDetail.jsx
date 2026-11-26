@@ -170,7 +170,7 @@ export function AppointmentDetail({ appt, currencyCode = "USD", onClose, onConfi
                   <div className="grid grid-cols-2 gap-2">
                     <Button variant="outline" disabled={amountPaidValue <= 0} onClick={() => pay("CASH")}>
                       <Banknote className="size-4" />
-                      Pay cash
+                      Pay by cash
                     </Button>
                     <Button disabled={amountPaidValue <= 0} onClick={startQrPayment}>
                       <ScanQrCode className="size-4" />

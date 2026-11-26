@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Switch } from "@/components/ui/switch";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { validateForm } from "@/utils/formValidator";
@@ -19,6 +20,8 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
   const [loading, setLoading] = useState();
   const [error, setError] = useState();
   const [defaultDepositPercentage, setDefaultDepositPercentage] = useState(null);
+  const [defaultPrepaymentType, setDefaultPrepaymentType] = useState("pay_later");
+  const [defaultAllowPayAtBusiness, setDefaultAllowPayAtBusiness] = useState(true);
   const {
     formState: serviceForm,
     setFormState: setServiceForm,
@@ -33,8 +36,9 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
     duration: "",
     locationId: locationId || "",
     prepaymentType: "pay_later",
-    depositType: "percent",
+    depositType: null,
     depositValue: "",
+    allowPayAtBusiness: true,
   });
 
   useEffect(() => {
@@ -50,7 +54,24 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
       .then(async (response) => {
         const data = await response.json();
         if (!response.ok) throw new Error(data.error || "Unable to load payment defaults.");
-        if (active) setDefaultDepositPercentage(data.settings.defaultDepositPercentage);
+        if (active) {
+          const defaults = data.settings;
+          const depositPercentage = defaults.defaultDepositPercentage;
+          const prepaymentType = defaults.defaultPrepaymentType || "pay_later";
+          const allowPayAtBusiness = defaults.defaultAllowPayAtBusiness ?? true;
+          setDefaultDepositPercentage(depositPercentage);
+          setDefaultPrepaymentType(prepaymentType);
+          setDefaultAllowPayAtBusiness(allowPayAtBusiness);
+          setServiceForm((current) => ({
+            ...current,
+            prepaymentType,
+            depositType: prepaymentType === "deposit" ? "percentage" : null,
+            depositValue: prepaymentType === "deposit" && Number(depositPercentage) > 0
+              ? String(depositPercentage)
+              : "",
+            allowPayAtBusiness,
+          }));
+        }
       })
       .catch((requestError) => {
         console.error("Unable to load service payment defaults:", requestError);
@@ -114,6 +135,7 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
               <Input id="name" name="name" onChange={handleServiceChange} value={serviceForm.name} />
               {formErrors && formErrors.name && <p className="text-sm text-red-500">{formErrors.name}</p>}
             </div>
+            {error && <p role="alert" className="mb-3 text-sm text-red-600">{error}</p>}
             <div className="mb-2">
               <Label htmlFor="description">Description</Label>
               <Textarea name="description" onChange={handleServiceChange} value={serviceForm.description} />
@@ -146,12 +168,13 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
             <div className="mt-3 grid gap-3 rounded-md border bg-slate-50 p-3">
               <div>
                 <Label>Payment rule</Label>
-                <Select value={serviceForm.prepaymentType} onValueChange={(value) => setServiceForm((prev) => ({
+                <Select value={serviceForm.prepaymentType || defaultPrepaymentType} onValueChange={(value) => setServiceForm((prev) => ({
                   ...prev,
                   prepaymentType: value,
-                  depositValue: value === "deposit" && !prev.depositValue && defaultDepositPercentage !== null
-                    ? String(defaultDepositPercentage)
-                    : prev.depositValue,
+                  depositType: value === "deposit" ? prev.depositType || "percentage" : null,
+                  depositValue: value === "deposit"
+                    ? prev.depositValue || (Number(defaultDepositPercentage) > 0 ? String(defaultDepositPercentage) : "")
+                    : "",
                 }))}>
                   <SelectTrigger className="mt-1 bg-white">
                     <SelectValue placeholder="Select payment rule" />
@@ -167,22 +190,36 @@ export default function AddService({ open, setAddServiceOpen, vendorId, location
                 <div className="grid gap-2 sm:grid-cols-[160px_1fr]">
                   <div>
                     <Label>Deposit type</Label>
-                    <Select value={serviceForm.depositType} onValueChange={(value) => setServiceForm((prev) => ({ ...prev, depositType: value }))}>
+                    <Select value={serviceForm.depositType} onValueChange={(value) => setServiceForm((prev) => ({
+                      ...prev,
+                      depositType: value,
+                      depositValue: value === "percentage" && Number(defaultDepositPercentage) > 0
+                        ? String(defaultDepositPercentage)
+                        : "",
+                    }))}>
                       <SelectTrigger className="mt-1 bg-white">
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="percent">Percent</SelectItem>
+                        <SelectItem value="percentage">Percentage</SelectItem>
                         <SelectItem value="fixed">Fixed amount</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                   <div>
                     <Label htmlFor="depositValue">Deposit value</Label>
-                    <Input id="depositValue" name="depositValue" type="number" min="0" step="0.01" value={serviceForm.depositValue} onChange={handleServiceChange} placeholder={serviceForm.depositType === "fixed" ? "25.00" : "25"} className="mt-1 bg-white" />
+                    <Input id="depositValue" name="depositValue" type="number" min="0.01" max={serviceForm.depositType === "fixed" ? serviceForm.price : "100"} step="0.01" value={serviceForm.depositValue} onChange={handleServiceChange} placeholder={serviceForm.depositType === "fixed" ? "25.00" : "25"} className="mt-1 bg-white" />
                   </div>
                 </div>
               )}
+              <div className="flex items-center justify-between gap-4">
+                <Label htmlFor="allowPayAtBusiness">Allow pay at business for this service</Label>
+                <Switch
+                  id="allowPayAtBusiness"
+                  checked={serviceForm.allowPayAtBusiness ?? defaultAllowPayAtBusiness}
+                  onCheckedChange={(value) => setServiceForm((current) => ({ ...current, allowPayAtBusiness: value }))}
+                />
+              </div>
             </div>
             <DialogFooter className="mt-4">
               <Button variant="secondary">Cancel</Button>

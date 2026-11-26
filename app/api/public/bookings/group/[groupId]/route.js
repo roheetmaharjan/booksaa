@@ -39,31 +39,21 @@ export async function GET(req, { params }) {
       return NextResponse.json({ error: "Booking group not found" }, { status: 404 });
     }
 
-    // Helper to calculate deposit required
-    function getDepositRequired(service) {
-      if (service.prepaymentType === "full") {
-        return service.price;
-      }
-      if (service.prepaymentType === "deposit") {
-        if (service.depositType === "fixed") {
-          return Number(service.depositValue || 0);
-        }
-        if (service.depositType === "percent") {
-          return service.price * (Number(service.depositValue || 0) / 100);
-        }
-      }
-      return 0;
-    }
-
     let totalAmount = 0;
     let totalDepositRequired = 0;
     let totalPaid = 0;
+    let totalRemainingBalance = 0;
+    let amountToPay = 0;
 
     const servicesList = bookings.map((b) => {
-      const deposit = getDepositRequired(b.service);
-      totalAmount += b.service.price;
+      const price = Number(b.paymentAmount);
+      const deposit = Number(b.depositAmount || 0);
+      const paidAmount = Number(b.paidAmount || 0);
+      totalAmount += price;
       totalDepositRequired += deposit;
-      totalPaid += b.paidAmount;
+      totalPaid += paidAmount;
+      totalRemainingBalance += Math.max(0, price - paidAmount);
+      amountToPay += Math.max(0, deposit - paidAmount);
 
       return {
         id: b.id,
@@ -71,7 +61,7 @@ export async function GET(req, { params }) {
         professionalName: b.professional?.name || "Staff Member",
         scheduledAt: b.scheduledAt,
         startTime: b.startTime,
-        price: b.service.price,
+        price,
         depositRequired: deposit,
         status: b.status,
       };
@@ -88,9 +78,6 @@ export async function GET(req, { params }) {
         stripePublishableKey: true,
       },
     });
-
-    const totalRemainingBalance = totalAmount - totalPaid;
-    const amountToPay = Math.max(0, totalDepositRequired - totalPaid);
 
     return NextResponse.json({
       paymentGroupId: groupId,

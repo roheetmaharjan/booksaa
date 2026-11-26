@@ -26,30 +26,32 @@ function toAppointment(booking) {
   const start = booking.startTime || scheduledAt.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
   const end = booking.endTime || (booking.scheduledEnd && new Date(booking.scheduledEnd).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }));
   const paid = Number(booking.paidAmount || 0);
+  const bookedPrice = Number(booking.paymentAmount ?? service?.price ?? 0);
   const latestPayment = booking.payments?.at(-1);
   return {
     id: booking.id,
     // A payment group represents one visit. Do not group a customer's later
     // booking with an earlier, completed visit from the same day.
     bookingGroupKey: booking.paymentGroupId || booking.id,
-    stage: {
-      PENDING: "unconfirmed",
-      PENDING_PAYMENT: "unconfirmed",
-      CHECKED_IN: "arrived",
-      IN_SERVICE: "in_service",
-      COMPLETED: "completed",
-    }[booking.status] || "confirmed",
+    stage:
+      {
+        PENDING: "unconfirmed",
+        PENDING_PAYMENT: "unconfirmed",
+        CHECKED_IN: "arrived",
+        IN_SERVICE: "in_service",
+        COMPLETED: "completed",
+      }[booking.status] || "confirmed",
     client: booking.customerName || booking.customer?.fullName || "Customer",
     phone: booking.customerPhone || booking.customer?.phone || "",
     start: displayTime(start),
     end: displayTime(end),
     showRate: 100,
-    avgVisit: Number(booking.paymentAmount || service?.price || 0),
+    avgVisit: bookedPrice,
     visitCadence: "",
     bookedOn: booking.createdAt ? new Date(booking.createdAt).toLocaleDateString() : "",
     tags: [],
     note: booking.notes || "",
-    services: service ? [{ id: service.id, bookingId: booking.id, name: service.name, staff: booking.professional?.name || "Unassigned", price: Number(service.price || booking.paymentAmount || 0), duration: service.duration || 30, start: displayTime(start), end: displayTime(end) }] : [],
+    services: service ? [{ id: service.id, bookingId: booking.id, name: service.name, staff: booking.professional?.name || "Unassigned", price: bookedPrice, duration: service.duration || 30, start: displayTime(start), end: displayTime(end) }] : [],
     paid: paid > 0 || booking.paymentStatus === "PAID" ? { total: paid, method: latestPayment?.method || "Unknown", tip: 0 } : null,
   };
 }
@@ -88,7 +90,7 @@ export default function CheckoutPage() {
   const [list, setList] = useState([]);
   const [currencyCode, setCurrencyCode] = useState("USD");
   const [draggedAppointment, setDraggedAppointment] = useState(null);
-  
+
   const url = useMemo(() => {
     const start = new Date(selectedDate);
     start.setHours(0, 0, 0, 0);
@@ -103,7 +105,7 @@ export default function CheckoutPage() {
     }
     return `${process.env.NEXT_PUBLIC_API_URL}/api/bookings?${requestParams.toString()}`;
   }, [locationId, selectedDate]);
-  
+
   const { data, loading, error, refetch } = useFetch(url);
 
   useEffect(() => {
@@ -125,9 +127,11 @@ export default function CheckoutPage() {
   }, [routeParams?.slug]);
 
   useEffect(() => {
-    const appointments = groupByBookingGroup(filterDueBookings(data?.bookings || [], selectedDate)
-      .map(toAppointment)
-      .filter(Boolean));
+    const appointments = groupByBookingGroup(
+      filterDueBookings(data?.bookings || [], selectedDate)
+        .map(toAppointment)
+        .filter(Boolean),
+    );
     setList(appointments);
     if (bookingId && appointments.some((item) => item.bookingIds.includes(bookingId))) setSelectedId(appointments.find((item) => item.bookingIds.includes(bookingId)).id);
     else if (selectedId && !appointments.some((item) => item.id === selectedId)) setSelectedId(null);

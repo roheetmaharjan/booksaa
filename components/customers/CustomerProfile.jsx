@@ -225,7 +225,7 @@ export function CustomerProfile({ customer, noteContent, setNoteContent, addNote
                     <TableCell>{new Date(booking.scheduledAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</TableCell>
                     <TableCell>{booking.service?.name || "-"}</TableCell>
                     <TableCell>{booking.professional?.name || "-"}</TableCell>
-                    <TableCell>{money(booking.paymentAmount || booking.service?.price)}</TableCell>
+                    <TableCell>{money(booking.paymentAmount ?? booking.service?.price)}</TableCell>
                     <TableCell>{booking.status}</TableCell>
                   </TableRow>
                 ))}

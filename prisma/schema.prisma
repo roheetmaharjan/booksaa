@@ -114,6 +114,8 @@ model VendorSettings {
   onlinePaymentsEnabled        Boolean  @default(true)
   payAtBusinessEnabled         Boolean  @default(true)
   depositsEnabled              Boolean  @default(true)
+  defaultPrepaymentType        String   @default("pay_later")
+  defaultAllowPayAtBusiness    Boolean  @default(true)
   defaultDepositPercentage     Float?
   paymentInstructions          String?
   notifyNewBooking             Boolean  @default(false)
@@ -174,6 +176,7 @@ model Bookings {
   notes                 String?
   paymentAmount         Float         @default(0)
   paymentRequirement    String        @default("pay_later")
+  depositAmount        Float         @default(0)
   professionalId        String?
   scheduledEnd          DateTime?
   startTime             String?
